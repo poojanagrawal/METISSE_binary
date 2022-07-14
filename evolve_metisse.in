@@ -1,0 +1,60 @@
+!you can define input parameters here
+!   NOTE: SSE_input_controls in evolve.in are read only when METISSE is called directly though its main unit.
+!   otherwise, values provided by the overlying code are used.
+
+&SSE_input_controls
+
+!initial_Z = 0.0142
+initial_Z = 0.02
+!initial_Z = 0.00134
+
+max_age = 1.2d4   !max age in Myrs
+
+read_mass_from_file = .false.
+input_mass_file = '/Users/poojan/BSE/bse_metisse/input_mass.in'
+
+number_of_tracks = 10
+min_mass = 1.0
+max_mass = 50.0
+
+pts_1 = 0.02
+pts_2 = 0.01
+pts_3 = 0.005
+
+BHNS_mass_scheme = 'Belczynski2008'
+
+/
+
+&extra_controls
+
+METISSE_DIR = '/Users/poojan/BSE/bse_metisse'
+
+!INPUT_FILES_DIR = '/Users/poojan/Dori/BIST/dwarfA'
+!key_columns_file = '/Users/poojan/BSE/bse_metisse/bist_read_cols.txt'
+!format_file = '/Users/poojan/BSE/bse_metisse/format_bist.dat'
+
+!INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/MESA/eeps'
+!INPUT_FILES_DIR = '/Users/poojan/mist/v1.2/MIST_v1.2_feh_p0.00_afe_p0.0_vvcrit0.0_EEPS'
+!INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/MESA/grid2'
+!INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/MESA/ml_test/Zp0/0ml/'
+
+
+INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/MESA/ovs/zsun_ovs0p11/eeps'
+key_columns_file = '/Users/poojan/BSE/bse_metisse/eep_read_columns.dat'
+
+!INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/pols/eeps/OVS01'
+!key_columns_file = '/Users/poojan/BSE/bse_metisse/pols_columns.list'
+!format_file = '/Users/poojan/BSE/bse_metisse/format_pols.dat'
+
+!write_eep_file = .true.
+!write_track_to_file = .false.
+
+!verbose = .false.
+
+!Mec = 49.0
+!Mhook= 0.8
+!Mfgb = 12.8
+
+/
+
+

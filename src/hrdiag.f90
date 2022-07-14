@@ -1,5 +1,5 @@
  subroutine hrdiag(mass,aj,mt,tm,tn,tscls,lums,GB,zpars,&
-                                r,lum,kw,mc,rc,menv,renv,k2,id,irecord)
+                                r,lum,kw,mc,rc,menv,renv,k2,mcx,id,irecord)
     use track_support
     use interp_support, only: interpolate_age
     use sse_support

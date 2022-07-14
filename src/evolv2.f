@@ -207,10 +207,12 @@
 *
       dbg = .false.
       irecord = 0
+
+      call allocate_track(2,mass0)
+
       mass1i = mass0(1)
       mass2i = mass0(2)
       
-      call allocate_track(mass0)
       
       tbi = tb
       ecci = ecc
@@ -296,7 +298,7 @@
 
         irecord = 1
          CALL hrdiag(mass0(k),age,mass(k),tm,tn,tscls,lums,GB,zpars,
-     &               rm,lum,kstar(k),mc,rc,me,re,k2,k,irecord)
+     &               rm,lum,kstar(k),mc,rc,me,re,k2,mcx,k,irecord)
 *            print*, 'ini', tm,tn,kstar(k)
 
          aj(k) = age
@@ -763,7 +765,7 @@
          irecord = 1
 *         print*, 'star_dt_mn',m0,mt,kw,k
          CALL hrdiag(m0,age,mt,tm,tn,tscls,lums,GB,zpars,
-     &               rm,lum,kw,mc,rc,me,re,k2,k,irecord)
+     &               rm,lum,kw,mc,rc,me,re,k2,mcx,k,irecord)
 *
          if(kw.ne.15)then
             ospin(k) = jspin(k)/(k2*(mt-mc)*rm*rm+k3*mc*rc*rc)
@@ -1999,13 +2001,13 @@
             goto 140
          endif
          kw = kstar(k)
-         if (dbg) print*,'ontaining parameters for the next step'
+         if (dbg) print*,'obtaining parameters for the next step'
          if (dbg) print*,' calling star and hrdiag', k
 
          CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,k)
          irecord = 1
          CALL hrdiag(m0,age,mt,tm,tn,tscls,lums,GB,zpars,
-     &               rm,lum,kw,mc,rc,me,re,k2,k,irecord)
+     &               rm,lum,kw,mc,rc,me,re,k2,mcx,k,irecord)
 *
 * Check for a supernova and correct the semi-major axis if so.
 *

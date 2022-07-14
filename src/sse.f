@@ -37,12 +37,17 @@ c-------------------------------------------------------------c
 *
       integer kw,j,k
 *
+      integer num_tracks,i,str
+      real*8 mass_track(100000),min_mass,max_mass
+*
       real*8 mass,mt,z,zpars(20)
       real*8 epoch,tms,tphys,tphysf,dtp
       real*8 r,lum,ospin
       real*8 mc,rc,menv,renv
       character*50 text1,text2,text3
+      character*30 filename
       character*30 label(16)
+
       data label /' Low Mass MS Star ',' Main sequence Star ',
      &            ' Hertzsprung Gap ',' Giant Branch ',
      &            ' Core Helium Burning ',
@@ -89,6 +94,7 @@ c-------------------------------------------------------------c
       READ(22,*)neta,bwind,hewind,sigma
       READ(22,*)ifflag,wdflag,bhflag,nsflag,mxns
       READ(22,*)pts1,pts2,pts3
+      READ(22,*)num_tracks,min_mass,max_mass
 *
 ************************************************************************
 *
@@ -98,6 +104,7 @@ c-------------------------------------------------------------c
       if(idum.gt.0) idum = -idum
 *
       if(mass.gt.0.0)then
+
 *
 * Initialize the star to begin on the ZAMS.
 *
@@ -113,8 +120,20 @@ c-------------------------------------------------------------c
       endif
       CLOSE(22)
       WRITE(*,*)
+
+      if(num_tracks>1)then
+        call imf1(num_tracks,min_mass,max_mass,mass_track)
+      else
+        mass_track(1)=mass
+      endif
+        do i=1,num_tracks
+        mass=mass_track(i)
+        mt = mass
+        kw = 1
+        tphys = 0.d0
+        epoch = 0.d0
 *
-* Set the initial spin of the star. If ospin is less than or equal to 
+* Set the initial spin of the star. If ospin is less than or equal to
 * zero at time zero then evolv1 will set an appropriate ZAMS spin. If 
 * ospin is greater than zero then it will start with that spin regardless
 * of the time. If you want to start at time zero with negligible spin 
@@ -129,13 +148,17 @@ c-------------------------------------------------------------c
 * tphysf will mean that no data is stored.
 *
       dtp = 0.d0
-* 
+*
+        str=int(mass*100)
+        WRITE(filename,"(a,i5.5,a)") "./output/evolve_",str,"M.dat"
+
       CALL evolv1(kw,mass,mt,r,lum,mc,rc,menv,renv,ospin,
      &            epoch,tms,tphys,tphysf,dtp,z,zpars)
 *
 ************************************************************************
 * Output:
 *
+
       j = 0
       if(scm(1,1).lt.0.0) goto 50
 *
@@ -145,20 +168,21 @@ c-------------------------------------------------------------c
 *    Time, stellar type, initial mass, current mass, log10(L), log10(r),
 *    log10(Teff), core mass, epoch and spin.
 *
-      OPEN(23,file='evolve.dat',status='unknown')
+      OPEN(23,file=filename,status='unknown')
       text1 = ' Tev(Myr)    type      Mo        Mt      log10(L) '
       text2 = ' log10(R) log10(Teff)  Mc        Menv     ' 
-      text3 = ' epoch      spin' 
+      text3 = ' epoch     Mcx    wind'
       WRITE(23,'(a,a,a)')text1,text2,text3
  30   j = j + 1
       if(scm(j,1).lt.0.0)then
          scm(j-1,1) = scm(j,1)
          j = j - 1
       endif
-      WRITE(23,99)(scm(j,k),k=1,8),scm(j,10),scm(j,12),scm(j,13)
+      WRITE(23,99)(scm(j,k),k=1,8),scm(j,10),scm(j,12)
+     &                        ,scm(j,14),scm(j,15)
       if(scm(j,1).ge.0.0) goto 30
       CLOSE(23)
- 99   FORMAT(8f10.4,1p,e12.4,0p,f12.4,1p,e12.4)
+ 99   FORMAT(8f10.4,1p,e12.4,0p,f12.4,1p,e12.4,e12.4)
 *
 * The spp array acts as a log, storing the time and mass at each change
 * of evolution stage.
@@ -175,6 +199,24 @@ c-------------------------------------------------------------c
 *
 ************************************************************************
 *
+
+      end do
       STOP
       END
 ***
+
+        subroutine imf1(n, minval, maxval, marray)
+            implicit none
+            integer i,n
+
+            real*8  marray(n)
+            real*8 minval, maxval,h
+
+            marray = 0.d0
+            !linearly spaced
+            h = abs(maxval- minval)/(n-1)
+            do i= 1,n
+                marray(i) = minval + (i-1)*h
+            end do
+        
+        end subroutine

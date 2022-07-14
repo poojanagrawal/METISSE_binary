@@ -39,6 +39,7 @@ c-------------------------------------------------------------c
       integer nv
       parameter(nv=50000)
 *
+      REAL*8 mass0(1)
       real*8 mass,z,aj
       real*8 epoch,tphys,tphys2,tmold,tbgold
       real*8 mt,tm,tn,tphysf,dtp,tsave
@@ -73,7 +74,9 @@ c-------------------------------------------------------------c
       id = 1
       irecord = 0
       wind=0.d0
-      call allocate_track(mass)
+
+      mass0(1) =mass
+      call allocate_track(1,mass0)
     
       if(ospin.le.0.d0)then
          ospin = 1.0d-10

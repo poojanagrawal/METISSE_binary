@@ -72,7 +72,7 @@
 *
          mew = ((mt-mc)/mt)*MIN(5.d0,MAX(1.2d0,(lum/lum0)**kap))
 * Apply the reduced WR-like mass loss for small H-envelope mass
-* as described in the Hurley, Pols & Tout (200) SSE paper.
+* as described in the Hurley, Pols & Tout (2000) SSE paper.
          if(mew.lt.1.d0)then
             dml = 1.0d-13*lum**(3.d0/2.d0)*(1.d0 - mew)
             dms = MAX(dms,dml)

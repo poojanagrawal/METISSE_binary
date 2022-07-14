@@ -21,7 +21,7 @@ OBJT3 = $(SRCE3:.f=.o)
 #	$(CMPLR) $(FFLAGS) $(OBJT3) -o popbin
 
 
-METISSE=metisse
+SSE_METISSE=sse_metisse
 
 
 track_support.o: $(SRC_DIR)/track_support.f90
@@ -48,7 +48,7 @@ OBJT4 = $(SRCE4:.f=.o)
 
 BSE_METISSE=bse_metisse
 
-all:$(BSE_METISSE)
+all:$(BSE_METISSE) $(SSE_METISSE)
 
 SRCE5 = \
 bse.f evolv2.f comenv.f corerd.f dgcore.f gntage.f \
@@ -64,17 +64,15 @@ OBJT5 = $(SRCE5:.f=.o)
 %.o : $(SRC_DIR)/%.f90
 	$(FC) $(OMP) $(FFLAGS1) -c $<
 
-$(METISSE): $(OBJT4) star.o sse_support.o hrdiag.o remnant_support.o z_support.o track_support.o interp_support.o zcnsts.o metisse_mlwind.o deltat.o alloc_track.o dealloc_track.o assign_commons.o
-	$(FC) $(OMP) -o $(BSE_DIR)/$(METISSE) $^
+$(SSE_METISSE): $(OBJT4) star.o sse_support.o hrdiag.o remnant_support.o z_support.o track_support.o interp_support.o zcnsts.o metisse_mlwind.o deltat.o alloc_track.o dealloc_track.o assign_commons.o
+	$(FC) $(OMP) -o $(BSE_DIR)/$(SSE_METISSE) $^
 
 
 $(BSE_METISSE): $(OBJT5) star.o sse_support.o hrdiag.o remnant_support.o z_support.o track_support.o interp_support.o zcnsts.o metisse_mlwind.o deltat.o alloc_track.o dealloc_track.o assign_commons.o
 	$(FC) $(OMP) -o $(BSE_DIR)/$(BSE_METISSE) $^
 
 
-
 clean:
-	rm -f $(BSE_DIR)/$(METISSE)
-	rm -f $(BSE_DIR)/$(BSE_METISSE)
+	rm -f $(BSE_DIR)/$(SSE_METISSE) $(BSE_DIR)/$(BSE_METISSE)
 	rm -f *.mod *.o
 

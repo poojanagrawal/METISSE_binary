@@ -1,1 +1,2 @@
-cd make; make bse_metisse
+TARGET=all
+cd make; make $TARGET

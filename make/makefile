@@ -2,11 +2,20 @@ BSE_DIR=..
 
 SRC_DIR=$(BSE_DIR)/src
 
+#com
 FC=gfortran
-DEBUG=-g -fbacktrace -fcheck=all 
-WARN=-Wall -Wextra -pedantic
-OMP=-fopenmp
+DEBUG=-g3 -fbacktrace -fcheck=all -fbounds-check
+WARN=-Wall -pedantic -Wno-tabs -Wextra
+# -Wconversion
+
+#Optimization flag
 OPT=-O3
+
+#NOT USED
+#Tells gfortran to compile using OpenMP
+OMP=-fopenmp
+
+
 FFLAGS1= -ffree-form -fimplicit-none $(OPT) $(WARN) $(DEBUG)
 FFLAGS2= -ffixed-form -fimplicit-none 
 

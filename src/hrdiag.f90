@@ -107,7 +107,7 @@
     mc = t% pars% core_mass
     mcx = t% pars% McCO
 
-    mt = t% pars% mass     !mt should be only be updated in star or evolv
+    mt = t% pars% mass
     kw = t% pars% phase
     aj = t% pars% age
     mass= t% zams_mass

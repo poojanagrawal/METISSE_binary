@@ -769,8 +769,11 @@ module z_support
         real(dp), allocatable :: T_centre(:)
         integer :: len_track, i, min_index
         integer:: j_bagb, j_tagb, i_start
+        real(dp), allocatable :: mass_list(:)
+
         logical:: debug
 
+!        mass_list => NULL()
         zpars = 0.d0
         debug = .true.
         old_co_frac = 0.0
@@ -795,12 +798,20 @@ module z_support
         Mcrit(9)% mass = s(num_tracks)% initial_mass
         Mcrit(9)% loc = num_tracks+1 !TODO: explain why+1?
 
+        if (.not. defined(Mcrit(7)% mass)) then
+          do i = 1,size(s)
+            call set_star_type_from_history(s(i))
+          end do
+        endif
+        allocate(mass_list(num_tracks))
+        mass_list = s% initial_mass
         !if already defined, do index search here otherwise search below
         do i = 2, size(Mcrit)-1
             if (.not. defined(Mcrit(i)% mass)) cycle
-            call index_search (num_tracks, s% initial_mass, Mcrit(i)% mass, min_index)
+            call index_search (num_tracks, mass_list, Mcrit(i)% mass, min_index)
             Mcrit(i)% mass = s(min_index)% initial_mass
             Mcrit(i)% loc = min_index
+            print*, i, Mcrit(i)% mass
         end do
 
         i_start = max(Mcrit(1)% loc, Mcrit(2)% loc)

@@ -86,7 +86,8 @@
 
             t% pars% dt = min(dt,dtr)
             
-!           if (kw==4) print*,"dt dtr phase",dt,dtr,t% pars%phase
+!           if (kw==5) print*,"dt dtr phase",dt,dtr,t% pars%phase
+!            if (kw==5) print*, t% nuc_time, tn
             if (dtr<=0.0) then
                 print*,"fatal error: invalid timestep", dtr ,"for phase", t% pars% phase
                 print*,"t% zams_mass, t% nuc_time, age, t% pars% mass"

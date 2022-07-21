@@ -423,7 +423,7 @@
     real(dp) :: HeI_time, HeB_time
     logical :: debug
 
-    debug = .false.
+    debug = .true.
     t% lost_envelope = (t% initial_mass <10.0 .and. t% pars% core_mass>= t% pars% mass) &
                         .or. (t% initial_mass>=10.0 .and. abs(t% pars% core_mass-t% pars% mass)<0.01)
     

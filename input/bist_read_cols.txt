@@ -1,0 +1,11 @@
+t[yr]
+M/Msun
+Teff[K]
+log(L/Lsun) 
+R/Rsun 
+log(Mdot[Msun/yr]
+coreHe[Msun] 
+coreCO[Msun] 
+cC12  
+cO16 
+cHe4

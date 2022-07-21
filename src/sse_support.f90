@@ -78,8 +78,8 @@ contains
         !print*,"bgb",BGB_EEP,identified(BGB_EEP)
 !        if (.not. defined(t% nuc_time))t% nuc_time = t% tr(i_age,t% ntrack) - t% tr(i_age,ZAMS_EEP)
     
-        t% nuc_time = age(min(Final_EEP,t% ntrack))
-
+        t% times(11) = age(min(Final_EEP,t% ntrack))
+        t% nuc_time = t% times(11)
         !determine the base of the giant branch times, if present
         if (mass > Mcrit(2)% mass .and. mass< Mcrit(5)% mass) then
             if (identified(BGB_EEP)) then
@@ -193,7 +193,7 @@ contains
 
     !tscls(4) = tscls(5) = tscls(6)
     tscls(13) = t% times(TPAGB)
-    tscls(14) = t% nuc_time
+    tscls(14) = t% times(11)
     tn = tscls(14)
 
     end subroutine

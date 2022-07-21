@@ -12,7 +12,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     real(dp), allocatable:: hecorelist(:),ccorelist(:),Lum_list(:),age_list(:)
     real(dp), allocatable:: rlist(:)
 
-    real(dp) :: times_old(10), nuc_old, delta,dtm! ,tnext,mnext
+    real(dp) :: times_old(11), nuc_old, delta,dtm! ,tnext,mnext
 
     integer :: str, idd, nt
     character(len=strlen) :: eep_filename
@@ -135,7 +135,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
 
 
     if (kw<10 .and. debug) print*, "in star end", mt,tm,delta,kw
-!    print*, "in star", tm, t% MS_time, tn, t% nuc_time, kw
+    print*, "in star", tm, t% MS_time, tn, t% nuc_time, kw
 nullify(t)
     return
 end subroutine star

@@ -1,0 +1,61 @@
+
+&format_controls
+
+    file_extension = '.dat'
+    read_eep_files = .false.
+
+    !the line number where column names are given- e.g. it's 1 for the first line
+    header_location = 0
+
+    total_cols = 94 !number of columns
+    extra_char = ''
+    column_name_file = '/Users/pagrawal/METISSE/bist_columns.txt'
+
+    !EEPS
+    PreMS_EEP = -1
+    ZAMS_EEP = 1
+    IAMS_EEP = 151
+    TAMS_EEP = 252
+    BGB_EEP = 403
+    cHeIgnition_EEP = 403
+    cHeBurn_EEP = 429
+    TA_cHeB_EEP = 608
+
+    cCBurn_EEP = -1
+    TPAGB_EEP = -1
+    post_AGB_EEP = -1
+    WD_EEP = -1
+
+    Initial_EEP = 1       !files will be read from this line number
+    Final_EEP = 608        !to this line  -currently not operational
+    Extra_EEP1 = -1
+    Extra_EEP2= -1
+    Extra_EEP3 = -1
+
+    !name of essential columns
+
+    age_colname = 't[yr]'        !age in units of yrs
+    mass_colname= 'M/Msun'            !mass of the star in solar units
+
+    log_L_colname = 'log(L/Lsun)'             	 !log of luminosity in solar units 
+
+    log_R_colname = ''
+    Radius_colname = 'R/Rsun'			!radius in solar units 
+
+    he_core_mass = 'coreHe[Msun]'       	 !mass He enriched/H depleted core in solar units
+    c_core_mass = 'coreCO[Msun]'         	 !mass C enriched/He depleted core in solar units
+
+    mdot_colname = ''                		 !d(star_mass)/dt (in msolar per year)  OR
+    log_mdot_colname = 'log(Mdot[Msun/yr]'       !log10(abs(star_mdot)) (in msolar per year)
+
+    Teff_colname = 'Teff[K]'			!surface temperature in K
+    log_T_colname = ''
+
+
+    !columns required for determining Mup and Mhook
+    log_Tc= ''                              !central temperature in log units
+    he4_mass_frac = 'cHe4'
+    c12_mass_frac = 'cC12'               !c12 mass fraction at the centre
+    o16_mass_frac = 'cO16'               !o16 mass fraction at the centre
+
+/

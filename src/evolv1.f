@@ -87,7 +87,7 @@ c-------------------------------------------------------------c
 *
 * Setup variables which control the output (if it is required).
 *
-      dbg = .false. !this controls screen output
+      dbg = .true. !this controls screen output
       ip = 0
       jp = 0
       tsave = tphys
@@ -406,12 +406,12 @@ c-------------------------------------------------------------c
 * or some cases at the upper end of the mass range for EC SNe. 
 *
          if(kw.ne.kwold)then
-            if (kw<10) print*,"star5:phase change",aj, mt,kw,dtm
+            if (kw<10) print*,"star5:phase change",aj, mt,tn,kw, dtm
             kw = kwold
             mass = m0
             mt = mt0
             CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
-*            if (kw<10) print*,"after star5:phase change",aj, mt,tm,kw
+            if (kw<10) print*,"after star5:phase change",aj, mt,tn,kw
          endif
 *
 * Choose minimum of time-scale and remaining interval (> 100 yrs).

@@ -94,7 +94,6 @@ subroutine zcnsts(z,zpars)
     !locates key columns of mass, age etc.
     call locate_column_numbers(s,key_cols)
     do i = 1,size(s)
-        call set_star_type_from_history(s(i))
         s(i)% has_mass_loss = check_mass_loss(s(i))
     end do
 

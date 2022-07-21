@@ -115,7 +115,7 @@ module interp_support
         !   also assign SSE phases (Hurley et al.2000)
 !        call calculate_phases_and_times(t)
         allocate(t% phase(t% ntrack))
-        allocate(t% times(10))
+        allocate(t% times(11))
         
         t% phase = undefined
         t% times = undefined
@@ -133,7 +133,7 @@ module interp_support
         !takes a set of EEP-defined tracks and find tracks for interpolation
         real(dp), intent(in) :: mass
         integer, intent(out) :: iseg,m,min_index,keyword
-        type(eep_track), pointer,intent(out) :: a(:)
+        type(eep_track), pointer, intent(out) :: a(:)
         type(eep_track), pointer :: sa(:)
         real(dp) :: min_mass
 

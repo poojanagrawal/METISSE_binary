@@ -58,7 +58,7 @@ format_file = 'input/format_sse.dat'
 
 Mhook = 1.0185  
 Mhef = 1.995  
-Mfgb = 13.032     
+Mfgb = 14.032     
 Mup = 6.110     
 Mec = 7.910
 

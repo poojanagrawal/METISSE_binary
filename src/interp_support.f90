@@ -209,7 +209,7 @@ module interp_support
         if (debug_mass) print*,"interpolate mass" , a% initial_mass
         if (debug_mass) print*,"interpolate ntrack" , a% ntrack
         if (debug_mass .and. mass < sa(1)% initial_mass) print*, "doing extrapolation"
-!        if (mass < sa(1)% initial_mass) print*, "doing extrapolation",mass
+!        if (mass < sa(1)% initial_mass) print*, "doing extrapolation", mass, sa(1)% initial_mass, a% initial_mass
 !        print*, mass, sa(1)% initial_mass
 
 		deallocate(mass_list)

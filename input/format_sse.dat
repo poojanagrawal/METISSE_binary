@@ -23,7 +23,7 @@
 
     cCBurn_EEP = 708
     TPAGB_EEP = 708
-    post_AGB_EEP = -1
+    post_AGB_EEP = 809
     WD_EEP = -1
 
     Initial_EEP = 1       !files are used from this line number

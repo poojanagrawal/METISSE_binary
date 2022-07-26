@@ -503,6 +503,7 @@ module track_support
         else
             pars% core_mass = pars% McCO
         endif
+!        if (pars% phase>=5) print*, "mass",pars% McHe,pars% McCO,pars% phase
     end subroutine
     
     logical function check_ge(x,y) result(z)

@@ -57,6 +57,7 @@
                 call interpolate_age(t,t% pars% age)
                 if (irecord>0 .and. debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
                 t% pars% mass = mt
+!                if (kw>=5 .and. irecord>0) print*, "mass",mt,mc,t% pars% core_mass,t% pars% McCO,kw
                 !check if phase has changed
                 do i = t% pars% phase,6
 !                if (irecord>0) print*,"hr", t% times(i),t% times(i+1),aj,i
@@ -128,6 +129,8 @@
 !        if (kw<10 .and. debug) print*, "delta in hrdiag",t% pars% delta
         t% pars% delta = 0.d0
         if (kw<10 .and. debug) print*,"saving pars",mt,mc,aj,kw,r
+        
+
     else
         t% pars = old_pars
         t% lost_envelope = lost_envelope

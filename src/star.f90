@@ -80,7 +80,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
 
                     call interpolate_mass(t% initial_mass,idd)
 !                    write the mass interpolated track if write_eep_file is true
-                    if (kw>=4 .and. kw<=4 .and. .false.) then
+                    if (kw>=1 .and. kw<=4 .and. .false.) then
                         str = int(mt*100)
                         print*,'writing',str,'M.track.eep'
                         write(eep_filename,"(a,a,i5.5,a)") trim(METISSE_DIR),"/output_eep/",str,"M.track.eep"
@@ -135,7 +135,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
 
 
     if (kw<10 .and. debug) print*, "in star end", mt,tm,delta,kw
-    print*, "in star", tm, t% MS_time, tn, t% nuc_time, kw
+!    print*, "in star", tm, t% MS_time, tn, t% nuc_time, kw
 nullify(t)
     return
 end subroutine star

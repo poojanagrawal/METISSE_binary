@@ -189,7 +189,7 @@
       REAL*8 beta,xi,acc2,epsnov,eddfac,gamma
       COMMON /VALUE5/ beta,xi,acc2,epsnov,eddfac,gamma
 *
-      REAL*8 z,tm,tn,m0,mt,rm,lum,mc,rc,me,re,k2,age,dtm,dtr
+      REAL*8 z,tm,tn,m0,mt,rm,lum,mc,rc,me,re,k2,age,dtr
       REAL*8 tscls(20),lums(10),GB(10),zpars(20)
       REAL*8 zero,ngtv,ngtv2,mt2,rrl1,rrl2,mcx,teff1,teff2
       REAL*8 mass1i,mass2i,tbi,ecci
@@ -201,12 +201,15 @@
       REAL bcm(50000,34),bpp(80,10)
       COMMON /BINARY/ bcm,bpp
       integer irecord
+      REAL*8 dtm
+      COMMON /TIMESTEP/ dtm
 
 *
 * Save the initial state.
 *
       dbg = .false.
-      irecord = 0
+      irecord = 1
+* TODO: irecord serves no purpose in BSE: better remove it
 
       call allocate_track(2,mass0)
 
@@ -296,10 +299,9 @@
          CALL star(kstar(k),mass0(k),mass(k),tm,tn,tscls,lums,GB,zpars
      &    ,dtm,k)
 
-        irecord = 1
          CALL hrdiag(mass0(k),age,mass(k),tm,tn,tscls,lums,GB,zpars,
      &               rm,lum,kstar(k),mc,rc,me,re,k2,mcx,k,irecord)
-*            print*, 'ini', tm,tn,kstar(k)
+            print*, 'ini', tm,tn,kstar(k)
 
          aj(k) = age
          epoch(k) = tphys - age
@@ -762,7 +764,6 @@
 * PA: second (main) call for detached phase
         if (dbg)print*,"second (main) call for detached phase",m0,age,k
          CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,k)
-         irecord = 1
 *         print*, 'star_dt_mn',m0,mt,kw,k
          CALL hrdiag(m0,age,mt,tm,tn,tscls,lums,GB,zpars,
      &               rm,lum,kw,mc,rc,me,re,k2,mcx,k,irecord)
@@ -827,8 +828,8 @@
 *     Base new time scale for changes in radius & mass on stellar type.
 *
          dt = dtmi(k)
+         if (dbg) print*, "calling deltat-1",tphys,k,kw
          CALL deltat(kw,age,tm,tn,tscls,dt,dtr,k)
-*        if (dbg) print*, "tphysf=",tphys,tphysf, tsave
 
 *
 * Choose minimum of time-scale and remaining interval.
@@ -1274,8 +1275,9 @@
                mass(j2) = 0.d0
             else
                mass(j2) = mass(j2) + dm2
+            print*, "calling gntage on 1278"
                CALL gntage(massc(j2),mass(j2),kst,zpars,
-     &                     mass0(j2),aj(j2))
+     &                     mass0(j2),aj(j2),j2)
                epoch(j2) = tphys - aj(j2)
             endif
             kstar(j2) = kst
@@ -1310,7 +1312,7 @@
          CALL comenv(mass0(j1),mass(j1),massc(j1),aj(j1),jspin(j1),
      &               kstar(j1),mass0(j2),mass(j2),massc(j2),aj(j2),
      &               jspin(j2),kstar(j2),zpars,ecc,sep,jorb,coel,
-     &               dtm,j1,j2)
+     &               j1,j2)
 *
          jp = MIN(80,jp + 1)
          bpp(jp,1) = tphys
@@ -1387,7 +1389,8 @@
             kst = 9
             if(kstar(j2).eq.10) massc(j2) = dm2
             if (dbg) print*, 'calling gntage 1355'
-            CALL gntage(massc(j2),mass(j2),kst,zpars,mass0(j2),aj(j2))
+            CALL gntage(massc(j2),mass(j2),kst,zpars,mass0(j2),
+     &                  aj(j2),j2)
             kstar(j2) = kst
             epoch(j2) = tphys - aj(j2)
          elseif(kstar(j2).le.12)then
@@ -1561,7 +1564,7 @@
                   endif
                   mt2 = mass(j2) + km*(dm2 - dms(j2))
                     if (dbg) print*, 'calling gntage1529',j2
-                  CALL gntage(mcx,mt2,kst,zpars,mass0(j2),aj(j2))
+                  CALL gntage(mcx,mt2,kst,zpars,mass0(j2),aj(j2),j2)
                   epoch(j2) = tphys + dtm - aj(j2)
 *
                   jp = MIN(80,jp + 1)
@@ -1620,7 +1623,8 @@
                   kst = MIN(6,3*kstar(j2)-27)
                   mt2 = mass(j2) + km*(dm2 - dms(j2))
                     if (dbg) print*, 'calling gntage 1587',j2
-                  CALL gntage(massc(j2),mt2,kst,zpars,mass0(j2),aj(j2))
+                  CALL gntage(massc(j2),mt2,kst,zpars,mass0(j2),
+     &                          aj(j2),j2)
                   epoch(j2) = tphys + dtm - aj(j2)
 *
                   jp = MIN(80,jp + 1)
@@ -2005,7 +2009,6 @@
          if (dbg) print*,' calling star and hrdiag', k
 
          CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,k)
-         irecord = 1
          CALL hrdiag(m0,age,mt,tm,tn,tscls,lums,GB,zpars,
      &               rm,lum,kw,mc,rc,me,re,k2,mcx,k,irecord)
 *
@@ -2041,8 +2044,8 @@
 *     Determine stellar evolution timescale for nuclear burning types.
 *
          if(kw.le.9)then
+            if (dbg) print*, "calling deltat-2",tphys,k,kw
             CALL deltat(kw,age,tm,tn,tscls,dt,dtr,k)
-*            if (dbg) print*, "tphysf12=",tphys,tphysf, tsave
 
             dtmi(k) = MIN(dt,dtr)
 *           dtmi(k) = dtr
@@ -2216,18 +2219,18 @@
       if (dbg) print*, 'CONTACT'
 *
       if(kstar(j1).ge.2.and.kstar(j1).le.9.and.kstar(j1).ne.7)then
-         if (dbg) print*, 'comenv on 2176'
+         if (dbg) print*, 'comenv due to', j1
          CALL comenv(mass0(j1),mass(j1),massc(j1),aj(j1),jspin(j1),
      &               kstar(j1),mass0(j2),mass(j2),massc(j2),aj(j2),
      &               jspin(j2),kstar(j2),zpars,ecc,sep,jorb,coel,
-     &               dtm,j1,j2)
+     &               j1,j2)
          com = .true.
       elseif(kstar(j2).ge.2.and.kstar(j2).le.9.and.kstar(j2).ne.7)then
-         if (dbg) print*, 'comenv on 2183'
+         if (dbg) print*, 'comenv due to', j2
          CALL comenv(mass0(j2),mass(j2),massc(j2),aj(j2),jspin(j2),
      &               kstar(j2),mass0(j1),mass(j1),massc(j1),aj(j1),
      &               jspin(j1),kstar(j1),zpars,ecc,sep,jorb,coel,
-     &               dtm,j1,j2)
+     &               j1,j2)
          com = .true.
       else
          CALL mix(mass0,mass,aj,kstar,zpars)

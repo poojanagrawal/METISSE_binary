@@ -1,5 +1,5 @@
 ***
-      SUBROUTINE gntage(mc,mt,kw,zpars,m0,aj)
+      SUBROUTINE gntage(mc,mt,kw,zpars,m0,aj,id)
 *
 * A routine to determine the age of a giant from its core mass and type.
 *
@@ -13,7 +13,8 @@
 *
       implicit none
 *
-      integer kw
+
+      integer kw, id
       integer j,jmax
       parameter(jmax=30)
 *
@@ -26,6 +27,8 @@
 *
       real*8 mcheif,mcagbf,mheif,mbagbf,mcgbf,lmcgbf,lbgbf,lbgbdf
       external mcheif,mcagbf,mheif,mbagbf,mcgbf,lmcgbf,lbgbf,lbgbdf
+      REAL*8 dtm
+      COMMON /TIMESTEP/ dtm
 *
 * This should only be entered with KW = 3, 4, 5, 6 or 9
 *
@@ -76,7 +79,7 @@
             kw = 14
 *           WRITE(66,*)' GNTAGE6: changed to 4'
          else
-            CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars)
+            CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             aj = tscls(13)
          endif
       endif
@@ -91,7 +94,7 @@
             kw = 14
 *           WRITE(66,*)' GNTAGE5: changed to 4'
          else
-            CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars)
+            CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             aj = tscls(2) + tscls(3)
          endif
       endif
@@ -157,7 +160,7 @@
  10      continue
  20      continue
 *
-         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars)
+         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
          aj = tscls(2) + aj*tscls(3)
 *
       endif
@@ -182,7 +185,7 @@
          else
 * Use Newton-Raphson to find m0 from Lbgb
             m0 = zpars(2)
-            CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars)
+            CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             lum = lmcgbf(mc,GB)
             j = 0
  30         continue
@@ -203,7 +206,7 @@
             goto 30
  40         continue
          endif
-         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars)
+         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
          aj = tscls(1) + 1.0d-06*(tscls(2) - tscls(1))
 *
       endif
@@ -216,7 +219,7 @@
 *
          kw = 8
          mmin = mc
-         CALL star(kw,mmin,mc,tm,tn,tscls,lums,GB,zpars)
+         CALL star(kw,mmin,mc,tm,tn,tscls,lums,GB,zpars,dtm,id)
          mcx = mcgbf(lums(2),GB,lums(6))
          if(mcx.ge.mc)then
 *           WRITE(99,*)' FATAL ERROR! GNTAGE9: mmin too big '
@@ -229,7 +232,7 @@
          f = mcx - mc
          mmax = mt
          do 50 , j = 1,jmax
-            CALL star(kw,mmax,mc,tm,tn,tscls,lums,GB,zpars)
+            CALL star(kw,mmax,mc,tm,tn,tscls,lums,GB,zpars,dtm,id)
             mcy = mcgbf(lums(2),GB,lums(6))
             if(mcy.gt.mc) goto 60
             mmax = 2.d0*mmax
@@ -258,7 +261,7 @@
          do 70 , j = 1,jmax
             dm = 0.5d0*dm
             mmid = m0 + dm
-            CALL star(kw,mmid,mc,tm,tn,tscls,lums,GB,zpars)
+            CALL star(kw,mmid,mc,tm,tn,tscls,lums,GB,zpars,dtm,id)
             mcy = mcgbf(lums(2),GB,lums(6))
             fmid = mcy - mc
             if(fmid.lt.0.d0) m0 = mmid
@@ -274,7 +277,7 @@
  70      continue
  80      continue
 *
-         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars)
+         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
          aj = tm + 1.0d-10*tm
 *
       endif
@@ -285,7 +288,7 @@
          m0 = mt
          mcy = mcagbf(m0)
          aj = mc/mcy
-         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars)
+         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
          if(m0.le.zpars(2))then
             mcx = mcgbf(lums(4),GB,lums(6))
          else

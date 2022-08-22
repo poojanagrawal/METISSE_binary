@@ -1,7 +1,7 @@
 ***
       SUBROUTINE COMENV(M01,M1,MC1,AJ1,JSPIN1,KW1,
      &                  M02,M2,MC2,AJ2,JSPIN2,KW2,
-     &                  ZPARS,ECC,SEP,JORB,COEL,DTM,J1,J2)
+     &                  ZPARS,ECC,SEP,JORB,COEL,J1,J2)
 *
 * Common Envelope Evolution.
 *
@@ -29,11 +29,16 @@
       REAL*8 MENV,RENV,MENVD,RZAMS,VS(3)
       REAL*8 AURSUN,K3,ALPHA1,LAMBDA
       REAL*8 DTM
+      COMMON /TIMESTEP/ DTM
       PARAMETER (AURSUN = 214.95D0,K3 = 0.21D0) 
       COMMON /VALUE2/ ALPHA1,LAMBDA
       LOGICAL COEL
       REAL*8 CELAMF,RL,RZAMSF
       EXTERNAL CELAMF,RL,RZAMSF
+      REAL*8 MCX
+
+
+* mcx is a dummy variable in this subroutine; TODO: this should be fixed
 *
 * Common envelope evolution - entered only when KW1 = 2, 3, 4, 5, 6, 8 or 9.
 *
@@ -51,7 +56,7 @@
       KW = KW1
       CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
       CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
-     &            R1,L1,KW1,MC1,RC1,MENV,RENV,K21,J1)
+     &            R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1,1)
       OSPIN1 = JSPIN1/(K21*R1*R1*(M1-MC1)+K3*RC1*RC1*MC1)
       MENVD = MENV/(M1-MC1)
       RZAMS = RZAMSF(M01)
@@ -59,7 +64,7 @@
       KW = KW2
       CALL star(KW2,M02,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,DTM,J2)
       CALL hrdiag(M02,AJ2,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,
-     &            R2,L2,KW2,MC2,RC2,MENV,RENV,K22,J2)
+     &            R2,L2,KW2,MC2,RC2,MENV,RENV,K22,MCX,J2,1)
       OSPIN2 = JSPIN2/(K22*R2*R2*(M2-MC2)+K3*RC2*RC2*MC2)
 *
 * Calculate the binding energy of the giant envelope (multiplied by lambda).
@@ -136,7 +141,7 @@
 
             CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
             CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
-     &                  R1,L1,KW1,MC1,RC1,MENV,RENV,K21,J1)
+     &                  R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1,1)
             IF(KW1.GE.13)THEN
                CALL kick(KW1,MF,M1,M2,ECC,SEPF,JORB,VS)
                IF(ECC.GT.1.D0) GOTO 30
@@ -230,7 +235,7 @@
             M1 = MC1
             CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
             CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
-     &                  R1,L1,KW1,MC1,RC1,MENV,RENV,K21,J1)
+     &                  R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1,1)
             IF(KW1.GE.13)THEN
                CALL kick(KW1,MF,M1,M2,ECC,SEPF,JORB,VS)
                IF(ECC.GT.1.D0) GOTO 30
@@ -240,7 +245,7 @@
             M2 = MC2
             CALL star(KW2,M02,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,DTM,J2)
             CALL hrdiag(M02,AJ2,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,
-     &                  R2,L2,KW2,MC2,RC2,MENV,RENV,K22,J2)
+     &                  R2,L2,KW2,MC2,RC2,MENV,RENV,K22,MCX,J2,1)
             IF(KW2.GE.13.AND.KW.LT.13)THEN
                CALL kick(KW2,MF,M2,M1,ECC,SEPF,JORB,VS)
                IF(ECC.GT.1.D0) GOTO 30
@@ -331,12 +336,12 @@
 *
 * Obtain a new age for the giant.
 *
-            print*,'new giant age',kw,kw1,kw2
-            CALL gntage(MC1,M1,KW,ZPARS,M01,AJ1)
+            print*,'getting new age giant',kw,kw1,kw2
+            CALL gntage(MC1,M1,KW,ZPARS,M01,AJ1,J1)
             CALL star(KW,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
          ENDIF
          CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
-     &               R1,L1,KW,MC1,RC1,MENV,RENV,K21,J1)
+     &               R1,L1,KW,MC1,RC1,MENV,RENV,K21,MCX,J1,1)
          JSPIN1 = OORB*(K21*R1*R1*(M1-MC1)+K3*RC1*RC1*MC1)
          KW1 = KW
          ECC = 0.D0

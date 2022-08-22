@@ -50,12 +50,6 @@ INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/SSE_EEPs/eeps/Z_02_log_0ml'
 key_columns_file = 'input/sse_columns.list'
 format_file = 'input/format_sse.dat'
 
-!write_eep_file = .true.
-!write_track_to_file = .false.
-
-!verbose = .false.
-
-
 Mhook = 1.0185  
 Mhef = 1.995  
 Mfgb = 14.032     
@@ -65,6 +59,11 @@ Mec = 7.910
 !Mec = 49.0
 !Mhook= 0.8
 !Mfgb = 12.8
+
+!write_eep_file = .true.
+!write_track_to_file = .false.
+
+!verbose = .false.
 
 /
 

@@ -297,6 +297,7 @@ c-------------------------------------------------------------c
          irecord = 1
          CALL hrdiag(mass,aj,mt,tm,tn,tscls,lums,GB,zpars,
      &                     r,lum,kw,mc,rc,menv,renv,k2,mcx,id,irecord)
+         irecord = 0
          epoch = tphys - aj
          if((isave.and.tphys.ge.tsave).or.iplot)then
             ip = ip + 1

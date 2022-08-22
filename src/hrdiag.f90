@@ -113,6 +113,7 @@
     aj = t% pars% age
     mass= t% zams_mass
 
+
     ! Calculate mass and radius of convective envelope, and envelope gyration radius.
     if(kw.lt.10)then
         if (kw>6) CALL calculate_rc(t,tscls,lums,zpars,GB,rc)
@@ -140,6 +141,6 @@
     if (irecord>0 .and. debug) print*,"finished hrdiag",mt,mc,aj,kw,id
 !    print*,"finished hrdiag",t% pars% mass, t% pars% core_mass,t% pars% age
 
-    irecord = 0
+    
     nullify(t)
     end subroutine hrdiag

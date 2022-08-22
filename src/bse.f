@@ -36,7 +36,7 @@
       INCLUDE 'const_bse.h'
 *
       integer kw,kw2,kstar(2),j,k,time
-*
+      integer str1, str2
       real*8 mass0(2),mass(2),z,zpars(20)
       real*8 epoch(2),tms(2),tphys,tphysf,dtp,aj
       real*8 rad(2),lum(2),ospin(2)
@@ -44,6 +44,7 @@
       real*8 tb,ecc,yearsc
       PARAMETER(yearsc=3.1557d+07)
       CHARACTER*8 label(14)
+      character*40 filename
 *
 ************************************************************************
 * Input:
@@ -165,7 +166,11 @@
       dtp = 0.d0
 *
 * Evolve the binary.
-* 
+*
+      str1=int(mass(1)*100)
+      str2=int(mass(2)*100)
+      WRITE(filename,"(a,i5.5,a,i5.5,a)")
+     &                "output_binary/",str1,"M_",str2,"M.dat"
       CALL evolv2(kstar,mass0,mass,rad,lum,massc,radc,
      &            menv,renv,ospin,epoch,tms,
      &            tphys,tphysf,dtp,z,zpars,tb,ecc)
@@ -186,7 +191,7 @@
 *    ratio of radius to roche lobe radius (repeated for secondary)],
 *    period, separation, eccentricity.
 *
-      OPEN(23,file='binary.dat', status='unknown')
+      OPEN(23,file=filename, status='unknown')
       j = 0
  30   j = j + 1
       if(bcm(j,1).lt.0.0)then

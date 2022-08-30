@@ -156,8 +156,7 @@ module track_support
         real(dp) :: mass,core_mass,McHe, McCO,luminosity,Teff,radius
         real(dp) :: log_L,log_Teff,log_R                !log values
         real(dp) :: epoch, age, age_old
-        real(dp) :: delta, dt, dms
-
+        real(dp) :: delta, dt, dms, cenv_frac,env_frac
     end type star_parameters
     
 
@@ -168,7 +167,7 @@ module track_support
         integer :: phase_wd
     end type agb_parameters
 
-    !holds values of agb parameters for constructing AGB to WD track
+    !holds values of SSE related parameters
     type sse_parameters
         real(dp) :: D,Mx,Lx,LtMS
         real(dp) :: Rzams, Lzams      !zams values

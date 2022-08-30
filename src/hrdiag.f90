@@ -126,12 +126,16 @@
         renv = 1.0d-10
         k2 = 0.21d0
     endif
+
+
+    t% pars% cenv_frac = menv/mt
+    t% pars% env_frac = (mt-t% pars% McHe)/mt
+
+
     if (irecord>0) then
 !        if (kw<10 .and. debug) print*, "delta in hrdiag",t% pars% delta
         t% pars% delta = 0.d0
         if (kw<10 .and. debug) print*,"saving pars",mt,mc,aj,kw,r
-        
-
     else
         t% pars = old_pars
         t% lost_envelope = lost_envelope

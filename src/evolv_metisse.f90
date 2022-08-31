@@ -45,6 +45,7 @@ subroutine evolv1(mass,max_age,ierr)
 
     !SSE like output file if write_track_to_file is true
     
+!TODO: update the output file location is no longer valid:remove it
     output = write_track_to_file
     if (output) write (output_file,"(a,a,i5.5,a)") trim(METISSE_DIR), "/output/evolve_", str, "M.dat"
     if (output) open (120,FILE=trim(output_file),action="write")

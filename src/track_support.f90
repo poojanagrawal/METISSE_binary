@@ -199,7 +199,7 @@ module track_support
     integer :: num_tracks
     real(dp) :: initial_Z
 
-!variable declaration-- for main
+    !variable declaration-- for main
     integer :: number_of_tracks
     character(len=strlen) :: input_mass_file
     logical :: read_mass_from_file
@@ -217,8 +217,6 @@ module track_support
     logical:: construct_wd_track, allow_electron_capture, use_Initial_final_mass_relation
     character (len = col_width) :: BHNS_mass_scheme, WD_mass_scheme
 !    real(dp) :: mc1, mc2 !mass cutoffs for Belczynski methods
-    
-            
     contains
     
 
@@ -384,15 +382,29 @@ module track_support
 
     end function binary_search
     
-    subroutine write_eep_track(eep_filename,x)
-    type(track), intent(in) :: x
-    character(len=strlen), intent(in) :: eep_filename
+    subroutine write_eep_track(x,mt,filename)
+    !modified from ISO subroutine of same name
 
-    integer :: io, ierr, j, ncol
+    type(track), intent(in) :: x
+    character(len=strlen), intent(in), optional :: filename
+    real(dp), intent(in), optional :: mt
+    character(len=strlen) :: eep_filename
+    integer :: str, io, ierr, j! ncol
     real(dp) :: real_phase
     character(len=8) :: have_phase
     io=alloc_iounit(ierr)
 
+
+    if (present(filename)) then
+        eep_filename = trim(filename)
+    elseif (present(mt)) then
+        str = int(mt*100)
+        write(eep_filename,"(a,a,i5.5,a)") trim(METISSE_DIR),"/output_eep/",str,"M.track.eep"
+    else
+        print*, 'ERROR: NO EEP FILE WRITTEN, either provide FILENAME or mass of the star'
+        return
+    ENDIF
+    print*,'writing',str,'M.track.eep'
     open(io,file=trim(eep_filename),action='write',status='unknown')
     have_phase = 'YES'
 
@@ -404,15 +416,15 @@ module track_support
     write(io,'(a2,f6.4,1p1e13.5,0p3f9.2)') '# ', x% initial_Y, x% initial_Z, x% Fe_div_H, x% alpha_div_Fe, x% v_div_vcrit
     write(io,'(a88)') '# --------------------------------------------------------------------------------------'
     write(io,'(a1,1x,a16,4a8,2x,a10)') '#','initial_mass', 'N_pts', 'N_EEP', 'N_col', 'phase', 'type'
-    write(io,'(a1,1x,1p1e16.10,3i8,a8,2x,a10)') '#', x% initial_mass, x% ntrack, x% neep, ncol, have_phase, &
+    write(io,'(a1,1x,1p1e16.10,3i8,a8,2x,a10)') '#', x% initial_mass, x% ntrack, x% neep, x% ncol+2, have_phase, &
          star_label(x% star_type)
     write(io,'(a8,20i8)') '# EEPs: ', x% eep
     write(io,'(a88)') '# --------------------------------------------------------------------------------------'
 
-       write(io,'(a1,299(27x,i5))') '#', (j,j=1,x% ncol)
+       write(io,'(a1,299(27x,i5))') '#', (j,j=1,x% ncol+2)
        write(io,'(a1,299a32)') '#', adjustr(x% cols(:)% name), 'phase'
        do j=x% eep(1),x% ntrack
-          real_phase=real(x% phase(j))            !added by Poojan
+          real_phase=real(x% phase(j))
           write(io,'(1x,299(1pes32.16e3))') x% tr(:,j), real_phase
        enddo
     close(io)

@@ -14,7 +14,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
 
     real(dp) :: times_old(11), nuc_old, delta,dtm! ,tnext,mnext
 
-    integer :: str, idd, nt
+    integer :: idd, nt
     character(len=strlen) :: eep_filename
 
     logical :: debug, mass_loss
@@ -47,6 +47,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             t% times_new = t% times
             t% tr(i_age,:) = t% tr(i_age2,:)
             mt = t% tr(i_mass,ZAMS_EEP)
+            call write_eep_track(t,t% initial_mass)
         else
             !first check if mass has changed since last time star was called
             ! for tracks that already have wind mass loss, only check
@@ -81,10 +82,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     call interpolate_mass(t% initial_mass,idd)
 !                    write the mass interpolated track if write_eep_file is true
                     if (kw>=1 .and. kw<=4 .and. .false.) then
-                        str = int(mt*100)
-                        print*,'writing',str,'M.track.eep'
-                        write(eep_filename,"(a,a,i5.5,a)") trim(METISSE_DIR),"/output_eep/",str,"M.track.eep"
-                        call write_eep_track(eep_filename,t)
+                        call write_eep_track(t,mt)
                     end if
                     
                     if (t% ntrack<nt) print*, '***WARNING: track length reduced***',nt,t% ntrack

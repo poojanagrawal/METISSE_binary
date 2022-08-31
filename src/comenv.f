@@ -36,6 +36,8 @@
       REAL*8 CELAMF,RL,RZAMSF
       EXTERNAL CELAMF,RL,RZAMSF
       REAL*8 MCX
+      LOGICAL SSE_FLAG
+      COMMON /SSE/ SSE_FLAG
 
 
 * mcx is a dummy variable in this subroutine; TODO: this should be fixed
@@ -59,8 +61,12 @@
      &            R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1,1)
       OSPIN1 = JSPIN1/(K21*R1*R1*(M1-MC1)+K3*RC1*RC1*MC1)
       MENVD = MENV/(M1-MC1)
-      RZAMS = RZAMSF(M01)
-      LAMB1 = CELAMF(KW,M01,L1,R1,RZAMS,MENVD,LAMBDA)
+      IF (SSE_FLAG.eqv..TRUE.) THEN
+        RZAMS = RZAMSF(M01)
+        LAMB1 = CELAMF(KW,M01,L1,R1,RZAMS,MENVD,LAMBDA)
+      ELSE
+        CALL comenv_lambda(KW,M01,L1,R1,MENVD,LAMBDA,J1,LAMB1)
+      ENDIF
       KW = KW2
       CALL star(KW2,M02,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,DTM,J2)
       CALL hrdiag(M02,AJ2,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,
@@ -73,13 +79,17 @@
 *
 * If the secondary star is also giant-like add its envelopes's energy.
 *
-      EORBI = M1*M2/(2.D0*SEP)  !shouldn't these be mc1*mc2
+      EORBI = M1*M2/(2.D0*SEP)  !From Kiel and Hurley 2016
       print*,'stellar type comenv check',kw1,kw2
       IF(KW2.GE.2.AND.KW2.LE.9.AND.KW2.NE.7)THEN
 *      PA: secondary (less massive star) is neither ms nor remnant
          MENVD = MENV/(M2-MC2)
-         RZAMS = RZAMSF(M02)        !doesn't apply to metisse
-         LAMB2 = CELAMF(KW,M02,L2,R2,RZAMS,MENVD,LAMBDA)
+         IF (SSE_FLAG.eqv..TRUE.) THEN
+           RZAMS = RZAMSF(M02)
+           LAMB2 = CELAMF(KW,M02,L2,R2,RZAMS,MENVD,LAMBDA)
+         ELSE
+           CALL comenv_lambda(KW,M02,L2,R2,MENVD,LAMBDA,J2,LAMB2)
+         ENDIF
          EBINDI = EBINDI + M2*(M2-MC2)/(LAMB2*R2)
 *
 * Calculate the initial orbital energy

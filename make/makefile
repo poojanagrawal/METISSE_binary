@@ -43,10 +43,11 @@ alloc_track.o: $(SRC_DIR)/alloc_track.f90 track_support.o
 dealloc_track.o: $(SRC_DIR)/dealloc_track.f90 track_support.o
 assign_commons.o: $(SRC_DIR)/assign_commons.f90 track_support.o remnant_support.o
 metisse_mlwind.o: $(SRC_DIR)/metisse_mlwind.f90 track_support.o
-deltat.o:$(SRC_DIR)/deltat.f90 track_support.o
+deltat.o: $(SRC_DIR)/deltat.f90 track_support.o
 zcnsts.o: $(SRC_DIR)/zcnsts.f90 z_support.o track_support.o
 star.o: $(SRC_DIR)/star.f90 track_support.o interp_support.o sse_support.o 
 hrdiag.o: $(SRC_DIR)/hrdiag.f90 track_support.o interp_support.o remnant_support.o sse_support.o
+comenv_lambda.o: $(SRC_DIR)/comenv_lambda.f90 track_support.o
 
 
 SRCE4 = \
@@ -73,11 +74,11 @@ OBJT5 = $(SRCE5:.f=.o)
 %.o : $(SRC_DIR)/%.f90
 	$(FC) $(OMP) $(FFLAGS1) -c $<
 
-$(SSE_METISSE): $(OBJT4) star.o sse_support.o hrdiag.o remnant_support.o z_support.o track_support.o interp_support.o zcnsts.o metisse_mlwind.o deltat.o alloc_track.o dealloc_track.o assign_commons.o
+$(SSE_METISSE): $(OBJT4) star.o sse_support.o hrdiag.o remnant_support.o z_support.o track_support.o interp_support.o zcnsts.o metisse_mlwind.o deltat.o alloc_track.o dealloc_track.o assign_commons.o comenv_lambda.o
 	$(FC) $(OMP) -o $(BSE_DIR)/$(SSE_METISSE) $^
 
 
-$(BSE_METISSE): $(OBJT5) star.o sse_support.o hrdiag.o remnant_support.o z_support.o track_support.o interp_support.o zcnsts.o metisse_mlwind.o deltat.o alloc_track.o dealloc_track.o assign_commons.o
+$(BSE_METISSE): $(OBJT5) star.o sse_support.o hrdiag.o remnant_support.o z_support.o track_support.o interp_support.o zcnsts.o metisse_mlwind.o deltat.o alloc_track.o dealloc_track.o assign_commons.o comenv_lambda.o
 	$(FC) $(OMP) -o $(BSE_DIR)/$(BSE_METISSE) $^
 
 

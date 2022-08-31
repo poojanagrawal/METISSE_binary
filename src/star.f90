@@ -102,7 +102,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     t% tr(i_logL,:) = Lum_list
                     !TEST: forcing r to remain unchanged
                     if ((t% pars% cenv_frac.ge.0.2)) t% tr(i_logR,:) = rlist
-!.and.(t% pars% env_frac.ge.0.2)
+!                    .and.(t% pars% env_frac.ge.0.2)
 !                    if (kw>=4 .and. mass<=20) t% tr(i_logR,:) = rlist
                     deallocate(hecorelist,ccorelist,Lum_list,age_list,rlist)
                 else

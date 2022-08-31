@@ -447,7 +447,7 @@ module interp_support
            i = locate(d) !finds the first point in d that is < 0
            start = i
             last = n
-            if (debug)print*, 'in mod_PAV', i, d(i)
+            if (debug) print*, 'in mod_PAV', i, d(i)
 
             if (start == old_start) start=old_start-1 !if start is the greatest value not in the end, take one step up and redo
             do while(.true.)
@@ -458,7 +458,7 @@ module interp_support
                 stop
             endif
             end do
-            if (debug) print*, start, old_start
+            if (debug) print*,'in mod_PAV', start, old_start
             do j= start+1,n
                 diff= y(j)-y(start)
                 if (debug) print*,"i and diff",i,diff
@@ -578,7 +578,10 @@ module interp_support
             beta = 1d0 - alfa
             do j=jstart,jend
                 interpolate = check_core_quant(j,n_pass, pass)
-                if (interpolate) new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
+                if (interpolate) then
+                    new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
+        if (new_line(j,1)/=new_line(j,1)) print*, 'Warning: NaN encountered ',t% initial_mass,input_age,j,mhi,mlo
+                endif
             end do
         else
             if (t% irecord>0 .and. debug) print*, "doing cubic interp in age"

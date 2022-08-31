@@ -203,13 +203,16 @@
       integer irecord
       REAL*8 dtm
       COMMON /TIMESTEP/ dtm
+      LOGICAL SSE_FLAG
+      COMMON /SSE/ SSE_FLAG
 
 *
 * Save the initial state.
 *
       dbg = .false.
+      SSE_FLAG = .false.
       irecord = 1
-* TODO: irecord serves no purpose in BSE: better remove it
+* TODO: irecord serves no purpose in BSE: better remove it/or make it common
 
       call allocate_track(2,mass0)
 

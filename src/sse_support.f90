@@ -525,17 +525,6 @@ contains
       return
     end
 
-    real(dp) FUNCTION METISSE_RZAMSF(id)
-    implicit none
-    integer, intent(in), optional :: id
-    integer :: idd
-        if(present(id))then
-            idd = id
-        else
-            idd = 1
-        endif
-        METISSE_RZAMSF = tarr(idd)% tr(i_logR,TAMS_EEP)
-    end
     subroutine calculate_rg(t,rg)
     !  rg = giant branch or Hayashi track radius, appropiate for the type.
     !       For kw=1 or 2 this is radius at BGB, and for kw=4 either GB or
@@ -563,7 +552,6 @@ contains
             case(HeBurn)
                 !Linear interpolation between r(bgb) and r(bagb)
                 !wrt luminosity l(bgb) and l(bagb) and L
-                !Todo: check whether both should be cHeIgnition_EEP?
 !                if (identified(BGB_EEP)) then
 !                    j = min(BGB_EEP,t% ntrack)
 !                else

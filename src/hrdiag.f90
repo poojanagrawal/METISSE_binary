@@ -80,7 +80,7 @@
             rtms = 10.d0**t% tr(i_logR, TAMS_EEP)
             if (i_core_radius == -1) then
             ! revert to SSE method
-                CALL calculate_rc(t,tscls,lums,zpars,GB,rc)
+                CALL calculate_rc(t,tscls,zpars,rc)
             else
                 call interpolate_age(t,t% pars% age,i_core_radius,rc)
             endif
@@ -113,10 +113,9 @@
     aj = t% pars% age
     mass= t% zams_mass
 
-
     ! Calculate mass and radius of convective envelope, and envelope gyration radius.
     if(kw.lt.10)then
-        if (kw>6) CALL calculate_rc(t,tscls,lums,zpars,GB,rc)
+        if (kw>6) CALL calculate_rc(t,tscls,zpars,rc)
         CALL calculate_rg(t,rg)
         CALL mrenv(kw,mass,mt,mc,lum,r,rc,aj,tm,lums(2),lums(3),&
                     lums(4),rzams,rtms,rg,menv,renv,k2)

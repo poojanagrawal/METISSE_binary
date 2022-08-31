@@ -580,15 +580,12 @@
     end function
 
 
-    subroutine calculate_rc(t, tscls,lums,zpars,GB,rc)
+    subroutine calculate_rc(t, tscls,zpars,rc)
      ! Calculate the core radius and the luminosity and radius of the
      ! remnant that the star may become.
-     !only rc should be calculated once the other function is called
-     !TODO: needs to be updated
      implicit none
      type(track), pointer :: t
-    !    integer :: kw,kwp
-     real(dp) :: tscls(20), lums(10), zpars(20), GB(10)
+     real(dp) :: tscls(20), zpars(20)
      real(dp) :: tau, lx,rx, rc,am,mt,mc,aj
      real(dp) :: tbagb,mass,lums1,lums2,tn
      
@@ -610,31 +607,23 @@
              endif
           case(HeBurn)
               tau = (aj - tscls(2))/tscls(3)     !tau = (aj - t_HeI)/t_He
-     !         CALL star(kwp,mc,mc,tm,tn,tscls,lums,GB,zpars)
-     !         am = MAX(0.d0,0.85d0-0.08d0*mc)
-     !         lx = lums(1)*(1.d0+0.45d0*tau+am*tau**2)
-     !        call calculate_he_timescales(t)
-     
               rx = radius_He_ZAMS(mc)
-        !TODO: following two lines may cause dt error
-        ! might need interpolation
+              !Following is akin to rzhef of SSE
+              !TODO: following two lines may cause dt error
+              ! might need interpolation
               am = MAX(0.d0,0.4d0-0.22d0*LOG10(mc))
-              rx = rx*(1.d0+am*(tau-tau**6))
-     !         CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars)
-              rc = rx
+              rc = rx*(1.d0+am*(tau-tau**6))
          case(EAGB)
     !            kwp = 9
              mc = t% pars% McHe
              tbagb = t% times(HeBurn)
              if(tn.gt.tbagb) tau = 3.d0*(aj-tbagb)/(tn-tbagb)
-    !            CALL  star(kwp,mc,mc,tm,tn,tscls,lums,GB,zpars)
              lx = lmcgbf(t% pars% McCO,t% He_pars% D, t% He_pars% Mx)
              lums1 = lum_He_ZAMS(mc)
              lums2 = lum_He_MS(mc,lums1,1.d0)
              if(tau.lt.1.d0) lx = lums2*(lx/lums2)**tau
              rx = radius_He_HG(mc,lx,radius_He_ZAMS(mc),lums2)
              rc = MIN(rx,radius_He_GB(lx))
-    !            CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars)
          case(TPAGB: He_GB)
              if (t% pars% phase == He_MS) then
                  rc = 0.d0

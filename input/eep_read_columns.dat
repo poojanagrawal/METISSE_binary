@@ -8,15 +8,14 @@ star_mdot ! d(star_mass)/dt (in msolar per year)
 
 he_core_mass ! h1 boundary is outermost location where h1 mass fraction is < 1e-4
 c_core_mass ! he4 boundary is outermost location where h1 mass fraction is < 1e-4
+he_core_radius
+c_core_radius
 
 ! conditions near surface
 
 log_L ! log10 luminosity in Lsun units
-log_LH ! log10 power_h_burn
-log_LHe ! log10 power_he_burn
 log_Teff ! log10 effective temperature
 log_R ! log10 radius in Rsun units
-log_g ! log10 gravity
 
 ! mass fractions near surface (averaged over the outer 1e−6% of the total stellar mass)
 
@@ -39,3 +38,5 @@ center he4
 center c12
 center o16
 
+mass_conv_envelope
+envelope_binding_energy

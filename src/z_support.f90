@@ -47,8 +47,8 @@ module z_support
             log_Tc, c12_mass_frac, o16_mass_frac,he4_mass_frac, &
             Lum_colname,Teff_colname,Radius_colname, total_cols,&
             extra_char, eep_location,low_mass_final_eep, high_mass_final_eep, &
-            log_mdot_colname, mdot_colname, he_core_radius, &
-            number_of_core_columns,core_columns
+            log_mdot_colname, mdot_colname, he_core_radius, co_core_radius,&
+            mass_conv_envelope, radius_conv_envelope, moment_of_inertia
 
     namelist /SSE_input_controls/ initial_Z, max_age,read_mass_from_file,&
                             input_mass_file, number_of_tracks, max_mass, min_mass, &
@@ -179,75 +179,66 @@ module z_support
     end subroutine read_format
 
 
-    !locating required columns here
+    !locating essential columns here
     subroutine locate_column_numbers(s,cols)
         type(column), intent(in) :: cols(:)
         type(eep_track) :: s(:)
-        logical :: required
-        character(len=col_width) :: newname
+        logical :: essential
 
-        required = .true.
+        essential = .true.
 
-        i_age2 = locate_column(cols, age_colname, required)
+        i_age2 = locate_column(cols, age_colname, essential)
         i_age = s(1)% ncol+1
-        i_mass = locate_column(cols, mass_colname, required)
+        i_mass = locate_column(cols, mass_colname, essential)
 
         if (log_L_colname /= '') then
             !find the log luminosity column
-            i_logL = locate_column(cols, log_L_colname, required)
+            i_logL = locate_column(cols, log_L_colname, essential)
 
         else
             !find the luminosity column and convert it into log
-            i_lum = locate_column(cols, Lum_colname, required)
+            i_lum = locate_column(cols, Lum_colname, essential)
             call make_logcolumn(s, i_logL)
         endif
         
 
         if (log_R_colname/= '') then
-            i_logR = locate_column(cols, log_R_colname, required)
+            i_logR = locate_column(cols, log_R_colname, essential)
         else
-            i_logR = locate_column(cols, Radius_colname, required)
+            i_logR = locate_column(cols, Radius_colname, essential)
             call make_logcolumn(s, i_logR)
         endif
 
-        i_he_core = locate_column(cols, he_core_mass, required)
-        i_co_core = locate_column(cols, c_core_mass, required)
+        i_he_core = locate_column(cols, he_core_mass, essential)
+        i_co_core = locate_column(cols, c_core_mass, essential)
         
         !TODO: - make log_T optional, Teff will get calculated in the code
         if (log_T_colname/= '') then
-            i_logTe = locate_column(cols, log_T_colname, required)
+            i_logTe = locate_column(cols, log_T_colname, essential)
         else
-            i_logTe = locate_column(cols, Teff_colname, required)
+            i_logTe = locate_column(cols, Teff_colname, essential)
             call make_logcolumn(s, i_logTe)
         endif
         
-        required  = .false.
+        essential  = .false.
         
-        !optional
-    
-        if (log_mdot_colname/= '') then
-            i_mdot = locate_column(cols, log_mdot_colname)
-            newname = "Mdot"
-            call make_pow10column(s,i_mdot,newname)
-        elseif (mdot_colname/= '') then
-             i_mdot =  locate_column(cols, mdot_colname)          !star_mdot
-!            call make_logcolumn(s, i_mdot)
-        else
-             i_mdot = -1
-        endif
+        !optional columns
+        !TODO: if core radius is in log units?
 
-        if (he_core_radius/= '') then
-            i_core_radius = locate_column(cols, he_core_radius)
-            allocate(core_cols(4))
-            core_cols(4) = i_core_radius
-        else
-            allocate(core_cols(3))
-            i_core_radius =-1
-        endif
+        i_RHe_core = -1
+        i_RCO_core = -1
 
-        core_cols(1) = i_logL
-        core_cols(2) = i_he_core
-        core_cols(3) = i_co_core
+        if (he_core_radius/= '') i_RHe_core = locate_column(cols, he_core_radius)
+        if (co_core_radius/= '') i_RCO_core = locate_column(cols, co_core_radius)
+
+        i_mcenv = -1
+        if (mass_conv_envelope/= '') i_mcenv = locate_column(cols, mass_conv_envelope)
+
+        i_Rcenv = -1
+        if (radius_conv_envelope/= '') i_rcenv = locate_column(cols, radius_conv_envelope)
+
+        i_MoI = -1
+        if (moment_of_inertia/= '') i_MoI = locate_column(cols, moment_of_inertia)
 
         i_he4 = locate_column(cols, he4_mass_frac)
         i_c12 = locate_column(cols, c12_mass_frac)
@@ -265,22 +256,45 @@ module z_support
             !i_he4=ilocate_column(cols,'center_he4')
             ! i_logg=ilocate_column(cols,'log_g')
 
-!        k = 1
-!        allocate (surface_cols(s(1)% ncol-1-size(core_cols)))
-!        do j = 1, s(1)% ncol
-!            if (any(j .eq. core_cols,1) .or. j == i_age2) cycle
-!            surface_cols(k) = j
-!            k=k+1
-!        end do
+!        if (log_mdot_colname/= '') then
+!            i_mdot = locate_column(cols, log_mdot_colname)
+!            call make_pow10column(s,i_mdot,"Mdot")
+!        elseif (mdot_colname/= '') then
+!             i_mdot =  locate_column(cols, mdot_colname)          !star_mdot
+!        !            call make_logcolumn(s, i_mdot)
+!        else
+!             i_mdot = -1
+!        endif
 
+
+!        if (i_RHe_core > 0) number_of_core_columns = number_of_core_columns+1
+!        if (i_RCO_core > 0) number_of_core_columns = number_of_core_columns+1
+
+        number_of_core_columns = 5
+        allocate(core_cols(number_of_core_columns))
+        core_cols = -1
+        core_cols(1) = i_logL
+        core_cols(2) = i_he_core
+        core_cols(3) = i_co_core
+
+        if (i_RHe_core > 0) core_cols(4) = i_RHe_core
+        if (i_RCO_core > 0) core_cols(5) = i_RCO_core
     end subroutine locate_column_numbers
 
-    integer function locate_column(cols,colname,required)
+    integer function locate_column(cols,colname,essential)
         character(len=col_width), intent(in) :: colname
-        logical, intent(in), optional :: required
+        logical, intent(in),optional :: essential
+        logical :: essential1
+
         type(column) :: cols(:)
         integer :: i
 
+        !if it is not provided whether a column is essential or not,
+        !then assume that it is not essential
+        essential1 = .false.
+        if (present(essential)) essential1 =essential
+
+        !now find the column
         locate_column = -1
         if (trim(colname)=='') return
         do i=1,size(cols)
@@ -290,12 +304,13 @@ module z_support
            endif
         enddo
 
-        if (present(required)) then
-            if(locate_column<0 .and. required) then
-               write(0,*) 'locate_column, could not find column: ', trim(colname)
-               STOP
-            endif
+        !check whether the column has been successfully located
+        if(locate_column<0) then
+            write(0,*) 'locate_column, could not find column: ', trim(colname)
+            !STOP the code if cannot locate one of the essential columns
+            if(essential1) STOP
         endif
+        
     end function locate_column
       
     subroutine make_logcolumn(s, itemp)

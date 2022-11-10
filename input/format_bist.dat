@@ -9,7 +9,7 @@
 
     total_cols = 94 !number of columns
     extra_char = ''
-    column_name_file = '/Users/pagrawal/METISSE/bist_columns.txt'
+    column_name_file = 'input/bist_columns.txt'
 
     !EEPS
     PreMS_EEP = -1

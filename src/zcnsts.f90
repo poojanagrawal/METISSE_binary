@@ -3,8 +3,8 @@ subroutine zcnsts(z,zpars)
     use z_support
     use remnant_support
 
-    real(dp) ,intent(in) :: z
-    real(dp) ,intent(out) :: zpars(20)
+    real(dp), intent(in) :: z
+    real(dp), intent(out) :: zpars(20)
 
     integer :: i,ierr
     logical :: debug
@@ -43,11 +43,11 @@ subroutine zcnsts(z,zpars)
     !getting filenames
     call get_files_from_path(path)
 
-    if (verbose) print*,"Number of input tracks", num_tracks
+    if (verbose) print*,"Number of input tracks: ", num_tracks
 
     !determine key columns 
     if (key_columns_file /= '') call process_columns(key_columns_file,key_cols,ierr)
-    if (debug) print*,"using key columns", key_cols % name
+    if (debug) print*,"using key columns: ", key_cols % name
 
     !get column numbers for core related quantities
 !    call get_core_columns()

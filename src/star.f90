@@ -15,19 +15,14 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     real(dp) :: times_old(11), nuc_old, delta,dtm! ,tnext,mnext
 
     integer :: idd, nt
-    character(len=strlen) :: eep_filename
-
     logical :: debug, mass_loss
     type(track), pointer :: t
 
-    t => NULL()
-    if(present(id))then
-        t => tarr(id)
-        idd = id
-    else
-        t => tarr(1)
-        idd = 1
-    endif
+    idd = 1
+    if(present(id)) idd = id
+    t => tarr(idd)
+        
+    
     mass_loss = .false.
     debug = .false.
 

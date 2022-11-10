@@ -54,6 +54,7 @@
                 print*,"end of file:aj,tn ",t% pars% age,t% tr(i_age,t% ntrack),t% tr(i_age2,t% ntrack)
                 call check_remnant_phase(t)
             else
+                t% pars% core_radius = -1.0
                 call interpolate_age(t,t% pars% age)
                 if (irecord>0 .and. debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
                 t% pars% mass = mt
@@ -76,14 +77,7 @@
                     call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
                 endif
             endif
-            rzams = 10.d0**t% tr(i_logR, ZAMS_EEP)
-            rtms = 10.d0**t% tr(i_logR, TAMS_EEP)
-            if (i_core_radius == -1) then
-            ! revert to SSE method
-                CALL calculate_rc(t,tscls,zpars,rc)
-            else
-                call interpolate_age(t,t% pars% age,i_core_radius,rc)
-            endif
+            
             
         case(He_MS)
             call evolve_after_envelope_loss(t)
@@ -106,6 +100,7 @@
     lum = t% pars% luminosity
     r =  t% pars% radius
     mc = t% pars% core_mass
+    rc = t% pars% core_radius
     mcx = t% pars% McCO
 
     mt = t% pars% mass
@@ -113,18 +108,57 @@
     aj = t% pars% age
     mass= t% zams_mass
 
+
     ! Calculate mass and radius of convective envelope, and envelope gyration radius.
-    if(kw.lt.10)then
-        if (kw>6) CALL calculate_rc(t,tscls,zpars,rc)
+    !this should be separate to above loop as phases may change during the evolution step
+
+    select case(t% pars% phase)
+    case(low_mass_MS:TPAGB)
+        !rc is calculated during age interpolation if neccessary columns are present,
+        !revert to SSE method if those columns are not present
+        if (rc<0) CALL calculate_rc(t,tscls,zpars,rc)
+        !TODO: should t% pars% core_radius be updated as well?
+        if (i_mcenv>0) then
+            !calculate mass of convective envelope
+            call interpolate_age(t,t% pars% age,i_mcenv,menv)
+            menv = min(menv,mt-mc)  ! limit it to the total envelope mass
+
+            if (i_rcenv>0) then
+                call interpolate_age(t,t% pars% age,i_rcenv,renv)
+            else
+                if((mt-mc)>0) then
+                    renv = (r - rc)*menv/(mt - mc)
+                else
+                    renv = 0.d0
+                endif
+            endif
+
+            !following two lines have been copied from SSE's mrenv.f
+            !1.0d-10 can be replaced by 0.d0
+            menv = MAX(menv,1.0d-10)
+            renv = MAX(renv,1.0d-10)
+            k2 = 0.21
+            !TODO: add similar lines K2(M.I.) if column is present)
+        else
+            !revert to SSE method
+            rzams = 10.d0**t% tr(i_logR, ZAMS_EEP)
+            rtms = 10.d0**t% tr(i_logR, TAMS_EEP)
+            CALL calculate_rg(t,rg)
+            CALL mrenv(kw,mass,mt,mc,lum,r,rc,aj,tm,lums(2),lums(3),&
+            lums(4),rzams,rtms,rg,menv,renv,k2)
+        endif
+
+    case(He_MS:He_GB)
+        CALL calculate_rc(t,tscls,zpars,rc)
         CALL calculate_rg(t,rg)
         CALL mrenv(kw,mass,mt,mc,lum,r,rc,aj,tm,lums(2),lums(3),&
                     lums(4),rzams,rtms,rg,menv,renv,k2)
-    else
+    case(HeWD:Massless_Rem)
         rc = r
         menv = 1.0d-10
         renv = 1.0d-10
         k2 = 0.21d0
-    endif
+    end select
 
 
     t% pars% cenv_frac = menv/mt

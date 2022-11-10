@@ -581,8 +581,7 @@
 
 
     subroutine calculate_rc(t, tscls,zpars,rc)
-     ! Calculate the core radius and the luminosity and radius of the
-     ! remnant that the star may become.
+     ! Calculate the core radius 
      implicit none
      type(track), pointer :: t
      real(dp) :: tscls(20), zpars(20)

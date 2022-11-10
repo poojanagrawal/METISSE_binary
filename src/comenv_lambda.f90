@@ -16,7 +16,6 @@ EXTERNAL CELAMF
 !  RZAMS = RZAMSF(M01)
 !  LAMB1 = CELAMF(KW,M01,L1,R1,RZAMS,MENVD,LAMBDA,J1)
 !ELSE
-print*,id
 if(present(id))then
     idd = id
 else

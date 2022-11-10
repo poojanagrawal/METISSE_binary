@@ -67,14 +67,22 @@
 
     !columns required for determining Mup and Mhook
     
-    he_core_radius = 'he_core_radius'  
+    he_core_radius = 'he_core_radius'       !in solar units (cannout use log)
+    co_core_radius = 'c_core_radius'        !in solar units (cannout use log)
+    
+    mass_conv_envelope = 'mass_conv_envelope'    !in solar units
+    radius_conv_envelope = ''
+    moment_of_inertia = ''
+    
+    
     log_Tc = 'log_center_T'                      !central temperature in log units
     He4_mass_frac = 'center_he4'
     c12_mass_frac = 'center_c12'            !c12 mass fraction at centre
     o16_mass_frac = 'center_o16'            !o16 mass fraction at centre
 
-    !list of columns related to the evolution of core
+    !below is not functional
+    !additional list of columns related to the evolution of core
     !these are interpolated based on the original age of the star before mass loss
-    number_of_core_columns = 8
-    core_columns = 'star_age,log_L,he_core_mass,c_core_mass,log_center_T,center_he4,center_c12,center_o16'
+    !extra_core_columns = 4
+    !extra_core_columns_names = 'log_center_T,center_he4,center_c12,center_o16'
 /

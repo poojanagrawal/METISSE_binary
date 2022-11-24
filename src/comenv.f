@@ -29,6 +29,7 @@
       REAL*8 MENV,RENV,MENVD,RZAMS,VS(3)
       REAL*8 AURSUN,K3,ALPHA1,LAMBDA
       REAL*8 DTM
+      LOGICAL dbg
       COMMON /TIMESTEP/ DTM
       PARAMETER (AURSUN = 214.95D0,K3 = 0.21D0) 
       COMMON /VALUE2/ ALPHA1,LAMBDA
@@ -38,19 +39,19 @@
       REAL*8 MCX
       LOGICAL SSE_FLAG
       COMMON /SSE/ SSE_FLAG
-
-
+*
 * mcx is a dummy variable in this subroutine; TODO: this should be fixed
 *
 * Common envelope evolution - entered only when KW1 = 2, 3, 4, 5, 6, 8 or 9.
 *
 * For simplicity energies are divided by -G.
 *
-      print*, 'begin comenv',kw1,kw2,j1,j2
-      print*, M01,M1,MC1,AJ1,JSPIN1,KW1,
+      dbg = .falsE.
+      if (dbg) print*, 'begin comenv',kw1,kw2,j1,j2
+      if (dbg) print*, M01,M1,MC1,AJ1,JSPIN1,KW1,
      &          M02,M2,MC2,AJ2,JSPIN2,KW2,
      &          ECC,SEP,JORB,COEL,DTM
-          TWOPI = 2.D0*ACOS(-1.D0)
+      TWOPI = 2.D0*ACOS(-1.D0)
       COEL = .FALSE.
 *
 * Obtain the core masses and radii.
@@ -80,7 +81,7 @@
 * If the secondary star is also giant-like add its envelopes's energy.
 *
       EORBI = M1*M2/(2.D0*SEP)  !From Kiel and Hurley 2016
-      print*,'stellar type comenv check',kw1,kw2
+      if (dbg) print*,'stellar type comenv check',kw1,kw2
       IF(KW2.GE.2.AND.KW2.LE.9.AND.KW2.NE.7)THEN
 *      PA: secondary (less massive star) is neither ms nor remnant
          MENVD = MENV/(M2-MC2)
@@ -140,14 +141,14 @@
 *
             EORBF = MAX(MC1*M2/(2.D0*SEPL),EORBI)
             EBINDF = EBINDI - ALPHA1*(EORBF - EORBI)
-            print*,'merger'
+            if (dbg) print*,'merger'
          ELSE
 *
 * Primary becomes a black hole, neutron star, white dwarf or helium star.
 *
             MF = M1
             M1 = MC1
-            print*,'Primary becomes a ...',kw,kw1,kw2
+            if (dbg) print*,'Primary becomes a ...',kw,kw1,kw2
 
             CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
             CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
@@ -162,7 +163,7 @@
 * Degenerate or giant secondary. Check if the least massive core fills its
 * Roche lobe.
 *
-      print*, 'Degenerate or giant secondary'
+         if (dbg) print*, 'Degenerate or giant secondary'
          SEPF = MC1*MC2/(2.D0*EORBF)
          Q1 = MC1/MC2
          Q2 = 1.D0/Q1
@@ -186,7 +187,7 @@
 * is an unstable Thorne-Zytkow object that leaves only the core.
 *
             SEPF = 0.D0
-            print*, 'coel',kw1,kw2
+            if (dbg) print*, 'coel',kw1,kw2
             IF(KW2.GE.13)THEN
                MC1 = MC2
                M1 = MC1
@@ -195,14 +196,14 @@
                KW1 = KW2
                KW2 = 15
                AJ1 = 0.D0
-                print*, 'kw2>=13',m1,m2
+               if (dbg) print*, 'kw2>=13',m1,m2
 *
 * The envelope mass is not required in this case.
 *
                GOTO 30
             ENDIF
 *
-            print*, 'acoel',kw1,kw2
+            if (dbg) print*, 'acoel',kw1,kw2
             KW = KTYPE(KW1,KW2) - 100
             MC3 = MC1 + MC2
 *
@@ -239,11 +240,12 @@
 *
 * The cores do not coalesce - assign the correct masses and ages.
 *
-            print*, "The cores do not coalesce, calling star"
+            if (dbg) print*, "The cores do not coalesce, calling star"
 
             MF = M1
             M1 = MC1
-            CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
+            !poojan - removing call to the stars
+*            CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
             CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
      &                  R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1,1)
             IF(KW1.GE.13)THEN
@@ -264,7 +266,7 @@
       ENDIF
 *
       IF(COEL)THEN
-         print*, 'after coel', kw1, kw2, kw,mc3
+         if (dbg) print*, 'after coel', kw1, kw2, kw,mc3
          MC22 = MC2
          IF(KW.EQ.4.OR.KW.EQ.7)THEN
 * If making a helium burning star calculate the fractional age 
@@ -324,7 +326,7 @@
          M2 = 0.D0
          M1 = MF
          KW2 = 15
-         print*, 'new',m1,m2,kw2
+         if (dbg) print*, 'new',m1,m2,kw2
 *
 * Combine the core masses.
 *
@@ -382,10 +384,11 @@
          JSPIN2 = OSPIN2*(K22*R2*R2*(M2-MC2)+K3*RC2*RC2*MC2)
       ENDIF
    30 SEP = SEPF
-        print*, 'comenv end',kw1,kw2,j1,j2
-        print*, M01,M1,MC1,AJ1,JSPIN1,KW1,
+        if (dbg) print*, 'comenv end',kw1,kw2,j1,j2
+        if (dbg) print*, M01,M1,MC1,AJ1,JSPIN1,KW1,
      &          M02,M2,MC2,AJ2,JSPIN2,KW2,
      &          ECC,SEP,JORB,COEL,DTM
+        if ((kw1==6) .or.(kw2==6)) stop
       RETURN
       END
 ***

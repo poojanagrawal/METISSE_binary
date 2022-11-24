@@ -50,8 +50,7 @@
             elseif (check_ge(t% pars% age,t% tr(i_age,t% ntrack))) then
                 if (kw<5) print*,'WARNING: possible early end of file due to incomplete track beyond phase',kw
                 end_of_file = .true.
-!                    if (debug)
-                print*,"end of file:aj,tn ",t% pars% age,t% tr(i_age,t% ntrack),t% tr(i_age2,t% ntrack)
+                if (debug) print*,"end of file:aj,tn ",t% pars% age,t% tr(i_age,t% ntrack),t% tr(i_age2,t% ntrack)
                 call check_remnant_phase(t)
             else
                 t% pars% core_radius = -1.0

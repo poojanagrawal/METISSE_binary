@@ -59,6 +59,6 @@
 
     !list of columns related to the evolution of core
     !these are interpolated based on the original age of the star before mass loss
-    number_of_core_columns = 8
-    core_columns = 'age,log_L,Mc_He,Mc_CO,log_Tc,cHe4,cC12,cO16'
+    !number_of_core_columns = 8
+    !core_columns = 'age,log_L,Mc_He,Mc_CO,log_Tc,cHe4,cC12,cO16'
 /

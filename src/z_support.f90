@@ -237,6 +237,8 @@ module z_support
         i_Rcenv = -1
         if (radius_conv_envelope/= '') i_rcenv = locate_column(cols, radius_conv_envelope)
 
+        print*, 'mcenv, rcenv columns',i_mcenv, i_Rcenv
+
         i_MoI = -1
         if (moment_of_inertia/= '') i_MoI = locate_column(cols, moment_of_inertia)
 
@@ -941,6 +943,8 @@ module z_support
             Mec_core = s(Mcrit(7)% loc-1)% tr(i_he_core,j_bagb)
         endif
 
+!        Mup_core = 1.7816
+!        Mec_core = 2.3660
         if (debug) print*,"Mup_core", Mup_core
         if (debug) print*,"Mec_core", Mec_core
 

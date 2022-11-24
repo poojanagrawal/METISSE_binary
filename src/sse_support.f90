@@ -336,12 +336,13 @@ contains
     !        Get an idea of when Mc = MIN(Mt,Mc,C,max) on the GB
         
             mc_max = max_core_mass_he(t% pars% mass, t% zams_mass)
+!mc_max = max(mc_max,t% pars% core_mass)
             if(mc_max.le.Mx)then
                 Tmax = Tinf1 - (1.d0/((p-1.d0)*AHe*D))*(mc_max**(1.d0-p))
             else
                 Tmax = Tinf2 - (1.d0/((q-1.d0)*AHe*B))*(mc_max**(1.d0-q))
             endif
-
+!            print*, 'core',mc_max,t% pars% core_mass,t% pars% mass, t% zams_mass
             Tmax = MAX(Tmax,t% MS_time)
             t% nuc_time = Tmax
             

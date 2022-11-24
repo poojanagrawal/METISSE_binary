@@ -14,7 +14,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
 
     real(dp) :: times_old(11), nuc_old, delta,dtm! ,tnext,mnext
 
-    integer :: idd, nt
+    integer :: idd, nt ,ierr
     logical :: debug, mass_loss
     type(track), pointer :: t
 
@@ -22,11 +22,12 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     if(present(id)) idd = id
     t => tarr(idd)
         
-    
+    ierr=0
+
     mass_loss = .false.
     debug = .false.
 
-    if (kw<10 .and. debug) print*, "in star", mt,kw
+    if (kw<10 .and. debug) print*, "in star", mass,mt,kw,id,t% pars% core_mass
     
     delta = 0.d0
     t% zams_mass = mass
@@ -42,7 +43,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             t% times_new = t% times
             t% tr(i_age,:) = t% tr(i_age2,:)
             mt = t% tr(i_mass,ZAMS_EEP)
-            call write_eep_track(t,t% initial_mass)
+!            call write_eep_track(t,t% initial_mass)
         else
             !first check if mass has changed since last time star was called
             ! for tracks that already have wind mass loss, only check
@@ -61,7 +62,8 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
 
                 nt = t% ntrack
 
-                call get_initial_mass_for_new_track(idd, delta)
+                call get_initial_mass_for_new_track(idd, delta,ierr)
+                if (ierr<0) return
                 if (kw>1) then
                     !store core properties for post-main sequence evolution
                     allocate(hecorelist(nt), ccorelist(nt),Lum_list(nt),age_list (nt))
@@ -129,7 +131,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     t% nuc_time = tn
 
 
-    if (kw<10 .and. debug) print*, "in star end", mt,tm,delta,kw
+    if (kw<10 .and. debug) print*, "in star end", mt,delta,kw,tm
 !    print*, "in star", tm, t% MS_time, tn, t% nuc_time, kw
 nullify(t)
     return

@@ -17,20 +17,7 @@ OMP=-fopenmp
 
 
 FFLAGS1= -ffree-form -fimplicit-none $(OPT) $(WARN) $(DEBUG)
-FFLAGS2= -ffixed-form -fimplicit-none 
-
-SRCE3 = \
-popbin.f comenv.f corerd.f deltat.f dgcore.f evolv2.f gntage.f \
-hrdiag.f instar.f kick.f mix.f mlwind.f mrenv.f ran3.f rl.f \
-star.f zcnsts.f zfuncs.f
- 
-OBJT3 = $(SRCE3:.f=.o)
-
-#popbin: $(OBJT3) $(LFLAGS)
-#	$(CMPLR) $(FFLAGS) $(OBJT3) -o popbin
-
-
-SSE_METISSE=sse_metisse
+FFLAGS2= -ffixed-form -fimplicit-none
 
 
 track_support.o: $(SRC_DIR)/track_support.f90
@@ -58,8 +45,6 @@ OBJT4 = $(SRCE4:.f=.o)
 
 BSE_METISSE=bse_metisse
 
-all:$(BSE_METISSE) $(SSE_METISSE)
-
 SRCE5 = \
 bse.f evolv2.f comenv.f corerd.f dgcore.f gntage.f \
 instar.f kick.f mix.f mlwind.f mrenv.f ran3.f rl.f zfuncs.f
@@ -67,6 +52,14 @@ instar.f kick.f mix.f mlwind.f mrenv.f ran3.f rl.f zfuncs.f
 
 OBJT5 = $(SRCE5:.f=.o)
 
+
+SRCE3 = \
+popbin.f comenv.f corerd.f dgcore.f evolv2.f gntage.f \
+instar.f kick.f mix.f mlwind.f mrenv.f ran3.f rl.f zfuncs.f
+ 
+OBJT3 = $(SRCE3:.f=.o)
+
+SSE_METISSE=sse_metisse
 
 %.o : $(SRC_DIR)/%.f
 	$(FC) $(OMP) $(FFLAGS2) -c $<
@@ -81,8 +74,13 @@ $(SSE_METISSE): $(OBJT4) star.o sse_support.o hrdiag.o remnant_support.o z_suppo
 $(BSE_METISSE): $(OBJT5) star.o sse_support.o hrdiag.o remnant_support.o z_support.o track_support.o interp_support.o zcnsts.o metisse_mlwind.o deltat.o alloc_track.o dealloc_track.o assign_commons.o comenv_lambda.o
 	$(FC) $(OMP) -o $(BSE_DIR)/$(BSE_METISSE) $^
 
+popbin: $(OBJT3) star.o sse_support.o hrdiag.o remnant_support.o z_support.o track_support.o interp_support.o zcnsts.o metisse_mlwind.o deltat.o alloc_track.o dealloc_track.o assign_commons.o comenv_lambda.o
+	$(FC) $(OMP) -o $(BSE_DIR)/popbin $^
+
+all:$(BSE_METISSE) $(SSE_METISSE) popbin
+
 
 clean:
-	rm -f $(BSE_DIR)/$(SSE_METISSE) $(BSE_DIR)/$(BSE_METISSE)
+	rm -f $(BSE_DIR)/$(SSE_METISSE) $(BSE_DIR)/$(BSE_METISSE) $(BSE_DIR)/popbin
 	rm -f *.mod *.o
 

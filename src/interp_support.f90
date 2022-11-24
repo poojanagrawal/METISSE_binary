@@ -750,7 +750,7 @@ module interp_support
     end subroutine interp_4pt_pm
     
 
-    subroutine get_initial_mass_for_new_track(id, delta)
+    subroutine get_initial_mass_for_new_track(id, delta,ierr)
 
     integer, intent(in) :: id
     real(dp), intent(in) :: delta
@@ -759,6 +759,7 @@ module interp_support
     real(dp), allocatable :: mlist(:),mlist1(:), age_list(:)
     real(dp) :: Mnew,alfa,beta,them, themold, age
     type(track), pointer :: t
+    integer :: ierr
 
     logical :: debug
 
@@ -825,9 +826,13 @@ module interp_support
         Mupp = min_index
     endif
     if(Mlow<1 .or. Mupp > num_list) then
-        print*,"Error: can't interpolate beyond the bounds:",Mlow, Mupp, num_list,mnew,eep_m
-        print*, mlist
-        stop
+        print*,"Error: can't interpolate beyond the bounds:",Mlow,Mupp,num_list,mnew,eep_m
+        print*, kw!mlist
+!        if (Mlow<1) Mlow = 1
+!        if (Mupp> num_list) Mupp = num_list
+!        stop
+        ierr = -1
+        return
     endif
     if (kw<10 .and. debug)  print*, "Mup =", mlist(Mupp), "mlow", mlist(Mlow),"mnew",mnew
     alfa = (Mnew - mlist(Mlow))/(mlist(Mupp) - mlist(Mlow))

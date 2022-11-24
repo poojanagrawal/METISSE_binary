@@ -117,7 +117,7 @@
     subroutine post_agb_parameters(t)
         type(track), pointer, intent(inout) :: t
         
-        if(construct_wd_track) then
+        if(t% pars% phase <=6 .and. construct_wd_track) then
             t% agb% phase_wd = t% pars% phase
             t% pars% phase = TPAGB
             t% post_agb = .true.
@@ -473,7 +473,6 @@
                 t% zams_mass = t% pars% mass
                 t% pars% McHe = t% pars% mass
                 t% pars% core_mass = t% pars% McCO
-
                 call calculate_he_timescales(t)
                 t% pars% age = He_GB_age(t% pars% core_mass,t% times(8), &
                                 t% times(9),t% He_pars% D, t% He_pars% Mx)

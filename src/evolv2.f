@@ -297,14 +297,14 @@
       do 500 , k = kmin,kmax
          age = tphys - epoch(k)
 *         if (dbg)
-         print*, "initial call for" , mass0(k)
+*         print*, "initial call for" , mass0(k)
          dtm =0.d0
          CALL star(kstar(k),mass0(k),mass(k),tm,tn,tscls,lums,GB,zpars
      &    ,dtm,k)
 
          CALL hrdiag(mass0(k),age,mass(k),tm,tn,tscls,lums,GB,zpars,
      &               rm,lum,kstar(k),mc,rc,me,re,k2,mcx,k,irecord)
-            print*, 'ini', tm,tn,kstar(k)
+*            print*, 'ini', tm,tn,kstar(k)
 
          aj(k) = age
          epoch(k) = tphys - age
@@ -765,12 +765,15 @@
             goto 140
          endif
 * PA: second (main) call for detached phase
-        if (dbg)print*,"second (main) call for detached phase",m0,age,k
+        if(dbg)print*,"second (main) call for detached phase",m0,age,
+     &                  kw,k
          CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,k)
 *         print*, 'star_dt_mn',m0,mt,kw,k
          CALL hrdiag(m0,age,mt,tm,tn,tscls,lums,GB,zpars,
      &               rm,lum,kw,mc,rc,me,re,k2,mcx,k,irecord)
 *
+         if (dbg)print*,"after second call",m0,age,kw,k
+
          if(kw.ne.15)then
             ospin(k) = jspin(k)/(k2*(mt-mc)*rm*rm+k3*mc*rc*rc)
          endif
@@ -1278,7 +1281,7 @@
                mass(j2) = 0.d0
             else
                mass(j2) = mass(j2) + dm2
-            print*, "calling gntage on 1278"
+            if (dbg) print*, "calling gntage on 1278"
                CALL gntage(massc(j2),mass(j2),kst,zpars,
      &                     mass0(j2),aj(j2),j2)
                epoch(j2) = tphys - aj(j2)
@@ -1310,8 +1313,7 @@
 *
          m1ce = mass(j1)
          m2ce = mass(j2)
-*         if (dbg)
-         print*, 'comenv on 1279', tphys
+         if (dbg) print*, ' ', tphys
          CALL comenv(mass0(j1),mass(j1),massc(j1),aj(j1),jspin(j1),
      &               kstar(j1),mass0(j2),mass(j2),massc(j2),aj(j2),
      &               jspin(j2),kstar(j2),zpars,ecc,sep,jorb,coel,

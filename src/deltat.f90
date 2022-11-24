@@ -86,14 +86,18 @@
 
             t% pars% dt = min(dt,dtr)
             
-!           if (kw==5) print*,"dt dtr phase",dt,dtr,t% pars%phase
+!           if (kw>=5) print*,"dt dtr phase",dt,dtr,t% pars%phase,t% pars% dt
 !            if (kw==5) print*, t% nuc_time, tn
             if (dtr<=0.0) then
+                !open a file and write the error, continue the code
                 print*,"fatal error: invalid timestep", dtr ,"for phase", t% pars% phase
                 print*,"t% zams_mass, t% nuc_time, age, t% pars% mass"
                 print*,t% zams_mass, t% nuc_time, age, t% pars% mass
-                stop
+!                stop
             endif
+
+            t% pars% dt = 0.d0
+
             
             nullify(t)
       end subroutine deltat

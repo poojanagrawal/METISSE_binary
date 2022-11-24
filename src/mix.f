@@ -23,7 +23,7 @@
 *
 *       J1,j2 are I1 I2 here, KS =KSTAR=k1,k2
 *       Define global indices with body #I1 being most evolved.
-        print*, 'in mix'
+*        print*, 'in mix'
       IF(KS(1).GE.KS(2))THEN
           I1 = 1
           I2 = 2

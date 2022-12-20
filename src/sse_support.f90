@@ -336,7 +336,9 @@ contains
     !        Get an idea of when Mc = MIN(Mt,Mc,C,max) on the GB
         
             mc_max = max_core_mass_he(t% pars% mass, t% zams_mass)
-!mc_max = max(mc_max,t% pars% core_mass)
+!TODO: Next line requires a check
+!Note that this is done to avoid negative timesteps that result from more massive cores than what sse formulae predict
+            mc_max = max(mc_max,t% pars% core_mass+1e-10)
             if(mc_max.le.Mx)then
                 Tmax = Tinf1 - (1.d0/((p-1.d0)*AHe*D))*(mc_max**(1.d0-p))
             else

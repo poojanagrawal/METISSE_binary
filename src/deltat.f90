@@ -47,7 +47,7 @@
 !                print*, t% times(3),t% times(4),t% nuc_time
 !                print*, dt,dtr,age
             case(EAGB)
-                dt = pts3*(t% times(5)- t% times(4))
+                dt = pts2*0.1*(t% times(5)- t% times(4))
                 dtr = MIN(t% nuc_time,t% times(5))-age
 !                print*, t% nuc_time, t% times(5), age
             case(TPAGB)
@@ -93,11 +93,8 @@
                 print*,"fatal error: invalid timestep", dtr ,"for phase", t% pars% phase
                 print*,"t% zams_mass, t% nuc_time, age, t% pars% mass"
                 print*,t% zams_mass, t% nuc_time, age, t% pars% mass
-!                stop
+                stop
             endif
-
-            t% pars% dt = 0.d0
-
             
             nullify(t)
       end subroutine deltat

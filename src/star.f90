@@ -56,7 +56,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             delta = delta -t% pars% delta
             if (debug) print*,'delta in star',kw, t% pars% mass, mt,delta
 
-            if (abs(delta) .gt. 1.0d-8) then
+            if (abs(delta) .gt. 1.0d-6) then
                 mass_loss = .true.
 !            if (kw<10 .and. debug) print*, "mass loss in interpolate mass called for", t% initial_mass,delta,t% tr(i_mass,1),id
 

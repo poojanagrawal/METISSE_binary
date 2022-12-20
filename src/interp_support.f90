@@ -826,10 +826,11 @@ module interp_support
         Mupp = min_index
     endif
     if(Mlow<1 .or. Mupp > num_list) then
-        print*,"Error: can't interpolate beyond the bounds:",Mlow,Mupp,num_list,mnew,eep_m
-        print*, kw!mlist
-!        if (Mlow<1) Mlow = 1
-!        if (Mupp> num_list) Mupp = num_list
+        print*,"Error: beyond the bounds for interpolation"
+        print*, "Mlow,Mupp,num_list,mnew,eep_m,kw", &
+                Mlow,Mupp,num_list,mnew,eep_m,kw!mlist
+        if (Mlow<1) Mlow = 1
+        if (Mupp> num_list) Mupp = num_list
 !        stop
         ierr = -1
         return

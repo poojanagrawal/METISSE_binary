@@ -437,7 +437,7 @@ module interp_support
         logical :: debug
 
         debug = .false.
-        n=size(y)
+        n = size(y)
         allocate(d(n-1))
         old_start = 0
 
@@ -458,7 +458,7 @@ module interp_support
                 stop
             endif
             end do
-            if (debug) print*,'in mod_PAV', start, old_start
+            if (debug) print*,'start, old_start', start, old_start
             do j= start+1,n
                 diff= y(j)-y(start)
                 if (debug) print*,"i and diff",i,diff
@@ -580,7 +580,10 @@ module interp_support
                 interpolate = check_core_quant(j,n_pass, pass)
                 if (interpolate) then
                     new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
-        if (new_line(j,1)/=new_line(j,1)) print*, 'Warning: NaN encountered ',t% initial_mass,input_age,j,mhi,mlo
+                    if (new_line(j,1)/=new_line(j,1)) then
+                    print*, 'Warning: NaN encountered ',t% initial_mass,input_age,j,mhi,mlo
+                    stop
+                    endif
                 endif
             end do
         else

@@ -298,6 +298,7 @@
          aj = tscls(2) + aj*tscls(3)
       endif
 *
+        print*,'exiting gntage: aj', aj
       RETURN
       END
 ***

@@ -117,7 +117,6 @@
 *
       OPEN(10,file='binaries.in',action='read',status='old')
       READ(10,*)nm1, Z
-      print*,'open',nm1,z
       do i = 1,nm1
 *
 * Read in parameters and set coefficients which depend on metallicity. 

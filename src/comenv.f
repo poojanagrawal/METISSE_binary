@@ -46,7 +46,7 @@
 *
 * For simplicity energies are divided by -G.
 *
-      dbg = .falsE.
+      dbg = .false.
       if (dbg) print*, 'begin comenv',kw1,kw2,j1,j2
       if (dbg) print*, M01,M1,MC1,AJ1,JSPIN1,KW1,
      &          M02,M2,MC2,AJ2,JSPIN2,KW2,
@@ -83,7 +83,7 @@
       EORBI = M1*M2/(2.D0*SEP)  !From Kiel and Hurley 2016
       if (dbg) print*,'stellar type comenv check',kw1,kw2
       IF(KW2.GE.2.AND.KW2.LE.9.AND.KW2.NE.7)THEN
-*      PA: secondary (less massive star) is neither ms nor remnant
+*      PA: secondary (less massive star) is neither ms nor remnant- is giant-like
          MENVD = MENV/(M2-MC2)
          IF (SSE_FLAG.eqv..TRUE.) THEN
            RZAMS = RZAMSF(M02)
@@ -110,7 +110,8 @@
 *
 * If the secondary is on the main sequence see if it fills its Roche lobe.
 *
-      IF(KW2.LE.1.OR.KW2.EQ.7)THEN !else is at about 142
+      IF(KW2.LE.1.OR.KW2.EQ.7)THEN !else is at about 160
+         if (dbg) print*, 'ms secondary'
          SEPF = MC1*M2/(2.D0*EORBF)
          Q1 = MC1/M2
          Q2 = 1.D0/Q1
@@ -133,6 +134,7 @@
          ENDIF
          IF(COEL)THEN
 *
+            if (dbg) print*, 'coel ',kw1,kw2
             KW = KTYPE(KW1,KW2) - 100
             MC3 = MC1
             IF(KW2.EQ.7.AND.KW.EQ.4) MC3 = MC3 + M2
@@ -141,18 +143,18 @@
 *
             EORBF = MAX(MC1*M2/(2.D0*SEPL),EORBI)
             EBINDF = EBINDI - ALPHA1*(EORBF - EORBI)
-            if (dbg) print*,'merger'
          ELSE
 *
 * Primary becomes a black hole, neutron star, white dwarf or helium star.
 *
+            if (dbg) print*,'Primary lost envelope',kw1,kw2
             MF = M1
             M1 = MC1
-            if (dbg) print*,'Primary becomes a ...',kw,kw1,kw2
-
             CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
             CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
      &                  R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1,1)
+            if (dbg) print*,kw1,kw2
+
             IF(KW1.GE.13)THEN
                CALL kick(KW1,MF,M1,M2,ECC,SEPF,JORB,VS)
                IF(ECC.GT.1.D0) GOTO 30
@@ -196,14 +198,14 @@
                KW1 = KW2
                KW2 = 15
                AJ1 = 0.D0
-               if (dbg) print*, 'kw2>=13',m1,m2
+               if (dbg) print*, 'sec is bh/ns',m1,m2
 *
 * The envelope mass is not required in this case.
 *
                GOTO 30
             ENDIF
 *
-            if (dbg) print*, 'acoel',kw1,kw2
+            if (dbg) print*,'not bh/ns:it is a merger',kw1,kw2
             KW = KTYPE(KW1,KW2) - 100
             MC3 = MC1 + MC2
 *
@@ -240,12 +242,10 @@
 *
 * The cores do not coalesce - assign the correct masses and ages.
 *
-            if (dbg) print*, "The cores do not coalesce, calling star"
-
+            if(dbg)print*,"No merger, removing envelope, calling star"
             MF = M1
             M1 = MC1
-            !poojan - removing call to the stars
-*            CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
+            CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
             CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
      &                  R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1,1)
             IF(KW1.GE.13)THEN
@@ -266,7 +266,7 @@
       ENDIF
 *
       IF(COEL)THEN
-         if (dbg) print*, 'after coel', kw1, kw2, kw,mc3
+         if (dbg) print*, 'coel:calc new frac age ', kw1, kw2, kw
          MC22 = MC2
          IF(KW.EQ.4.OR.KW.EQ.7)THEN
 * If making a helium burning star calculate the fractional age 
@@ -326,7 +326,7 @@
          M2 = 0.D0
          M1 = MF
          KW2 = 15
-         if (dbg) print*, 'new',m1,m2,kw2
+         if (dbg) print*, 'new mass following merger',m1,m2,kw
 *
 * Combine the core masses.
 *
@@ -348,7 +348,7 @@
 *
 * Obtain a new age for the giant.
 *
-            print*,'getting new age giant',kw,kw1,kw2
+            print*,'getting new age giant following merger',kw1,kw2,kw
             CALL gntage(MC1,M1,KW,ZPARS,M01,AJ1,J1)
             CALL star(KW,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
          ENDIF

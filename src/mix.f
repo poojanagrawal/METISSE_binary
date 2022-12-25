@@ -74,12 +74,12 @@
       KW = ICASE
       AGE3 = 0.d0
 *
-* TODO: NOTE this restriction on mass of mixed stars here
+* NOTE: below restriction on mass of mixed stars here removed by PA
 *       Restrict merged stars to masses less than 100 Msun. 
-      IF(M3.GE.100.D0)THEN
-         M3 = 99.D0
-         M03 = MIN(M03,M3)
-      ENDIF
+*      IF(M3.GE.100.D0)THEN
+*         M3 = 99.D0
+*         M03 = MIN(M03,M3)
+*      ENDIF
 *
 *       Evaluate apparent age and other parameters.
 *

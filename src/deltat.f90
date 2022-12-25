@@ -47,7 +47,7 @@
 !                print*, t% times(3),t% times(4),t% nuc_time
 !                print*, dt,dtr,age
             case(EAGB)
-                dt = pts2*0.1*(t% times(5)- t% times(4))
+                dt = pts3*0.1*(t% times(5)- t% times(4))
                 dtr = MIN(t% nuc_time,t% times(5))-age
 !                print*, t% nuc_time, t% times(5), age
             case(TPAGB)

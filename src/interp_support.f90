@@ -512,15 +512,11 @@ module interp_support
         debug = .false.
 
 !        print*,"in  interpolate age"
- 
+        jstart = 1
+        jend = t% ncol
         if (present(icolumn)) then
             jstart = icolumn
             jend = icolumn
-        else
-            jstart = 1
-            jend = t% ncol
-            
-
         endif
         allocate (new_line(t% ncol,1))
         new_line = -1.d0
@@ -528,7 +524,10 @@ module interp_support
 
         kw = t% pars% phase
     !.and. abs(t% times(kw)-t% times_new(kw))>tiny
-
+        !TODO: this is temporary, to avoid NaN during interpolation
+        if (kw ==3) then
+            if (t% times(kw)-t% times(kw-1)==0.d0) kw =4
+        endif
         if (kw>1 .and. kw<6) then
             !scale the input age for the new track
             !TODO: check tscls(kw) and (kw-1) are >0 (defined)
@@ -538,6 +537,7 @@ module interp_support
             age2 = t% times_new(kw-1)+(frac*them_new)
             n_pass = 2
             if (t% irecord>0 .and. debug) print*, "in interp2", age2, t% pars% age,kw
+!print*,t% times(kw),t% times(kw-1),t% times_new(kw),t% times_new(kw-1)
         !t% pars% mass,t% pars% core_mass,t% times_new(kw)
         else
             age2 = input_age

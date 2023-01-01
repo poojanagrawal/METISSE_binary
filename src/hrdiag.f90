@@ -17,17 +17,12 @@
     type(track), pointer :: t
 
     debug = .false.
-!    if (kw>1) print*,"started hrdiag",mt,mc,aj,kw
-    t => NULL()
-    if(present(id))then
-        t => tarr(id)
-        idd = id
-    else
-        t => tarr(1)
-        idd = 1
-    endif
+    idd = 1
+    if(present(id)) idd = id
+    t => tarr(idd)
     
-    
+!if (kw>1) print*,"started hrdiag",mt,mc,aj,kw
+
     end_of_file = .false. !this is just the end of eep track, different to t_end defined in evolv1.f90
 
     !save input state

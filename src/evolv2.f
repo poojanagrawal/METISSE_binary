@@ -759,11 +759,11 @@
 *
 * Masses over 100Msun should probably not be trusted in the
 * evolution formulae.
-*
-         if(mt.gt.100.d0)then
-            WRITE(99,*)' MASS EXCEEDED ',mass1i,mass2i,tbi,ecci,mt
-            goto 140
-         endif
+*PA: removed the following if block
+*         if(mt.gt.100.d0)then
+*            WRITE(99,*)' MASS EXCEEDED ',mass1i,mass2i,tbi,ecci,mt
+*            goto 140
+*         endif
 * PA: second (main) call for detached phase
         if(dbg)print*,"second (main) call for detached phase",m0,age,
      &                  kw,k
@@ -1313,7 +1313,6 @@
 *
          m1ce = mass(j1)
          m2ce = mass(j2)
-         if (dbg) print*, ' ', tphys
          CALL comenv(mass0(j1),mass(j1),massc(j1),aj(j1),jspin(j1),
      &               kstar(j1),mass0(j2),mass(j2),massc(j2),aj(j2),
      &               jspin(j2),kstar(j2),zpars,ecc,sep,jorb,coel,
@@ -1393,7 +1392,7 @@
 *
             kst = 9
             if(kstar(j2).eq.10) massc(j2) = dm2
-            if (dbg) print*, 'calling gntage 1355'
+            if (dbg) print*, 'WD revived to HeGB: calling gntage'
             CALL gntage(massc(j2),mass(j2),kst,zpars,mass0(j2),
      &                  aj(j2),j2)
             kstar(j2) = kst
@@ -1627,7 +1626,7 @@
                else
                   kst = MIN(6,3*kstar(j2)-27)
                   mt2 = mass(j2) + km*(dm2 - dms(j2))
-                    if (dbg) print*, 'calling gntage 1587',j2
+                  if (dbg) print*, 'WD to He star: calling gntage',kst
                   CALL gntage(massc(j2),mt2,kst,zpars,mass0(j2),
      &                          aj(j2),j2)
                   epoch(j2) = tphys + dtm - aj(j2)
@@ -2005,10 +2004,10 @@
 * Masses over 100Msun should probably not be trusted in the
 * evolution formulae.
 *
-         if(mt.gt.100.d0)then
-            WRITE(99,*)' MASS EXCEEDED ',mass1i,mass2i,tbi,ecci,mt
-            goto 140
-         endif
+*         if(mt.gt.100.d0)then
+*            WRITE(99,*)' MASS EXCEEDED ',mass1i,mass2i,tbi,ecci,mt
+*            goto 140
+*         endif
          kw = kstar(k)
          if (dbg) print*,'obtaining parameters for the next step'
          if (dbg) print*,' calling star and hrdiag', k
@@ -2285,7 +2284,7 @@
       endif
 *
  135  continue
-      if (dbg) print*, "tphysf13=",tphys,tphysf, tsave
+      if (dbg) print*, "tphys at 135",tphys,tphysf, tsave
 
 *
       sgl = .true.
@@ -2337,12 +2336,12 @@
          coel = .false.
          goto 4
       endif
-        if (dbg) print*, "tphysf13=",tphys,tphysf, tsave
+        if (dbg) print*, "tphys before 140=",tphys,tphysf, tsave
 
 *
  140  continue
 *
-        if (dbg) print*, "tphysf223=",tphys,tphysf, tsave
+        if (dbg) print*, "tphys at 140",tphys,tphysf, tsave
 
       if(com)then
          com = .false.
@@ -2380,7 +2379,7 @@
             bpp(jp,8) = rad(1)/rol(1)
             bpp(jp,9) = rad(2)/rol(2)
             bpp(jp,10) = 10.0
-            if (dbg) print*, "MAx time,file ended", tphys
+            if (dbg) print*, "Max time,file ended", tphys
          endif
       endif
 *

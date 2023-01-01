@@ -16,11 +16,10 @@ EXTERNAL CELAMF
 !  RZAMS = RZAMSF(M01)
 !  LAMB1 = CELAMF(KW,M01,L1,R1,RZAMS,MENVD,LAMBDA,J1)
 !ELSE
-if(present(id))then
-    idd = id
-else
-    idd = 1
-endif
+
+idd = 1
+if(present(id)) idd = id
+
 RZAMS = 10.d0**tarr(idd)% tr(i_logR,ZAMS_EEP)
 LAMBF = CELAMF(KW,M0,L,R,RZAMS,MENVD,LAMBDA)
 !comenv_lambda = LAMBF

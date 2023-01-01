@@ -46,7 +46,7 @@
 *
 * For simplicity energies are divided by -G.
 *
-      dbg = .false.
+      dbg = .true.
       if (dbg) print*, 'begin comenv',kw1,kw2,j1,j2
       if (dbg) print*, M01,M1,MC1,AJ1,JSPIN1,KW1,
      &          M02,M2,MC2,AJ2,JSPIN2,KW2,
@@ -349,6 +349,7 @@
 * Obtain a new age for the giant.
 *
             print*,'getting new age giant following merger',kw1,kw2,kw
+! PA: kw can change in gntage
             CALL gntage(MC1,M1,KW,ZPARS,M01,AJ1,J1)
             CALL star(KW,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
          ENDIF

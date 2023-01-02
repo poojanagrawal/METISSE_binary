@@ -209,7 +209,7 @@ module track_support
     
     !for z_support
     real(dp) :: Mhook, Mhef,Mfgb, Mup, Mec, Mextra,Mup_core,Mec_core
-    real(dp) :: Z04
+    real(dp) :: Z04, Z_H, Z_He
 
     !for interp_support
     logical:: fix_track

@@ -210,7 +210,7 @@ contains
     
     integer :: i,j_bgb
     real(dp) :: lums(10), mass
-    real(dp), pointer :: Lumt(:)=>NULL()
+    real(dp), pointer :: Lumt(:) 
     
     logical :: debug
     debug = .false.

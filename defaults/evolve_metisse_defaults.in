@@ -45,10 +45,6 @@
     pts_2 = 0.01
     pts_3 = 0.02
 
-!points_MS =
-!points_HG =
-!points_RGB =
-
 /
 
 &extra_controls
@@ -87,6 +83,12 @@
     Mec = -1.0
 
     Mextra = -1.0       !if any
+
+    !the hydrogen and helium abundances; default is SSE
+
+    Z_H = -1.0  
+    Z_He = -1.0  
+
 
     !   INTERPOLATION CONTROLS
 

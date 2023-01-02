@@ -57,7 +57,7 @@ module z_support
                             
     namelist /extra_controls/ METISSE_DIR, INPUT_FILES_DIR, read_files_from_Z,&
                         Z_folder_list, format_file, key_columns_file, &
-                        Mhook, Mhef, Mfgb, Mup, Mec, Mextra, fix_track, &
+                        Mhook, Mhef, Mfgb, Mup, Mec, Mextra, Z_H, Z_He, fix_track, &
                         lookup_index, accuracy_limit, construct_wd_track, allow_electron_capture, &
                         verbose, write_eep_file, write_track_to_file
             
@@ -790,8 +790,6 @@ module z_support
 
         logical:: debug
 
-!        mass_list => NULL()
-        zpars = 0.d0
         debug = .true.
         old_co_frac = 0.0
         Mup_core = 0.0
@@ -820,8 +818,10 @@ module z_support
             call set_star_type_from_history(s(i))
           end do
         endif
+
         allocate(mass_list(num_tracks))
         mass_list = s% initial_mass
+
         !if already defined, do index search here otherwise search below
         do i = 2, size(Mcrit)-1
             if (.not. defined(Mcrit(i)% mass)) cycle
@@ -951,9 +951,17 @@ module z_support
 
         call sort_mcutoff()
         if (debug) print*, "m_cutoffs: ", m_cutoff
-        
-        !Todo: this may need addressing as zpars are -1 at times,need some default value
-        zpars(1:5) = Mcrit(3:7)% mass
+    
+        !now redefine zpars where applicable
+        do i = 3,7
+        if (defined (Mcrit(i)% mass)) zpars (i-2) = Mcrit(i)% mass
+        end do
+
+        if (defined(Z_H)) zpars(11) = Z_H
+        if (defined(Z_He)) zpars(12) = Z_He
+        Z04 = zpars(14)
+
+        if (debug) print*, 'zpars',  zpars(1:5)
 
 !        call sort(Mcrit% loc, m_cutoff)
     end subroutine set_zparameters
@@ -1012,9 +1020,40 @@ module z_support
             list(i) = val
         end do
     end subroutine sort
-!    subroutine locate_mcrit(mcrit, mloc, s% )
-!    !find mcrit if already defined
-!    call index_search (num_tracks, s% initial_mass, Mcrit, min_index)
-!            Mcrit = s(min_index)% initial_mass
-!            Mloc = min_index
+
+    subroutine calculate_sse_zpars(z,zpars)
+
+    real(dp),intent(in) :: z
+    real(dp),intent(out) :: zpars(14)
+    real(dp) :: lzs,dlzs,lz,lzd
+
+        lzs = log10(z/0.02d0)
+        dlzs = 1.d0/(z*log(10.d0))
+        lz = log10(z)
+        lzd = lzs + 1.d0
+
+        zpars = 0.d0
+
+        zpars(1) = 1.0185d0 + lzs*(0.16015d0 + lzs*0.0892d0)
+        zpars(2) = 1.995d0 + lzs*(0.25d0 + lzs*0.087d0)
+        zpars(3) = 16.5d0*z**0.06d0/(1.d0 + (1.0d-04/z)**1.27d0)
+        zpars(4) = MAX(6.11044d0 + 1.02167d0*lzs, 5.d0)
+        zpars(5) = zpars(4) + 1.8d0
+        zpars(6) = 5.37d0 + lzs*0.135d0
+!        zpars(7) = c(1) + lzs*(c(2) + lzs*(c(3) + lzs*(c(4) + lzs*c(5))))
+!        zpars(8) = MAX(0.95d0,MAX(0.95d0-(10.d0/3.d0)*(z-0.01d0),
+!        &           MIN(0.99d0,0.98d0-(100.d0/7.d0)*(z-0.001d0))))
+        !CALL star(kw,zpars(2),zpars(2),tm,tn,tscls,lums,GB,zpars)
+        !zpars(9) = mcgbf(lums(3),GB,lums(6))
+        !zpars(10) = mcgbf(lums(4),GB,lums(6))
+        !* set the hydrogen and helium abundances
+        zpars(11) = 0.76d0 - 3.d0*z
+        zpars(12) = 0.24d0 + 2.d0*z
+        !* set constant for low-mass CHeB stars
+        !zpars(13) = rminf(zpars(2))/
+        !&            rgbf(zpars(2),lzahbf(zpars(2),zpars(9),zpars(2)))
+
+        zpars(14) = z**0.4d0
+
+    end subroutine
 end module z_support

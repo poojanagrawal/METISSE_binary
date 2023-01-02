@@ -100,14 +100,12 @@ subroutine zcnsts(z,zpars)
     !TODO: check for monotonicity of initial masses
     if (debug) print*,s% initial_mass
 
-    !sets z parameters and cutoff masses
+    !first calculate it SSE way as a default
+    call calculate_sse_zpars(z,zpars)
+
+    !then reset z parameters where available
+    !calculate cutoff masses
     call set_zparameters(zpars)
-    
-    !TODO: make user definable?
-    zpars(11) = 0.76d0 - 3.d0*z
-    zpars(12) = 0.24d0 + 2.d0*z
-    Z04 = initial_Z**0.4
-    zpars(14) = initial_Z**0.4
 
     if (direct_call) then
         call set_remnant_scheme()

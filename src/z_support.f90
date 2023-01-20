@@ -771,14 +771,6 @@ module z_support
         enddo
     end subroutine set_star_type_from_label
 
-    !ZPARS
-    !finds critical masses and their locations
-    !1; M below which hook doesn't appear on MS, Mhook. 3
-    !2; M above which He ignition occurs non-degenerately, Mhef. 4
-    !3; M above which He ignition occurs on the HG, Mfgb. 5
-    !4; M below which C/O ignition doesn't occur, Mup. 6
-    !5; M above which C ignites in the centre, Mec. 7
-    
     subroutine set_zparameters(zpars)
         real(dp), intent(out) :: zpars(20)
         real(dp) :: old_co_frac,co_fraction,change_frac
@@ -872,18 +864,20 @@ module z_support
                 !determining Mup
                 if ((.not. defined(Mcrit(6)% mass)) .and. smass<8.0) then
 !                    j_tagb = min(len_track,cCBurn_EEP,TPAGB_EEP)         !end of agb  min(cCBurn,TPAGB)
-                    j_tagb = min(cCBurn_EEP,TPAGB_EEP)
-                    co_fraction = s(i)% tr(i_c12,j_tagb)+s(i)% tr(i_o16,j_tagb)
-                    if (old_co_frac>0.0) then
-                        change_frac = abs(co_fraction-old_co_frac)
-                        change_frac = change_frac/old_co_frac
-                        if (change_frac>0.01) then
-                            Mcrit(6)% mass = smass
-                            Mcrit(6)% loc = i
-                            if (debug) print*,"Mup",smass,i
+                    if (i_c12>0 .and. i_o16 >0) then
+                        j_tagb = min(cCBurn_EEP,TPAGB_EEP)
+                        co_fraction = s(i)% tr(i_c12,j_tagb)+s(i)% tr(i_o16,j_tagb)
+                        if (old_co_frac>0.0) then
+                            change_frac = abs(co_fraction-old_co_frac)
+                            change_frac = change_frac/old_co_frac
+                            if (change_frac>0.01) then
+                                Mcrit(6)% mass = smass
+                                Mcrit(6)% loc = i
+                                if (debug) print*,"Mup",smass,i
+                            endif
                         endif
-                    endif
                     old_co_frac = co_fraction
+                    endif
                 endif
             endif
 
@@ -923,25 +917,34 @@ module z_support
         !picks up the first or second track, which can lead to errors later,
         !hence those values need to be reverted
 
-        do i =2,size(Mcrit)-1
+        do i = 2,size(Mcrit)-1
             if (Mcrit(i)% mass <= Mcrit(1)% mass) then
                 Mcrit(i)% mass= -1.d0
                 Mcrit(i)% loc = 0
             endif
         end do
 
-        if (Mcrit(6)% loc > 1 .and. Mcrit(6)% loc < Mcrit(7)% loc) then
-            j_bagb = min(s(Mcrit(6)% loc-1)% ntrack,TA_cHeB_EEP)
-            Mup_core = s(Mcrit(6)% loc-1)% tr(i_he_core,j_bagb)
-        else
-            j_bagb = min(s(Mcrit(1)% loc)% ntrack,TA_cHeB_EEP)
-            Mup_core = s(Mcrit(1)% loc)% tr(i_he_core,j_bagb)
+        Mcrit(7)% loc = max(Mcrit(7)% loc-1,1)
+        j_bagb = min(s(Mcrit(7)% loc)% ntrack,TA_cHeB_EEP)
+        Mec_core = s(Mcrit(7)% loc)% tr(i_he_core,j_bagb)
+        
+        !if cannot locate Mup or located it beyond Mec (which is incorrect),
+
+        if (Mcrit(6)% loc < 1 .or. Mcrit(6)% loc > Mcrit(7)% loc) then
+            !modify Mup by SSE way
+            if (debug) print*, 'Mcrit(6)/Mup not located, defaulting to Mup= Mec-1.8'
+            Mcrit(6)% mass = Mcrit(7)% mass - 1.8d0
+            call index_search (num_tracks, mass_list, Mcrit(6)% mass, Mcrit(6)% loc)
+            Mcrit(6)% loc = min(Mcrit(6)% loc,Mcrit(7)% loc-1)
+            Mcrit(6)% mass = s(Mcrit(6)% loc)% initial_mass
+            Mcrit(6)% loc = Mcrit(6)% loc +1 !one is reduced later for normal cases
+print*,Mcrit(6)% mass,Mcrit(6)% loc
         endif
 
-        if (Mcrit(7)% loc > 1) then
-            j_bagb = min(s(Mcrit(7)% loc-1)% ntrack,TA_cHeB_EEP)
-            Mec_core = s(Mcrit(7)% loc-1)% tr(i_he_core,j_bagb)
-        endif
+        Mcrit(6)% loc = max(Mcrit(6)% loc-1,1)
+
+        j_bagb = min(s(Mcrit(6)% loc)% ntrack,TA_cHeB_EEP)
+        Mup_core = s(Mcrit(6)% loc)% tr(i_he_core,j_bagb)
 
 !        Mup_core = 1.7816
 !        Mec_core = 2.3660
@@ -1020,6 +1023,14 @@ module z_support
             list(i) = val
         end do
     end subroutine sort
+
+    !ZPARS
+    !finds critical masses and their locations
+    !1; M below which hook doesn't appear on MS, Mhook. 3
+    !2; M above which He ignition occurs non-degenerately, Mhef. 4
+    !3; M above which He ignition occurs on the HG, Mfgb. 5
+    !4; M below which C/O ignition doesn't occur, Mup. 6
+    !5; M above which C ignites in the centre, Mec. 7
 
     subroutine calculate_sse_zpars(z,zpars)
 

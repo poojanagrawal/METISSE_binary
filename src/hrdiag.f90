@@ -21,7 +21,7 @@
     if(present(id)) idd = id
     t => tarr(idd)
     
-!if (kw>1) print*,"started hrdiag",mt,mc,aj,kw
+!if (kw>3) print*,"started hrdiag",mt,mc,aj,kw
 
     end_of_file = .false. !this is just the end of eep track, different to t_end defined in evolv1.f90
 

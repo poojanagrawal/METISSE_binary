@@ -36,7 +36,8 @@ center_gamma ! plasma interaction parameter
 center h1
 center he4
 center c12
-center o16
+!center o16
 
+rad_conv_envelope
 mass_conv_envelope
 envelope_binding_energy

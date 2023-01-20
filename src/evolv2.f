@@ -2088,7 +2088,7 @@
             bpp(jp,7) = ecc
             bpp(jp,8) = rad(1)/rol(1)
             bpp(jp,9) = rad(2)/rol(2)
-            bpp(jp,10) = 14.0
+            bpp(jp,10) = 14.0  !'BEG BSS'
          endif
 *
  90   continue

@@ -25,6 +25,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr=0
 
     debug = .false.
+!    if ((id == 1) .and. (kw==4))debug = .true.
 
 !    if (kw<=5)  print*, "in star",mass,mt,kw,id,t% pars% core_mass
     if (kw<10 .and. debug) print*, "in star", mass,mt,kw,id
@@ -67,7 +68,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     if (t% pars% core_mass.ge.mt) then
                         call calculate_He_timescales(t)
                         call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
-                        if (debug)print*, 'star has lost envelope, exiting star'
+                        if (debug)print*, 'star has lost envelope, exiting star',t% pars% core_mass,mt
                         nullify(t)
                         return
                     endif
@@ -81,7 +82,9 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                         ! kw=0,1: main-sequence star, rewrite with new track
                         if (debug)print*, 'main-sequence star, rewrite with new track'
                         call interpolate_mass(t% initial_mass,idd)
-                        if (t% ntrack<nt) print*, '***WARNING: track length reduced***',nt,t% ntrack
+                        if (t% ntrack<nt) print*, '***WARNING: track length reduced***',t% initial_mass,nt,t% ntrack
+                        
+
                         ! Calculate timescales and assign SSE phases (Hurley et al.2000)
                         call calculate_phases_and_times(t)
                         t% times_new = t% times
@@ -104,7 +107,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                             call write_eep_track(t,mt)
                         end if
                         
-                        if (t% ntrack<nt) print*, '***WARNING: track length reduced***',nt,t% ntrack
+                        if (t% ntrack<nt) print*, '**WARNING: track length reduced**',t% initial_mass,nt,t% ntrack
 
                         call calculate_phases_and_times(t)
 

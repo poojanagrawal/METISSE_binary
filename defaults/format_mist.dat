@@ -41,7 +41,7 @@
     !when fix_track is true in evolve.in
 
     !for M<Mec
-    low_mass_final_eep = 1409
+    low_mass_final_eep = 808
     !for stars M>=Mec
     high_mass_final_eep = 808
 
@@ -71,7 +71,7 @@
     co_core_radius = 'c_core_radius'        !in solar units (cannout use log)
     
     mass_conv_envelope = 'mass_conv_envelope'    !in solar units
-    radius_conv_envelope = ''
+    radius_conv_envelope = 'rad_conv_envelope'    !in solar units
     moment_of_inertia = ''
     
     

@@ -14,13 +14,11 @@ module interp_support
     contains
 
     !   interpolates a new track given initial mass
-    subroutine interpolate_mass(mass,id,icolumn)
+    subroutine interpolate_mass(mass,id)
         implicit none
         real(dp), intent(in) :: mass
         type(track), pointer :: t
-        integer, intent(in), optional :: icolumn
         integer, intent(in), optional :: id
-        integer :: jstart, jend
         
         integer :: iseg, m,keyword,min_index
         type(eep_track), pointer :: a(:)
@@ -28,30 +26,21 @@ module interp_support
         integer :: i, j, k, mlo, mhi,ierr
 
     
-        a=>NULL()
- 		t => NULL()
+        a => NULL()
+        t => tarr(1)
         if(present(id))then
         	t => tarr(id)
-   		else
-        	t => tarr(1)
     	endif
     
         debug_mass = .false.
         ierr=0
+!if (t% ntrack<nt) print*, '***WARNING: track length reduced***',t% initial_mass,nt,t% ntrack
 
         !this line is to avoid array length problem while multiple calls to fix-track
         if (allocated(t% tr)) call deallocate_arrays(t)
         
         !   takes a set of EEP-defined tracks and find tracks for interpolation (a)
         call findtracks_for_interpolation(mass,a,iseg,m,min_index,keyword)
-
-        if (present(icolumn)) then
-            jstart = icolumn
-            jend = icolumn
-        else
-            jstart = 1
-            jend =  t% ncol
-        endif
 
         !   interpolate the new track for given initial mass
         dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
@@ -523,10 +512,9 @@ module interp_support
         dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
 
         kw = t% pars% phase
-    !.and. abs(t% times(kw)-t% times_new(kw))>tiny
         !TODO: this is temporary, to avoid NaN during interpolation
-        if (kw ==3) then
-            if (t% times(kw)-t% times(kw-1)==0.d0) kw =4
+        if (kw >1) then
+            if(t% times(kw)-t% times(kw-1)<1d-12) kw = kw+1
         endif
         if (kw>1 .and. kw<6) then
             !scale the input age for the new track
@@ -537,7 +525,7 @@ module interp_support
             age2 = t% times_new(kw-1)+(frac*them_new)
             n_pass = 2
             if (t% irecord>0 .and. debug) print*, "in interp2", age2, t% pars% age,kw
-!print*,t% times(kw),t% times(kw-1),t% times_new(kw),t% times_new(kw-1)
+    !print*,t% times(kw),t% times(kw-1),t% times_new(kw),t% times_new(kw-1)
         !t% pars% mass,t% pars% core_mass,t% times_new(kw)
         else
             age2 = input_age
@@ -581,8 +569,8 @@ module interp_support
                 if (interpolate) then
                     new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
                     if (new_line(j,1)/=new_line(j,1)) then
-                    print*, 'Warning: NaN encountered ',t% initial_mass,input_age,j,mhi,mlo
-                    stop
+                    print*, '**Warning: NaN encountered** ',t% initial_mass,input_age,j,mhi,mlo
+!                    stop
                     endif
                 endif
             end do

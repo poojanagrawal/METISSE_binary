@@ -29,12 +29,16 @@
       external mcheif,mcagbf,mheif,mbagbf,mcgbf,lmcgbf,lbgbf,lbgbdf
       REAL*8 dtm
       COMMON /TIMESTEP/ dtm
+      LOGICAL dbg
+
 *
 * This should only be entered with KW = 3, 4, 5, 6 or 9
 *
 * First we check that we don't have a CheB star 
 * with too small a core mass.
-        print*, 'in gntage',kw
+        dbg = .false.
+
+        if (dbg) print*, 'in gntage',kw
       if(kw.eq.4)then
 * Set the minimum CHeB core mass using M = Mflash
          mcy = mcheif(zpars(2),zpars(2),zpars(10))
@@ -298,7 +302,7 @@
          aj = tscls(2) + aj*tscls(3)
       endif
 *
-        print*,'exiting gntage: aj', aj
+      if (dbg) print*,'exiting gntage: aj', aj
       RETURN
       END
 ***

@@ -122,7 +122,7 @@
 * Read in parameters and set coefficients which depend on metallicity. 
 *
          READ(10,*,iostat=ierr)k1,k2,m1,m2,tb,ecc,age1,tmax
-         print*, 'ip',i,k1,k2,m1,m2,tb,ecc,tmax,ierr
+*         print*, 'ip',i,k1,k2,m1,m2,tb,ecc,tmax,ierr
          ecc0 = ecc
          tb0 = tb/yeardy
          sep0 = aursun*(tb0*tb0*(mass(1) + mass(2)))**(1.d0/3.d0)

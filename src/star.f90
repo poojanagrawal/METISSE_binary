@@ -25,7 +25,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr=0
 
     debug = .false.
-!    if ((id == 1) .and. (kw==4))debug = .true.
+!    if ((id == 1) .and. (kw>=4))debug = .true.
 
 !    if (kw<=5)  print*, "in star",mass,mt,kw,id,t% pars% core_mass
     if (kw<10 .and. debug) print*, "in star", mass,mt,kw,id
@@ -66,8 +66,8 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     !next check whether star lost its envelope during binary interaction
                     !to avoid unneccesssary call to interpolation routine
                     if (t% pars% core_mass.ge.mt) then
-                        call calculate_He_timescales(t)
-                        call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
+!                        call calculate_He_timescales(t)
+!                        call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
                         if (debug)print*, 'star has lost envelope, exiting star',t% pars% core_mass,mt
                         nullify(t)
                         return

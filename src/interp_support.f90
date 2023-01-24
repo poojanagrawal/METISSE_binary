@@ -817,8 +817,8 @@ module interp_support
         Mupp = min_index
     endif
     if(Mlow<1 .or. Mupp > num_list) then
-        print*,"Error: beyond the bounds for interpolation"
-        print*, "Mlow,Mupp,num_list,mnew,eep_m,kw", &
+        if (debug) print*,"Error: beyond the bounds for interpolation"
+        if (debug) print*, "Mlow,Mupp,num_list,mnew,eep_m,kw", &
                 Mlow,Mupp,num_list,mnew,eep_m,kw!mlist
         if (Mlow<1) Mlow = 1
         if (Mupp> num_list) Mupp = num_list
@@ -826,11 +826,11 @@ module interp_support
         ierr = -1
         return
     endif
-    if (kw<10 .and. debug)  print*, "Mup =", mlist(Mupp), "mlow", mlist(Mlow),"mnew",mnew
+    if (debug)  print*, "Mup =", mlist(Mupp), "mlow", mlist(Mlow),"mnew",mnew
     alfa = (Mnew - mlist(Mlow))/(mlist(Mupp) - mlist(Mlow))
     beta = 1d0 - alfa
     t% initial_mass = alfa*mlist1(Mupp) + beta*mlist1(Mlow)
-    if (kw<10 .and. debug) print*, "new ini mass",t% initial_mass, mlist1(Mupp), mlist1(Mlow), eep_m
+    if (debug) print*, "new ini mass",t% initial_mass, mlist1(Mupp), mlist1(Mlow), eep_m
 
     deallocate(mlist,mlist1)
     deallocate(age_list)

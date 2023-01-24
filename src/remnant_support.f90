@@ -424,10 +424,11 @@
     logical :: debug
 
     debug = .false.
-    t% lost_envelope = (t% pars% core_mass>= t% pars% mass) &
+    t% lost_envelope = (t% pars% core_mass.ge.t% pars% mass) &
                         .or. (t% initial_mass>=10.0 .and. abs(t% pars% core_mass-t% pars% mass)<0.01)
     
 !    if (t% irecord>0)print*,"age, core mass, mass", t%  pars% age, t% pars% core_mass ,t% pars% mass
+!    print*, t% initial_mass, t% pars% core_mass.ge.t% pars% mass
     if(t% lost_envelope)then
         if (debug) print*,"Lost envelope at phase", t% pars% phase
         if (debug) print*,"age, core mass, mass", t% pars% age, t% pars% core_mass, t% pars% mass

@@ -587,6 +587,8 @@
      real(dp) :: tscls(20), zpars(20)
      real(dp) :: tau, lx,rx, rc,am,mt,mc,aj
      real(dp) :: tbagb,mass,lums1,lums2,tn
+real(dp) :: D, mx
+
      
         mass = t% zams_mass
         mt = t% pars% mass
@@ -617,7 +619,9 @@
              mc = t% pars% McHe
              tbagb = t% times(HeBurn)
              if(tn.gt.tbagb) tau = 3.d0*(aj-tbagb)/(tn-tbagb)
-             lx = lmcgbf(t% pars% McCO,t% He_pars% D, t% He_pars% Mx)
+             D = 5.5d+04/(1.d0+0.4d0* t% zams_mass**4)
+             Mx = (B/D)**(1.d0/(p-q))
+             lx = lmcgbf(t% pars% McCO,D, Mx)
              lums1 = lum_He_ZAMS(mc)
              lums2 = lum_He_MS(mc,lums1,1.d0)
              if(tau.lt.1.d0) lx = lums2*(lx/lums2)**tau

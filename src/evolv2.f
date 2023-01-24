@@ -1313,6 +1313,8 @@
 *
          m1ce = mass(j1)
          m2ce = mass(j2)
+         if (dbg) print*, 'calling comenv'
+
          CALL comenv(mass0(j1),mass(j1),massc(j1),aj(j1),jspin(j1),
      &               kstar(j1),mass0(j2),mass(j2),massc(j2),aj(j2),
      &               jspin(j2),kstar(j2),zpars,ecc,sep,jorb,coel,

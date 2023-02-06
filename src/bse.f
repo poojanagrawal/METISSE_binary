@@ -205,10 +205,12 @@
      &            bcm(j,6),bcm(j,20),bcm(j,15),bcm(j,29),
      &            bcm(j,5),bcm(j,19),bcm(j,13),bcm(j,27),
      &            bcm(j,14),bcm(j,28),
+     &            bcm(j,10),bcm(j,24),
+     &            bcm(j,11),bcm(j,25),
      &            bcm(j,31),bcm(j,32)
       if(bcm(j,1).ge.0.0) goto 30
       CLOSE(23)
- 99   FORMAT(f10.4,2i3,10f10.4,5e12.4,f7.3)
+ 99   FORMAT(f10.4,2i3,10f10.4,10e12.4,f7.3)
  999  FORMAT(f10.4,2f10.4,1p,2e12.4)
 *
 * The bpp array acts as a log, storing parameters at each change

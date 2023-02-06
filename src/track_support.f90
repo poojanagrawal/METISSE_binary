@@ -255,6 +255,7 @@ module track_support
     subroutine save_values(new_line,pars)
         type(star_parameters) :: pars
         real(dp),intent (in) :: new_line(:,:)
+real(dp) :: lim_R
         pars% mass = new_line(i_mass,1)
         pars% McHe = new_line(i_he_core,1)
         pars% McCO = new_line(i_co_core,1)
@@ -264,6 +265,11 @@ module track_support
         pars% Teff = 10**(pars% log_Teff)
         pars% log_R = new_line(i_logR,1)
     !        pars% log_R = 2*(3.762+(0.25*pars% log_L)-pars% log_Teff )
+!Todo: also limit radius to prevent track from going beyond the hayashi
+!limit during extrapolation
+lim_R = 2*(3.762+(0.25*pars% log_L)-3.555 )
+if (pars% log_R>lim_R) pars% log_R = lim_R
+
         pars% radius = 10**pars% log_R
         if (pars% phase <= EAGB) then
             pars% core_mass = pars% McHe

@@ -935,7 +935,8 @@ module z_support
             if (debug) print*, 'Mcrit(6)/Mup not located, defaulting to Mup= Mec-1.8'
             Mcrit(6)% mass = Mcrit(7)% mass - 1.8d0
             call index_search (num_tracks, mass_list, Mcrit(6)% mass, Mcrit(6)% loc)
-            Mcrit(6)% loc = min(Mcrit(6)% loc,Mcrit(7)% loc-1)
+            !Mup cannot exceed Mec
+            Mcrit(6)% loc = max(1,min(Mcrit(6)% loc,Mcrit(7)% loc-1))
             Mcrit(6)% mass = s(Mcrit(6)% loc)% initial_mass
             Mcrit(6)% loc = Mcrit(6)% loc +1 !one is reduced later for normal cases
 print*,Mcrit(6)% mass,Mcrit(6)% loc
@@ -965,6 +966,7 @@ print*,Mcrit(6)% mass,Mcrit(6)% loc
         Z04 = zpars(14)
 
         if (debug) print*, 'zpars',  zpars(1:5)
+
 
 !        call sort(Mcrit% loc, m_cutoff)
     end subroutine set_zparameters

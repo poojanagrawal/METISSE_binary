@@ -5,8 +5,8 @@ SRC_DIR=$(BSE_DIR)/src
 #com
 FC=gfortran
 DEBUG=-g3 -fbacktrace -fcheck=all -fbounds-check
-WARN=-Wall -pedantic -Wno-tabs -Wextra
-# -Wconversion
+WARN=-Wall -pedantic -Wno-tabs -Wno-maybe-uninitialized 
+# -Wconversion -Wextra
 
 #Optimization flag
 OPT=-O3

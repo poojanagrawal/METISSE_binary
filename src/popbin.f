@@ -210,7 +210,7 @@
           kstar(1) = INT(bpp(j,4))
           kstar(2) = INT(bpp(j,5))
           bkw = INT(bpp(j,10))
-
+          if (bpp(j,6) >= 1e+8) bpp(j,6) = 9.99e+7
           WRITE(123,101)(bpp(j,k),k=1,3),kstar,(bpp(j,k),k=6,9),bkw
           goto 52
 60        continue

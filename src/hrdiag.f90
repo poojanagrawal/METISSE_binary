@@ -21,7 +21,10 @@
     if(present(id)) idd = id
     t => tarr(idd)
     
-!if (kw>3) print*,"started hrdiag",mt,mc,aj,kw
+!    if ((id == 1))debug = .true.
+
+    if (debug) print*, '-----------HRDIAG-------------'
+    if (debug) print*,"started hrdiag",mt,mc,aj,kw,mc>=mt
 
     end_of_file = .false. !this is just the end of eep track, different to t_end defined in evolv1.f90
 
@@ -43,7 +46,7 @@
             if (t% post_agb) then
                 call evolve_after_agb(t)
             elseif (check_ge(t% pars% age,t% tr(i_age,t% ntrack))) then
-                if (kw<5) print*,'WARNING: possible early end of file due to incomplete track beyond phase',kw
+                if (kw<5) print*,'WARNING: possible early end of file due to incomplete track beyond phase',kw,t% initial_mass
                 end_of_file = .true.
                 if (debug) print*,"end of file:aj,tn ",t% pars% age,t% tr(i_age,t% ntrack),t% tr(i_age2,t% ntrack)
                 call check_remnant_phase(t)
@@ -51,6 +54,8 @@
                 t% pars% core_radius = -1.0
                 call interpolate_age(t,t% pars% age)
                 if (irecord>0 .and. debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
+!print*, t% pars% core_mass,t% pars% mass,mt
+
                 t% pars% mass = mt
 !                if (kw>=5 .and. irecord>0) print*, "mass",mt,mc,t% pars% core_mass,t% pars% McCO,kw
                 !check if phase has changed
@@ -170,7 +175,9 @@
         !tm and tn get calculated in star.f90
     endif
     if (irecord>0 .and. debug) print*,"finished hrdiag",mt,mc,aj,kw,id
+!if (kw>1 .and. mc<=0.0) stop
 !    print*,"finished hrdiag",t% pars% mass, t% pars% core_mass,t% pars% age
+!    if ((id == 1) .and. (kw>1 .and. mc<=0.0)) stop
 
     
     nullify(t)

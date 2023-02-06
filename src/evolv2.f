@@ -782,6 +782,8 @@
 *
          if(kw.ne.kstar(k).and.kstar(k).le.12.and.
      &      (kw.eq.13.or.kw.eq.14))then
+            if (dbg)  print*, 'calling kick1'
+            
             if(sgl)then
                CALL kick(kw,mass(k),mt,0.d0,0.d0,-1.d0,0.d0,vs)
             else
@@ -887,6 +889,8 @@
 *
          do 507 , k = 1,2
             rol(k) = rl(q(k))*sep
+*            print*,'rol1',rol(k),rl(q(k)),q(k)
+
             if(ABS(dtm).gt.tiny)then
                rdot(k) = rdot(k) + (rol(k) - rol0(k))/dtm
                rol0(k) = rol(k)
@@ -1584,7 +1588,7 @@
                   bpp(jp,8) = rad(1)/rol(1)
                   bpp(jp,9) = rad(2)/rol(2)
                   bpp(jp,10) = 8.0
-                  if (dbg) print*, 'MERGER'
+                  if (dbg) print*, 'MERGER/gntage'
                   if(j1.eq.2)then
                      bpp(jp,2) = mt2
                      bpp(jp,3) = mass(j1)
@@ -1644,7 +1648,7 @@
                   bpp(jp,8) = rad(1)/rol(1)
                   bpp(jp,9) = rad(2)/rol(2)
                   bpp(jp,10) = 8.0
-                  if (dbg) print*, 'MERGER'
+                  if (dbg) print*, 'MERGER/gntage'
                   if(j1.eq.2)then
                      bpp(jp,2) = mt2
                      bpp(jp,3) = mass(j1)
@@ -1965,7 +1969,7 @@
 * the main sequence.
 *
       if(kstar(j1).le.2.or.kstar(j1).eq.7)then
-         if (dbg) print*, "reju, calling star",j1
+         if (dbg) print*, "reju, calling star",j1,aj(j1),kstar(j1)
          CALL star(kstar(j1),mass0(j1),mass(j1),tmsnew,tn,tscls,
      &             lums,GB,zpars,dtm,j1)
          if(kstar(j1).eq.2)then
@@ -1975,10 +1979,11 @@
             aj(j1) = tmsnew/tms(j1)*aj(j1)
          endif
          epoch(j1) = tphys - aj(j1)
+         if (dbg) print*, "after rejuvenation",j1,aj(j1)
       endif
 *
       if(kstar(j2).le.2.or.kstar(j2).eq.7)then
-        if (dbg) print*, "reju, calling star",j2
+        if (dbg) print*, "reju, calling star",j2,aj(j2)
          CALL star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,tscls,
      &             lums,GB,zpars,dtm,j2)
          if(kstar(j2).eq.2)then
@@ -1991,6 +1996,7 @@
             aj(j2) = tmsnew/tms(j2)*aj(j2)
          endif
          epoch(j2) = tphys - aj(j2)
+         if (dbg) print*, "after rejuvenation",j2,aj(j2)
       endif
 *
 * Obtain the stellar parameters for the next step.
@@ -2023,7 +2029,10 @@
          if(kw.ne.kstar(k).and.kstar(k).le.12.and.
      &      (kw.eq.13.or.kw.eq.14))then
             dms(k) = mass(k) - mt
+            if (dbg) print*, 'calling kick2'
+*            print*, mass(k),mt,mass(3-k),ecc,sep,jorb,vs
             CALL kick(kw,mass(k),mt,mass(3-k),ecc,sep,jorb,vs)
+*            print*, mass(k),mt,mass(3-k),ecc,sep,jorb,vs
             if(ecc.gt.1.d0)then
                kstar(k) = kw
                mass(k) = mt
@@ -2098,6 +2107,8 @@
       do 100 , k = 1,2
          q(k) = mass(k)/mass(3-k)
          rol(k) = rl(q(k))*sep
+*         print*,'rol2',rol(k),rl(q(k)),q(k),sep
+*            if (rol(k)<1.0) stop
  100  continue
       if(rad(j1).gt.rol(j1)) radx(j1) = MAX(radc(j1),rol(j1))
       do 110 , k = 1,2

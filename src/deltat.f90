@@ -4,19 +4,17 @@
     use track_support
     integer, intent(in), optional :: id
 
-    INTEGER :: kw
+    INTEGER :: kw, idd
     REAL(dp) :: age,tm,tn,tscls(20)
     REAL(dp) :: pts1,pts2,pts3
     COMMON /POINTS/ pts1,pts2,pts3
     
     real(dp) :: dtr,dt, tMS_hook
-    type(track), pointer :: t => NULL()
+    type(track), pointer :: t
     
-    if(present(id))then
-        t=> tarr(id)
-    else
-        t=> tarr(1)
-    endif
+        idd = 1
+        if(present(id)) idd = id
+        t => tarr(idd)
     
         dtr = -1.d0
         dt = -1.d0
@@ -90,7 +88,7 @@
 !            if (kw==5) print*, t% nuc_time, tn
             if (dtr<=0.0) then
                 !open a file and write the error, continue the code
-                print*,"fatal error: invalid timestep", dtr ,"for phase", t% pars% phase
+                print*,"fatal error: invalid timestep", dtr ,"for phase and id", t% pars% phase,id
                 print*,"t% zams_mass, t% nuc_time, age, t% pars% mass"
                 print*,t% zams_mass, t% nuc_time, age, t% pars% mass
                 stop

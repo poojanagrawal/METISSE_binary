@@ -41,28 +41,31 @@
 
     debug_rem = .false.
     mc_max= 0.d0
+    Mc11 = 0.d0
         !mcmax1 = 0.d0
     j_bagb=min(t% ntrack, TA_cHeB_EEP)
     Mcbagb = t% tr(i_he_core, j_bagb)
 
-        if (t% pars% phase <=6) then       !without envelope loss
+        if (t% pars% phase>1 .and.t% pars% phase <=6) then       !without envelope loss
             Mc11 = 0.773* Mcbagb-0.35
             mc_max = MAX(M_ch,Mc11)
             !mc = MAX(mc_max,mc_threshold)
             !mc_max = MIN(pars% mass,mc_max)
             mc_threshold = t% pars% McCO
-        else
+        elseif (t% pars% phase ==8 .or. t% pars% phase ==9) then
             mc_max = max_core_mass_he(t% pars% mass, t% zams_mass)
             mc_threshold = t% pars% core_mass
             Mcbagb= t% zams_mass
+        else
+            return
         endif
 
         if (mc_max<=0.0) then
-            print*,"fatal error: incorrect mc_max ", mc_max
+            print*,"fatal error: incorrect mc_max ", mc_max, t% zams_mass
             STOP
         endif
 
-        if(mc_threshold>mc_max .or. abs(mc_max- mc_threshold)<tiny .or. end_of_file)then
+        if(mc_threshold>=mc_max .or. abs(mc_max-mc_threshold)<tiny .or. end_of_file)then
             !mc = MIN(mc_max,mc_threshold)
             t% pars% core_mass = mc_threshold
             t% pars% age_old = t% pars% age
@@ -70,7 +73,7 @@
             if (debug_rem) then
                 print*, "In remnant section"
                 print*, "mass, core_mass, McCO, mc_max, 0.773*mcbagb-0.35"
-                print*, t% pars% mass, t% pars% core_mass, t% pars% McCO, mc_max, Mc11
+                print*, t% pars% mass, t% pars% core_mass, t% pars% McCO, mc_max, Mc11,Mcbagb
             end if
 
             !Mup_core, Mec_core are calculated in set_zparmeters routine of zfuncs
@@ -513,8 +516,8 @@
         !McHeI= He_McDu = core_mass_He_GB(lums(4), D,lx)   !core mass at He Ignition
         !print*, t% pars% mass, t% McHeI
 
-        !TODO -- this step needs to checked specially for binaries
-        ! TODO -- also evolve this HeWD
+        !TODO: -- this step needs to checked specially for binaries
+        ! TODO: -- also evolve this HeWD
 !                 j_HeI = min(t% ntrack, cHeIgnition_EEP)
 !                McHeI = t% tr(i_he_core, j_HeI)
 !                if(t% pars% mass < McHeI ) t% pars% phase = HeWD
@@ -534,9 +537,10 @@
         t% pars% McHe = t% pars% mass
         t% pars% McCO = t% pars% core_mass
     endif
+!    if (t% pars% phase>=He_HG) call check_remnant_phase(t)
+
     if (debug) print*,"End: Phase",t% pars% phase ," core mass",t% pars% core_mass
 !        print*,"lum", t% pars% luminosity, "rad", t% pars% radius
-
     end subroutine
 
     subroutine set_remnant_scheme()
@@ -587,7 +591,7 @@
      real(dp) :: tscls(20), zpars(20)
      real(dp) :: tau, lx,rx, rc,am,mt,mc,aj
      real(dp) :: tbagb,mass,lums1,lums2,tn
-real(dp) :: D, mx
+     real(dp) :: D, mx
 
      
         mass = t% zams_mass

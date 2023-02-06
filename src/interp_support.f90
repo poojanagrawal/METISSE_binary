@@ -99,7 +99,7 @@ module interp_support
 
         !   check if mass and age are monotonic
         call smooth_track(t)
-        
+
         !   recalibrate age from ZAMS and calculate timescales
         !   also assign SSE phases (Hurley et al.2000)
 !        call calculate_phases_and_times(t)
@@ -130,7 +130,7 @@ module interp_support
         real(dp), pointer :: mass_list(:)
 
         sa => NULL()
-
+        a => NULL()
         m = 1
         m_low = 0
         num_list = 0
@@ -491,6 +491,7 @@ module interp_support
         real(dp), intent(out), optional :: val
         integer :: jstart, jend, age_col, kw
         real(dp) ::  them, them_new, frac, age, age2
+!real(dp) :: lim_R
 
         integer, allocatable :: min_eeps(:)
         real(dp) :: f(3), dx, x(4), y(4), alfa, beta
@@ -607,6 +608,13 @@ module interp_support
         else
             call save_values(new_line,t% pars)
         endif
+
+!        if (t% pars% phase <=4) then
+!        !Todo: also limit radius to prevent track from going beyond the hayashi
+!        !limit during extrapolation
+!            lim_R = 2*(3.762+(0.25*t% pars% log_L)-3.555 )
+!            if (t% pars% log_R>lim_R) t% pars% log_R = lim_R
+!        endif
 
         if (t% pars% mass <0.0) then
             print*,"fatal error: mass <0 "
@@ -741,7 +749,7 @@ module interp_support
     end subroutine interp_4pt_pm
     
 
-    subroutine get_initial_mass_for_new_track(id, delta,ierr)
+    subroutine get_initial_mass_for_new_track(id, delta)
 
     integer, intent(in) :: id
     real(dp), intent(in) :: delta
@@ -752,9 +760,11 @@ module interp_support
     type(track), pointer :: t
     integer :: ierr
 
-    logical :: debug
+    logical :: debug , interpolate_new
 
     debug = .false.
+    interpolate_new = .false.
+
     t => tarr(id)
     !nt is the length of the track before new interpolation
     eep_m = -1
@@ -832,6 +842,8 @@ module interp_support
     t% initial_mass = alfa*mlist1(Mupp) + beta*mlist1(Mlow)
     if (debug) print*, "new ini mass",t% initial_mass, mlist1(Mupp), mlist1(Mlow), eep_m
 
+
+    if (kw>1) interpolate_new = .true.
     deallocate(mlist,mlist1)
     deallocate(age_list)
 

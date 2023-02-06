@@ -25,10 +25,11 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr=0
 
     debug = .false.
-!    if ((id == 1) .and. (kw>=4))debug = .true.
+!    if ((id == 1) .and. (kw>=6))debug = .true.
 
-!    if (kw<=5)  print*, "in star",mass,mt,kw,id,t% pars% core_mass
-    if (kw<10 .and. debug) print*, "in star", mass,mt,kw,id
+    if (debug) print*, '-----------STAR---------------'
+    if (debug) print*, "in star", mass,mt,kw,id
+
 
     delta = 0.d0
     t% zams_mass = mass
@@ -59,22 +60,21 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                 delta = delta -t% pars% delta
                 if (debug) print*,'delta in star',kw, t% pars% mass, mt,delta
 
-                if (abs(delta) .gt. 1.0d-6) then
-                    if (kw<10 .and. debug) print*, "mass loss in interpolate mass called for", &
+                !next check whether star lost its envelope during binary interaction
+                !to avoid unneccesssary call to interpolation routine
+                if (t% pars% core_mass.ge.mt) then
+                    if (debug) print*, 'star has lost envelope, exiting star',t% pars% core_mass,mt
+!                call calculate_He_timescales(t)
+!                call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
+!                nullify(t)
+!                return
+!                endif
+                elseif (abs(delta) .gt. 1.0d-6) then
+                    if (debug) print*, "mass loss in interpolate mass called for", &
                                                     t% initial_mass,delta,t% tr(i_mass,1),id
-
-                    !next check whether star lost its envelope during binary interaction
-                    !to avoid unneccesssary call to interpolation routine
-                    if (t% pars% core_mass.ge.mt) then
-!                        call calculate_He_timescales(t)
-!                        call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
-                        if (debug)print*, 'star has lost envelope, exiting star',t% pars% core_mass,mt
-                        nullify(t)
-                        return
-                    endif
-                    t% times_new =-1.0
+                    t% times_new = -1.0
                     nt = t% ntrack
-                    call get_initial_mass_for_new_track(idd, delta,ierr)
+                    call get_initial_mass_for_new_track(idd, delta)
                     if (debug)print*, 'initial mass for the new track',t% initial_mass
 
     !                if (ierr<0) return
@@ -142,8 +142,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     t% MS_time = tm
     t% nuc_time = tn
 
-    if (kw<10 .and. debug) print*, "in star end", mt,delta,kw,tm
-    !    print*, "in star", tm, t% MS_time, tn, t% nuc_time, kw
+    if (debug) print*, "in star end", mt,delta,kw,tm,tscls(1),tn
     nullify(t)
     return
 end subroutine star

@@ -21,10 +21,10 @@
     if(present(id)) idd = id
     t => tarr(idd)
     
-!    if ((id == 1))debug = .true.
+!    if ((id == 2))debug = .true.
 
     if (debug) print*, '-----------HRDIAG-------------'
-    if (debug) print*,"started hrdiag",mt,mc,aj,kw,mc>=mt
+    if (debug) print*,"started hrdiag",mt,mc,aj,kw,tn
 
     end_of_file = .false. !this is just the end of eep track, different to t_end defined in evolv1.f90
 
@@ -76,8 +76,6 @@
                     call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
                 endif
             endif
-            
-            
         case(He_MS)
             call evolve_after_envelope_loss(t)
             rzams = t% He_pars% Rzams

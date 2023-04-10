@@ -133,7 +133,7 @@ contains
         dLdTe = diff_L/diff_Te
 
         peak = maxloc(dLdTe,dim = 1)
-        !print*,"peak = ",peak, Teff(peak)
+!        print*,"peak = ",mass,peak, Teff(peak),j_diff
 
         if(peak>=j_diff) return
         if (dLdTe(peak)>0.0 .and. dLdTe(peak+1)<0.0) then         !checking for oscillations
@@ -339,6 +339,7 @@ contains
 !TODO: Next line requires a check
 !Note that this is done to avoid negative timesteps that result from more massive cores than what sse formulae predict
             mc_max = max(mc_max,t% pars% core_mass+1e-10)
+
             if(mc_max.le.Mx)then
                 Tmax = Tinf1 - (1.d0/((p-1.d0)*AHe*D))*(mc_max**(1.d0-p))
             else
@@ -352,7 +353,7 @@ contains
             t% times(8) = Tinf1     !these 8-10 here do not represent the phase numbers
             t% times(9) = Tinf2
             t% times(10) = Tx
-            if (debug) WRITE(*,*) "He timescales", tinf1, tx, tinf2, tmax
+            if (debug) WRITE(*,*) "He timescales", tinf1, tx, tinf2, tmax,t% MS_time,t% nuc_time
         return
         end subroutine calculate_He_timescales
 

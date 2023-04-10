@@ -30,10 +30,7 @@
                     dtr = t% times(1)-age
             case(HG)
                 dt = pts1*(t% times(2)-t% times(1))
-!                dt = pts1*(t% times(2)-tm)
                 dtr = t% times(2)-age
-!                dt = pts1*(tscls(1) - tm)
-!         dtr = tscls(1) - age
             case(RGB)
                 dt = pts2*(t% times(3)- t% times(2))
                 dtr = MIN(t% nuc_time,t% times(3))-age
@@ -70,6 +67,8 @@
                     dt = pts2*(t% times(9) - age)
                 endif
                 dtr = t% nuc_time -age
+                
+
             case(HeWD:NS)
                 dt = MAX(0.1d0,age*10.0)
                 dt = MAX(0.1d0,dt*10.0)
@@ -86,9 +85,9 @@
             
 !           if (kw>=5) print*,"dt dtr phase",dt,dtr,t% pars%phase,t% pars% dt
 !            if (kw==5) print*, t% nuc_time, tn
-            if (dtr<=0.0) then
+            if (t% pars% dt<=0.0) then
                 !open a file and write the error, continue the code
-                print*,"fatal error: invalid timestep", dtr ,"for phase and id", t% pars% phase,id
+                print*,"fatal error: invalid timestep", t% pars% dt ,"for phase and id", t% pars% phase,id
                 print*,"t% zams_mass, t% nuc_time, age, t% pars% mass"
                 print*,t% zams_mass, t% nuc_time, age, t% pars% mass
                 stop

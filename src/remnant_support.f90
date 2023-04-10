@@ -78,19 +78,19 @@
 
             !Mup_core, Mec_core are calculated in set_zparmeters routine of zfuncs
             if(t% pars% core_mass < M_ch)then
-                    if(Mcbagb< Mup_core)then
-                        t% pars% phase = CO_WD        !Zero-age Carbon/Oxygen White Dwarf
-                        call post_agb_parameters(t)
+                if(Mcbagb< Mup_core)then
+                    t% pars% phase = CO_WD        !Zero-age Carbon/Oxygen White Dwarf
+                    call post_agb_parameters(t)
+                else
+                    if (ec_flag>0 .and. t% pars% McCO >= 1.372)then   !1.372<= mc< 1.44
+                        t% pars% phase = NS
+                        call initialize_ECSNe(t% pars)
+                        if (debug_rem) print*,"ECSNe I: Mc< Mch, Mup> Mcbagb"
                     else
-                            if (ec_flag>0 .and. t% pars% McCO >= 1.372)then   !1.372<= mc< 1.44
-                                t% pars% phase = NS
-                                call initialize_ECSNe(t% pars)
-                                if (debug_rem) print*,"ECSNe I: Mc< Mch, Mup> Mcbagb"
-                            else
-                                t% pars% phase = ONeWD    !Zero-age Oxygen/Neon White Dwarf
-                                call post_agb_parameters(t)
-                            endif
+                        t% pars% phase = ONeWD    !Zero-age Oxygen/Neon White Dwarf
+                        call post_agb_parameters(t)
                     endif
+                endif
             else !(mc>mch)
                 !supernova 
                 if(Mcbagb < Mup_core)then

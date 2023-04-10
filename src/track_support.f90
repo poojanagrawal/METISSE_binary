@@ -356,6 +356,7 @@ end subroutine
     end function defined
 
     !same as the function 'defined' above but for integers
+    ! used for checking if locations are identified
     logical function identified(x) result(y)
         integer, intent(in) :: x
         if (abs(x-undefined_i)<=tiny) then

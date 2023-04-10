@@ -749,21 +749,21 @@ module interp_support
     end subroutine interp_4pt_pm
     
 
-    subroutine get_initial_mass_for_new_track(id, delta)
+    subroutine get_initial_mass_for_new_track(id, delta,interpolate_all)
 
     integer, intent(in) :: id
     real(dp), intent(in) :: delta
 
-    integer :: min_index,eep_m,num_list,Mupp,Mlow,i,j,nt,kw
+    integer :: min_index,num_list,Mupp,Mlow,i,j,nt,kw
     real(dp), allocatable :: mlist(:),mlist1(:), age_list(:)
     real(dp) :: Mnew,alfa,beta,them, themold, age
     type(track), pointer :: t
-    integer :: ierr
+    integer :: eep_m, eep_core
 
-    logical :: debug , interpolate_new
+    logical :: debug, interpolate_all
 
     debug = .false.
-    interpolate_new = .false.
+    interpolate_all = .false.
 
     t => tarr(id)
     !nt is the length of the track before new interpolation
@@ -833,7 +833,6 @@ module interp_support
         if (Mlow<1) Mlow = 1
         if (Mupp> num_list) Mupp = num_list
 !        stop
-        ierr = -1
         return
     endif
     if (debug)  print*, "Mup =", mlist(Mupp), "mlow", mlist(Mlow),"mnew",mnew
@@ -843,7 +842,14 @@ module interp_support
     if (debug) print*, "new ini mass",t% initial_mass, mlist1(Mupp), mlist1(Mlow), eep_m
 
 
-    if (kw>1) interpolate_new = .true.
+    if (kw<=1)then
+        interpolate_all = .true.
+!        eep_core = 0.75* TAMS_EEP
+!        if(identified(IAMS_EEP)) eep_core = IAMS_EEP
+!        if (eep_m>=eep_core) interpolate_all = .false.
+!        print*, 'eep_core', eep_core, IAMS_EEP,interpolate_all
+!TODO: need to scale age as well in the age interpolation
+    endif
     deallocate(mlist,mlist1)
     deallocate(age_list)
 

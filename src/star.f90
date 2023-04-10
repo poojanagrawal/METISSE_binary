@@ -15,7 +15,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     real(dp) :: times_old(11), nuc_old, delta,dtm! ,tnext,mnext
 
     integer :: idd, nt ,ierr
-    logical :: debug
+    logical :: debug, interpolate_all,consvR
     type(track), pointer :: t
 
     idd = 1
@@ -23,7 +23,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     t => tarr(idd)
         
     ierr=0
-
+consvR = .false.
     debug = .false.
 !    if ((id == 1) .and. (kw>=6))debug = .true.
 
@@ -64,27 +64,20 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                 !to avoid unneccesssary call to interpolation routine
                 if (t% pars% core_mass.ge.mt) then
                     if (debug) print*, 'star has lost envelope, exiting star',t% pars% core_mass,mt
-!                call calculate_He_timescales(t)
-!                call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
-!                nullify(t)
-!                return
-!                endif
                 elseif (abs(delta) .gt. 1.0d-6) then
                     if (debug) print*, "mass loss in interpolate mass called for", &
                                                     t% initial_mass,delta,t% tr(i_mass,1),id
                     t% times_new = -1.0
                     nt = t% ntrack
-                    call get_initial_mass_for_new_track(idd, delta)
+                    call get_initial_mass_for_new_track(idd, delta,interpolate_all)
                     if (debug)print*, 'initial mass for the new track',t% initial_mass
 
-    !                if (ierr<0) return
-                    if (kw<=1) then
-                        ! kw=0,1: main-sequence star, rewrite with new track
+                    if (interpolate_all) then
+                        ! kw=0,1: main-sequence star, rewrite all columns with new track
                         if (debug)print*, 'main-sequence star, rewrite with new track'
                         call interpolate_mass(t% initial_mass,idd)
                         if (t% ntrack<nt) print*, '***WARNING: track length reduced***',t% initial_mass,nt,t% ntrack
                         
-
                         ! Calculate timescales and assign SSE phases (Hurley et al.2000)
                         call calculate_phases_and_times(t)
                         t% times_new = t% times
@@ -101,6 +94,8 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                         nuc_old = t% nuc_time
                         age_list = t% tr(i_age,:)
                         rlist = t% tr(i_logR,:)
+                        if (t% pars% cenv_frac.ge.0.2) consvR= .true.
+!                            .and.(t% pars% env_frac.ge.0.2)
                         call interpolate_mass(t% initial_mass,idd)
                        !write the mass interpolated track if write_eep_file is true
                         if (kw>=1 .and. kw<=4 .and. .false.) then
@@ -119,9 +114,11 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                         t% tr(i_he_core,:) = hecorelist
                         t% tr(i_co_core,:) = ccorelist
                         t% tr(i_logL,:) = Lum_list
-                        !TEST: forcing r to remain unchanged
-                        if ((t% pars% cenv_frac.ge.0.2)) t% tr(i_logR,:) = rlist
-        !                    .and.(t% pars% env_frac.ge.0.2)
+                        !TEST: R remains unchanged if Mconv is significant
+                        if (consvR) then
+                            t% tr(i_logR,:) = rlist
+!                        print*, 'conserving r', kw
+                        endif
                         deallocate(hecorelist,ccorelist,Lum_list,age_list,rlist)
                         
                     endif

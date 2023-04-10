@@ -140,7 +140,7 @@ contains
             peak = maxloc(dLdTe(:peak-1),dim = 1)     !!whatif ends are very close??
         endif
         if (dLdTe(peak)>0.0) then          !convective core
-            do k = peak,j_diff
+            do k = peak,j_diff-1
                 if (dLdTe(k)<1E-32 .and. Teff(k)<3.8) then
                     j_bgb = k
                     t% has_RGB=.true.
@@ -148,7 +148,7 @@ contains
                 endif
             end do
         elseif (mass<2.0) then            !radiative core  !TODO: -- mhook?
-            do k = 1,j_diff
+            do k = 1,j_diff-1
                 l_calc = log10(2.3E+5*(core_mass(k)**6))
                 diff =  l_calc-Lum(k)
                 if (abs(diff)<0.12) then

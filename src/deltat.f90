@@ -67,7 +67,9 @@
                     dt = pts2*(t% times(9) - age)
                 endif
                 dtr = t% nuc_time -age
-                
+                !TODO: Next line requires a check
+                !Note that this is done to avoid negative timesteps that result from more massive cores than what sse formulae predict
+                dtr = max(dtr,1d-10)
 
             case(HeWD:NS)
                 dt = MAX(0.1d0,age*10.0)

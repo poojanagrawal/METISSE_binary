@@ -57,7 +57,7 @@
       KW = KW1
       CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
       CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
-     &            R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1,1)
+     &            R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1)
       OSPIN1 = JSPIN1/(K21*R1*R1*(M1-MC1)+K3*RC1*RC1*MC1)
       MENVD = MENV/(M1-MC1)
       IF (SSE_FLAG.eqv..TRUE.) THEN
@@ -69,7 +69,7 @@
       KW = KW2
       CALL star(KW2,M02,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,DTM,J2)
       CALL hrdiag(M02,AJ2,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,
-     &            R2,L2,KW2,MC2,RC2,MENV,RENV,K22,MCX,J2,1)
+     &            R2,L2,KW2,MC2,RC2,MENV,RENV,K22,MCX,J2)
       OSPIN2 = JSPIN2/(K22*R2*R2*(M2-MC2)+K3*RC2*RC2*MC2)
 *
 * Calculate the binding energy of the giant envelope (multiplied by lambda).
@@ -150,7 +150,7 @@
             M1 = MC1
             CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
             CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
-     &                  R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1,1)
+     &                  R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1)
             if (dbg) print*,kw1,kw2
 
             IF(KW1.GE.13)THEN
@@ -247,7 +247,7 @@
             M1 = MC1
             CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
             CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
-     &                  R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1,1)
+     &                  R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1)
             IF(KW1.GE.13)THEN
                CALL kick(KW1,MF,M1,M2,ECC,SEPF,JORB,VS)
                IF(ECC.GT.1.D0) GOTO 30
@@ -257,7 +257,7 @@
             M2 = MC2
             CALL star(KW2,M02,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,DTM,J2)
             CALL hrdiag(M02,AJ2,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,
-     &                  R2,L2,KW2,MC2,RC2,MENV,RENV,K22,MCX,J2,1)
+     &                  R2,L2,KW2,MC2,RC2,MENV,RENV,K22,MCX,J2)
             IF(KW2.GE.13.AND.KW.LT.13)THEN
                CALL kick(KW2,MF,M2,M1,ECC,SEPF,JORB,VS)
                IF(ECC.GT.1.D0) GOTO 30
@@ -354,7 +354,7 @@
             CALL star(KW,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
          ENDIF
          CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
-     &               R1,L1,KW,MC1,RC1,MENV,RENV,K21,MCX,J1,1)
+     &               R1,L1,KW,MC1,RC1,MENV,RENV,K21,MCX,J1)
          JSPIN1 = OORB*(K21*R1*R1*(M1-MC1)+K3*RC1*RC1*MC1)
          KW1 = KW
          ECC = 0.D0

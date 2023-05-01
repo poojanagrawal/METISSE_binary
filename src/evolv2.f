@@ -200,11 +200,12 @@
       EXTERNAL rl,metisse_mlwind,vrotf,corerd
       REAL bcm(50000,34),bpp(80,10)
       COMMON /BINARY/ bcm,bpp
-      integer irecord
       REAL*8 dtm
       COMMON /TIMESTEP/ dtm
       LOGICAL SSE_FLAG
       COMMON /SSE/ SSE_FLAG
+      INTEGER irecord
+      COMMON /REC/ irecord
 
 *
 * Save the initial state.
@@ -212,7 +213,8 @@
       dbg = .false.
       SSE_FLAG = .false.
       irecord = 1
-* TODO: irecord serves no purpose in BSE: better remove it/or make it common
+* irecord is useful for evolv1.f but serves no purpose here
+* see decsription in evolv1
 
       call allocate_track(2,mass0)
 
@@ -303,7 +305,7 @@
      &    ,dtm,k)
 
          CALL hrdiag(mass0(k),age,mass(k),tm,tn,tscls,lums,GB,zpars,
-     &               rm,lum,kstar(k),mc,rc,me,re,k2,mcx,k,irecord)
+     &               rm,lum,kstar(k),mc,rc,me,re,k2,mcx,k)
 *            print*, 'ini', tm,tn,kstar(k)
 
          aj(k) = age
@@ -770,7 +772,7 @@
          CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,k)
 *         print*, 'star_dt_mn',m0,mt,kw,k
          CALL hrdiag(m0,age,mt,tm,tn,tscls,lums,GB,zpars,
-     &               rm,lum,kw,mc,rc,me,re,k2,mcx,k,irecord)
+     &               rm,lum,kw,mc,rc,me,re,k2,mcx,k)
 *
          if (dbg)print*,"after second call",m0,age,kw,k
 
@@ -2023,7 +2025,7 @@
 
          CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,k)
          CALL hrdiag(m0,age,mt,tm,tn,tscls,lums,GB,zpars,
-     &               rm,lum,kw,mc,rc,me,re,k2,mcx,k,irecord)
+     &               rm,lum,kw,mc,rc,me,re,k2,mcx,k)
 *
 * Check for a supernova and correct the semi-major axis if so.
 *

@@ -56,7 +56,9 @@ subroutine evolv1(mass,max_age,ierr)
     do while(.true.)
         if (tphys>=max_age) then
             tphys = max_age
-            t_end  = .true.     !flag for telling the loop that this is the last timestep, so save
+            t_end  = .true.
+            !flag for telling the loop that this is the last timestep, so save
+            !it is different to end_of_file defined in hrdiag
         end if
         
         !evolve the star- calculate stellar parameters at tphys

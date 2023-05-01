@@ -23,7 +23,7 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     t => tarr(idd)
         
     ierr=0
-consvR = .false.
+    consvR = .false.
     debug = .false.
 !    if ((id == 1) .and. (kw>=6))debug = .true.
 

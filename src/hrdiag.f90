@@ -1,5 +1,5 @@
  subroutine hrdiag(mass,aj,mt,tm,tn,tscls,lums,GB,zpars,&
-                                r,lum,kw,mc,rc,menv,renv,k2,mcx,id,irecord)
+                                r,lum,kw,mc,rc,menv,renv,k2,mcx,id)
     use track_support
     use interp_support, only: interpolate_age
     use sse_support
@@ -9,12 +9,15 @@
     integer, intent(in), optional :: id
     real(dp) :: mass,aj,mt,tm,tn,tscls(20),lums(10),GB(10),zpars(20)
     real(dp) :: r,lum,mc,rc,menv,renv,k2,mcx
-    integer :: kw,i, irecord, idd
+    integer :: kw,i,idd
     real(dp) :: rg,rzams,rtms
     type(star_parameters) :: old_pars
 
     logical :: debug,lost_envelope, post_agb
     type(track), pointer :: t
+
+    INTEGER irecord
+    COMMON /REC/ irecord
 
     debug = .false.
     idd = 1
@@ -26,7 +29,7 @@
     if (debug) print*, '-----------HRDIAG-------------'
     if (debug) print*,"started hrdiag",mt,mc,aj,kw,tn
 
-    end_of_file = .false. !this is just the end of eep track, different to t_end defined in evolv1.f90
+    end_of_file = .false. !this is just the end of eep track
 
     !save input state
     lost_envelope = t% lost_envelope
@@ -160,7 +163,6 @@
 
     t% pars% cenv_frac = menv/mt
     t% pars% env_frac = (mt-t% pars% McHe)/mt
-
 
     if (irecord>0) then
 !        if (kw<10 .and. debug) print*, "delta in hrdiag",t% pars% delta

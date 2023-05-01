@@ -100,7 +100,7 @@ contains
 
         !TODO: add WR phase, will be useful for mass gain sitiuations
         !if (.not.t% has_RGB .and. mass>0.7) t% times(RGB) = age(605)!*1E-6
-        !deallocate(age)
+        nullify(age)
     end subroutine
 
     integer function base_GB(t) result(j_bgb)

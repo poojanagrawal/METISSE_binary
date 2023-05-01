@@ -4,11 +4,10 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
     implicit none
     integer, intent(in), optional :: id
     
-!    real(dp), intent(in) :: Z
     integer:: kw
 
     real(dp) :: lum,r,mt,mc,rl,z
-    real(dp) :: dms,neta,hewind!,bwind,dml
+    real(dp) :: dms,neta,hewind
     real(dp) :: tnext,tprev, mnext,mprev
 
     logical :: add_mass_loss
@@ -72,16 +71,7 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
 !        if (kw<=9) print*,"mlwind function",dms,mt,mc,kw,id
     endif
 
-!TODO: remove this when done
-!TEST: binary mass loss here
-!if (r>50.d0) then
- !   dms = dms+1d-3
-!print*, "extra ml",r,t% pars% age,kw, dms
-!endif
-
-
-
-    !Todo: check this
+    !Todo: at present these stars and modelled
     if (kw ==6 .and. t% post_agb) dms = 0.d0
     if (debug) print*,"in mlwind, dms",dms, t% pars% mass, t% pars% phase
     metisse_mlwind = dms

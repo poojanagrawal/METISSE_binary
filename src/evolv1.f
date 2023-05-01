@@ -62,8 +62,18 @@ c-------------------------------------------------------------c
       COMMON /POINTS/ pts1,pts2,pts3
       REAL scm(50000,15),spp(20,3)
       COMMON /SINGLE/ scm,spp
-      integer id, irecord
+      INTEGER irecord
+      COMMON /REC/ irecord
+      integer id
 *
+      ! in evolv1 hrdiag can be called several times
+      !with METISSE not everytime the calculations needs to be saved in the pars array
+      !so irecord is used to hrdiag when to save values
+      irecord = 0
+      id = 1
+      mass0(1) = mass
+      call allocate_track(1,mass0)
+      
       dtm = 0.d0
       r = 0.d0
       lum = 0.d0
@@ -71,12 +81,7 @@ c-------------------------------------------------------------c
       mc1 = 0.d0
       rc = 0.d0
       rl = 0.d0
-      id = 1
-      irecord = 0
-      wind=0.d0
-
-      mass0(1) =mass
-      call allocate_track(1,mass0)
+      wind = 0.d0
     
       if(ospin.le.0.d0)then
          ospin = 1.0d-10
@@ -198,7 +203,7 @@ c-------------------------------------------------------------c
 *         if (kw<10)print*,"calling hrdiag aj,mt,kw",aj,mt,kw,dtm,mc
          kwold = kw
          CALL hrdiag(mass,aj,mt,tm,tn,tscls,lums,GB,zpars,
-     &               r,lum,kw,mc,rc,menv,renv,k2,mcx,id,irecord)
+     &               r,lum,kw,mc,rc,menv,renv,k2,mcx,id)
 *         if (kw>3 .and. kw<5) print*,"after hrdiag",aj,mt,kw,dtm,mc
 *        write(50,*)j,kw,tphys,mass,mt,mc,aj,tscls(2)+tscls(3)
 *        write(50,*)j,kw,tphys,mass,mt,mc,aj,tn
@@ -248,7 +253,7 @@ c-------------------------------------------------------------c
                if (kw<10) print*,"star 4: after updating epoch",aj,mt,kw
                CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                CALL hrdiag(mass,aj,mt,tm,tn,tscls,lums,GB,zpars,
-     &                     r,lum,kw,mc,rc,menv,renv,k2,mcx,id,irecord)
+     &                     r,lum,kw,mc,rc,menv,renv,k2,mcx,id)
 *           print*, "aj2",aj,dtm
                goto 20
             endif
@@ -296,7 +301,7 @@ c-------------------------------------------------------------c
 * added by Poojan-  another call to hrdiag to store current values in pars structure
          irecord = 1
          CALL hrdiag(mass,aj,mt,tm,tn,tscls,lums,GB,zpars,
-     &                     r,lum,kw,mc,rc,menv,renv,k2,mcx,id,irecord)
+     &                     r,lum,kw,mc,rc,menv,renv,k2,mcx,id)
          irecord = 0
          epoch = tphys - aj
          if((isave.and.tphys.ge.tsave).or.iplot)then
@@ -355,7 +360,7 @@ c-------------------------------------------------------------c
             aj = MAX(aj,aj*(1.d0-eps)+dtr)
             mc1 = mc 
             CALL hrdiag(mass,aj,mt,tm,tn,tscls,lums,GB,zpars,
-     &        r1,lum1,kw,mc1,rc1,menv1,renv1,k21,mcx,id,irecord)
+     &        r1,lum1,kw,mc1,rc1,menv1,renv1,k21,mcx,id)
 *            print*, "aj3",aj,dtm
             dr = r1 - rm0
 *           write(*,*)' check final ',dr
@@ -379,7 +384,7 @@ c-------------------------------------------------------------c
          mc1 = mc
          if (kw<10 .and. dbg) print*, "before aj4",aj,dtm,kw
          CALL hrdiag(mass,aj,mt,tm,tn,tscls,lums,GB,zpars,
-     &               r1,lum1,kw,mc1,rc1,menv1,renv1,k21,mcx,id,irecord)
+     &               r1,lum1,kw,mc1,rc1,menv1,renv1,k21,mcx,id)
 *          if (kw<10) print*, "after aj4,dtm,kw",aj,dtm,kw
          dr = r1 - rm0
          it = it + 1
@@ -430,7 +435,7 @@ c-------------------------------------------------------------c
 
 *        irecord = 1
 *        CALL hrdiag(mass,ajhold,mt,tm,tn,tscls,lums,GB,zpars,
-*        &                     r,lum,kw,mc,rc,menv,renv,k2,mcx,id,irecord)
+*        &                     r,lum,kw,mc,rc,menv,renv,k2,mcx,id)
 
 
  10   continue

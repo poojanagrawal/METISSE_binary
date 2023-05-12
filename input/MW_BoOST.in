@@ -1,0 +1,49 @@
+! Make sure to ADD a new line at the end (after / symbol)
+
+&metallicity_controls
+
+    ! Location of the folder containing input files for a given metallicity
+    INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/Boost/BoOST-stellarmodels-MW'
+
+    ! Metallicity of input tracks
+    ! It is only used to cross-check 
+    ! against input Z to avoid mistakes
+
+    
+    z_files = 0.008
+
+    ! Details about the file structure (see format_defaults.dat)
+    ! Empty string will raise an error
+
+    format_file = 'input/format_boost.dat'
+
+
+    ! Columns to be used, irrespective of the order
+    ! Empty string means all columns will be used
+
+    key_columns_file = 'input/boost_read_cols.txt'
+    
+  
+    ! Z PARAMETERS/ mass cutoffs
+    ! If < 0 then the values are calculated by the code
+    ! If>0 then these values are instead used 
+
+    Mhook = -1.0
+    Mhef = -1.0
+    Mfgb = -1.0
+    Mup = -1.0
+    Mec = -1.0
+
+    ! Extra mass cutoff- if any
+
+    Mextra = -1.0       
+
+    ! Hydrogen and helium abundance
+    ! Default is SSE formulae
+    ! If Z_H <0 then it is calculated from Z as 0.76 - 3*Z
+    ! If Z_He <0 then it is calculated from Z as 0.24 + 2*Z
+
+    Z_H = -1.0
+    Z_He = -1.0
+
+/

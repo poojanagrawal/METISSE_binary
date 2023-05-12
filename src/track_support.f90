@@ -19,7 +19,7 @@ module track_support
     logical :: direct_call = .false.
 
 
-    character(len=strlen) :: METISSE_DIR, eep_dir
+    character(len=strlen) :: METISSE_DIR
     real(dp) :: pts_1,pts_2,pts_3
     integer :: low_mass_final_eep, high_mass_final_eep
     integer, allocatable :: key_eeps(:)
@@ -137,13 +137,12 @@ module track_support
   !holds an evolutionary track for input, use an array of these for multiple tracks
 
     type eep_track
-        character(len=strlen) :: filename, cmd_suffix
-        character(len=8) :: version_string
+        character(len=strlen) :: filename
         type(column), allocatable :: cols(:)
 
         logical :: has_phase = .false., ignore=.false.
         logical :: has_mass_loss
-        integer :: ncol, ntrack, neep, MESA_revision_number
+        integer :: ncol, ntrack, neep
         integer :: star_type = unknown
 
         integer, allocatable :: eep(:), phase(:)
@@ -200,7 +199,7 @@ module track_support
     type(eep_track), allocatable,target :: s(:)
     type(track), allocatable,target :: tarr(:)
     integer :: num_tracks
-    real(dp) :: initial_Z
+    real(dp) :: initial_Z, Z_files
 
     !variable declaration-- for main
     integer :: number_of_tracks
@@ -212,12 +211,12 @@ module track_support
     real(dp) :: Z04, Z_H, Z_He
 
     !for interp_support
-    logical:: fix_track
+    logical :: fix_track
     real(dp) :: lookup_index, accuracy_limit
     
     !for remnant support
     real(dp) :: max_NS_mass         !maximum NS mass
-    logical:: construct_wd_track, allow_electron_capture, use_Initial_final_mass_relation
+    logical :: construct_wd_track, allow_electron_capture, use_Initial_final_mass_relation
     character (len = col_width) :: BHNS_mass_scheme, WD_mass_scheme
 !    real(dp) :: mc1, mc2 !mass cutoffs for Belczynski methods
     contains

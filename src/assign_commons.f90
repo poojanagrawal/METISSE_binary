@@ -1,9 +1,9 @@
 subroutine assign_commons()
     use track_support,only: dp,pts_1,pts_2,pts_3
-    use remnant_support, only:ns_flag,wd_flag,if_flag,Max_NS_mass
+    use remnant_support, only:ns_flag,wd_flag,if_flag,Max_NS_mass,ec_flag
     implicit none
     
-!    INCLUDE 'const_bse.h'
+!   used to assign common variables when METISSE is used in standalone mode
 
 REAL(dp) :: pts1,pts2,pts3
     COMMON /POINTS/ pts1,pts2,pts3
@@ -21,7 +21,7 @@ ns_flag = nsflag
     pts_1 = pts1
     pts_2 = pts2
     pts_3 = pts3
-    
+    ec_flag = 1
     !neta,bwind,hewind,sigma
 
     end subroutine

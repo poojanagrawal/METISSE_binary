@@ -4,12 +4,12 @@
     file_extension = '.dat'
     read_eep_files = .false.
 
-    !the line number where column names are given- e.g. it's 1 for the first line
-    header_location = 0
+    !the line number where column names are listed
+    header_location = -1
 
     total_cols = 94 !number of columns
     extra_char = ''
-    column_name_file = 'input/bist_columns.txt'
+    column_name_file = 'input/boost_columns.txt'
 
     !EEPS
     PreMS_EEP = -1
@@ -27,10 +27,14 @@
     WD_EEP = -1
 
     Initial_EEP = 1       !files will be read from this line number
-    Final_EEP = 608        !to this line  -currently not operational
+    Final_EEP = 608        !to this line  
     Extra_EEP1 = -1
     Extra_EEP2= -1
     Extra_EEP3 = -1
+    
+    fix_track = .false.
+    low_mass_final_eep = -1
+    high_mass_final_eep = -1
 
     !name of essential columns
 

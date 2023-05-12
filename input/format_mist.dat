@@ -1,20 +1,18 @@
-!this file is read by default for format if read_eep_files is true
-!some quantities here are not used as they can be read easily from the .eep files
-!modify a copy of this file, if you are using input files with a different format
 
 &format_controls
     file_extension = '.eep'
+    
     read_eep_files = .true.
 
     header_location = 12
-    total_cols = -1 !number of columns
+    
+    
     extra_char = '' ! any extra character present in the header line
 
-    !if header is <=0, i.e., no column names
-    !specify column_name_file for determining the name and the order of columns
-    !Note that this is different from the key_columns_file (in evolve_defaults.in) which specifies the subset of these columns to be used
-
     column_name_file = ''
+    
+    total_cols = -1 !number of columns
+
 
     !EEPS
     PreMS_EEP = 1
@@ -37,9 +35,9 @@
     Extra_EEP2= -1
     Extra_EEP3 = -1
 
-    !used to complete incomplete tracks
-    !when fix_track is true in evolve.in
 
+    fix_track = .true.
+    
     !for M<Mec
     low_mass_final_eep = 808
     !for stars M>=Mec
@@ -80,9 +78,4 @@
     c12_mass_frac = 'center_c12'            !c12 mass fraction at centre
     o16_mass_frac = 'center_o16'            !o16 mass fraction at centre
 
-    !below is not functional
-    !additional list of columns related to the evolution of core
-    !these are interpolated based on the original age of the star before mass loss
-    !extra_core_columns = 4
-    !extra_core_columns_names = 'log_center_T,center_he4,center_c12,center_o16'
 /

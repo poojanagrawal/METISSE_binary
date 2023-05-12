@@ -165,7 +165,7 @@ contains
         real(dp) :: tscls(20),lums(10),GB(10),zpars(20),tm,tn
     
         ! Other SSE parameters
-        call calculate_SSE_tscls(t, zpars, tscls,tm,tn)
+        call calculate_SSE_tscls(t, tscls,tm,tn)
         call calculate_SSE_lums(t, zpars, lums)
         call calculate_SSE_GB(t, zpars, GB)
     end subroutine calculate_SSE_parameters

@@ -3,18 +3,21 @@ module z_support
     implicit none
 
     character(LEN=strlen) :: format_file, key_columns_file, INPUT_FILES_DIR
-    logical :: read_files_from_Z, read_eep_files
+    logical :: read_eep_files
 
-    character(LEN=strlen) :: metallicity_file, Z_folder_list
+    character(LEN=strlen) :: metallicity_file
+    character(LEN=strlen) :: metallicity_file_list(20) = ''
+    real(dp) :: Z_files, Z_accuracy_limit
+
     !format_specifications
     character(LEN=5):: file_extension
     integer :: header_location, eep_location
-    character(LEN=256) :: column_name_file
+    character(LEN=strlen) :: column_name_file
     type(column), allocatable :: key_cols(:), temp_cols(:)
     integer :: total_cols
     integer :: extra_cols = 3
 
-   character:: extra_char
+    character:: extra_char
 
     !used to set star_type_from_history
     ! central limits for high- / intermediate-mass stars, set these from input eep_controls nml
@@ -39,29 +42,29 @@ module z_support
     real(dp) :: mass, max_age, min_mass, max_mass
 
     namelist /SSE_input_controls/ initial_Z, max_age,read_mass_from_file,&
-                            input_mass_file, number_of_tracks, max_mass, min_mass, &
-                            WD_mass_scheme,use_initial_final_mass_relation, allow_electron_capture, &
-                            BHNS_mass_scheme, max_NS_mass,pts_1, pts_2, pts_3
+                        input_mass_file, number_of_tracks, max_mass, min_mass, &
+                        WD_mass_scheme,use_initial_final_mass_relation, allow_electron_capture, &
+                        BHNS_mass_scheme, max_NS_mass,pts_1, pts_2, pts_3
                             
-    namelist /METISSE_input_controls/ METISSE_DIR, metallicity_file, read_files_from_Z,&
-                        Z_folder_list, lookup_index, accuracy_limit, construct_wd_track,  &
-                        verbose, write_eep_file, write_track_to_file
+    namelist /METISSE_input_controls/ METISSE_DIR, metallicity_file_list, Z_accuracy_limit,  &
+                        mass_accuracy_limit, construct_wd_track, verbose, &
+                        write_eep_file, write_track_to_file
             
     namelist /metallicity_controls/ INPUT_FILES_DIR, Z_files,format_file, key_columns_file, &
                         Mhook, Mhef, Mfgb, Mup, Mec, Mextra, Z_H, Z_He
                         
     namelist /format_controls/ file_extension, read_eep_files,total_cols,&
-            extra_char, header_location, column_name_file, &
-            PreMS_EEP, ZAMS_EEP, IAMS_EEP, TAMS_EEP, BGB_EEP, cHeIgnition_EEP, &
-            cHeBurn_EEP, TA_cHeB_EEP, TPAGB_EEP, cCBurn_EEP, post_AGB_EEP, WD_EEP, &
-            Initial_EEP, Final_EEP, Extra_EEP1 ,Extra_EEP2, Extra_EEP3, &
-            fix_track, low_mass_final_eep, high_mass_final_eep, &
-            age_colname, mass_colname, log_L_colname ,log_T_colname, &
-            log_R_colname, he_core_mass, c_core_mass, &
-            log_Tc, c12_mass_frac, o16_mass_frac,he4_mass_frac, &
-            Lum_colname,Teff_colname,Radius_colname,&
-            log_mdot_colname, mdot_colname, he_core_radius, co_core_radius,&
-            mass_conv_envelope, radius_conv_envelope, moment_of_inertia
+                        extra_char, header_location, column_name_file, &
+                        PreMS_EEP, ZAMS_EEP, IAMS_EEP, TAMS_EEP, BGB_EEP, cHeIgnition_EEP, &
+                        cHeBurn_EEP, TA_cHeB_EEP, TPAGB_EEP, cCBurn_EEP, post_AGB_EEP, WD_EEP, &
+                        Initial_EEP, Final_EEP, Extra_EEP1 ,Extra_EEP2, Extra_EEP3, &
+                        fix_track, low_mass_final_eep, high_mass_final_eep, lookup_index, &
+                        age_colname, mass_colname, log_L_colname ,log_T_colname, &
+                        log_R_colname, he_core_mass, c_core_mass, &
+                        log_Tc, c12_mass_frac, o16_mass_frac,he4_mass_frac, &
+                        Lum_colname, Teff_colname, Radius_colname,&
+                        log_mdot_colname, mdot_colname, he_core_radius, co_core_radius,&
+                        mass_conv_envelope, radius_conv_envelope, moment_of_inertia
 
     contains
 
@@ -69,10 +72,7 @@ module z_support
         integer :: io
         integer, intent(out) :: ierr
         
-        
         ierr = 0
-        
-        
         io = alloc_iounit(ierr)
         open(io, file = 'defaults/evolve_metisse_defaults.in',action='read',iostat=ierr )
             if(ierr/=0)then
@@ -83,6 +83,10 @@ module z_support
         close(io)
         call free_iounit(io)
     
+        ! Note that unlike other variables, metallicity_file_list = ''
+        ! in the namelist only sets the value of the first element and not the whole array
+        ! that's why the default for metallicity is specified at its initialization
+        
         !initialize metallicity related variables
         io = alloc_iounit(ierr)
         open(io, file = 'defaults/metallicity_defaults.in',action='read',iostat=ierr )
@@ -124,22 +128,74 @@ module z_support
             read(unit = io, nml = METISSE_input_controls)
         close(io)
         call free_iounit(io)
+        
     end subroutine read_input
+    
+    subroutine get_metallcity_file_from_Z(Z_req,ierr)
+        real(dp), intent(in) :: Z_req
+        integer, intent(out) :: ierr
+
+        integer :: i,c
+        logical:: found_z
+
+        if (verbose) print*, 'Input Z is', Z_req
+        ierr = 0
+!        metallicity_file = ''
+        c = 0
+        found_z = .false.
+        do i = 1, 20
+            if (len_trim(metallicity_file_list(i))>0) c=c+1
+        end do
+        
+        if (c<1) then
+            print*, "Error: metallicity_file_list is not defined"
+            ierr = 1
+            return
+        endif
+        
+        do i = 1, 20
+            if (len_trim(metallicity_file_list(i))>0) then
+                call read_metallicity_file(metallicity_file_list(i),ierr)
+                if (ierr/=0) cycle
+                if (.not. defined (Z_files)) then
+                    print*, 'Warning: Z_files not defined in "'//trim(metallicity_file_list(i))//'"'
+                elseif (relative_diff(Z_files,Z_req) < Z_accuracy_limit) then
+                    print*, 'Matching Z_files is', Z_files
+                    print*, metallicity_file_list(i)
+                    found_z = .true.
+                    exit
+                endif
+                print*, 'Z_files is', Z_files
+
+            endif
+        end do
+        
+        if (found_z .eqv. .false.) then
+            print*, 'Error: metallicity value =', Z_req, 'not found amongst given Z_files'
+            print*, 'Check metallicity_file_list and value of Z_files for each file'
+            print*, 'If needed, Z_accuracy_limit can be relaxed (set to a greater value).'
+            ierr = 1
+            return
+        endif
+     
+    end subroutine get_metallcity_file_from_Z
     
     subroutine read_metallicity_file(filename,ierr)
         character(LEN=strlen), intent(in) :: filename
         integer :: io
         integer, intent(out) :: ierr
 
-        if (trim(metallicity_file) == '' )then
-            print*, "Error: metallicity_file is not defined"
-            ierr =1
-            return
-        endif
-        
         ierr = 0
+        
+        ! reset the defaults (even if already set)
         io = alloc_iounit(ierr)
-!        if (ierr /= 0) return
+        open(io, file = 'defaults/metallicity_defaults.in',action='read')
+            read(unit=io, nml = metallicity_controls)
+        close(io)
+        call free_iounit(io)
+        
+        
+        io = alloc_iounit(ierr)
         open(io, file=filename, action='read', iostat=ierr)
             if (ierr /= 0) then
                print*, 'Error: Failed to open metallicity_file "'//trim(filename)//'"'
@@ -149,22 +205,9 @@ module z_support
             read(io, nml = metallicity_controls)
         close(io)
         call free_iounit(io)
-!        if (ierr /= 0) then
-!           print*, 'Error: Failed while trying to read metallicity_file "'//trim(filename)//'"'
-!           STOP
-!        end if
         
-        if (trim(INPUT_FILES_DIR) == '' )then
-            print*,"Error: INPUT_FILES_DIR is not defined"
-            return
-        endif
-        
-        if (.not. defined (Z_files) .or. relative_diff(Z_files,initial_Z) > 1.0d-2) then
-            print*,"Error: Z_files does not matches with input Z"
-            return
-        endif
     end subroutine read_metallicity_file
-
+    
     subroutine read_format(filename,ierr)
         character(LEN=strlen), intent(in) :: filename
         integer :: io
@@ -186,19 +229,30 @@ module z_support
     end subroutine read_format
 
     
-    subroutine get_files_from_path(path)
-    character(LEN=strlen),intent(in) :: path
+    subroutine get_files_from_path(path,ierr)
+    character(LEN=strlen), intent(in) :: path
+    integer, intent (out) ::  ierr
+
     character(LEN=strlen) :: str,eep_list
-    integer :: n,i, ierr, io
+    integer :: n,i, io
+    
 
         ierr = 0
+        
+        if (trim(path) == '' )then
+            print*,"Error: INPUT_FILES_DIR is not defined"
+            return
+        endif
+        
         if (verbose) print*,"Reading input files from: ", trim(path)
+        
         eep_list = 'find '//trim(path)//'/*'//trim(file_extension)//' -maxdepth 1 > .file_name.txt'
         call system(eep_list,ierr)
+        
         if (ierr/=0) then
-        print*,'Problem reading input files'
-        print*,'check if INPUT_FILES_DIR is correct'
-        STOP
+            print*,'Problem reading input files'
+            print*,'check if INPUT_FILES_DIR is correct'
+            return
         end if
 
         io = alloc_iounit(ierr)
@@ -225,53 +279,6 @@ module z_support
         call free_iounit(io)
         
     end subroutine get_files_from_path
-
-    !TODO: this needs updates
-    subroutine get_folder_from_Z(INPUT_FILES_DIR,Z_value,fold_path)
-    character(LEN=strlen),intent(in) :: INPUT_FILES_DIR
-    real(dp),intent(in) :: Z_value
-    character(LEN=strlen),intent(out) :: fold_path
-
-    character(LEN=strlen) :: folder_list
-    character(LEN=50) :: name
-    integer :: ierr,io
-    real(dp):: metallicity,v_div_vcrit
-    logical:: found_z
-
-        ierr = 0
-        v_div_vcrit = 0d0
-        found_z = .false.
-
-        folder_list = trim(INPUT_FILES_DIR)//trim(Z_folder_list)
-        io = alloc_iounit(ierr)
-        open(io,FILE=trim(folder_list),action="read",iostat=ierr)
-
-        do while(.true.)
-            read(io,*,iostat=ierr) name, metallicity, v_div_vcrit
-            if (ierr/=0) exit
-            if (abs(Z_value-metallicity) < 1.0d-4) then     !TODO: relative error instead of absolute error?
-                fold_path = trim(INPUT_FILES_DIR)//'/'//trim(name)
-                !if(debug) print*,fold_path
-                found_z = .true.
-                exit
-            endif
-        end do
-
-        if (found_z .eqv. .false.) then
-        print*, Z_value,'metallicity value not found'
-        STOP
-        endif
-
-        if (ierr/=0) then
-        print*,'Erorr locating folders'
-        print*,'check if Z_value and Z_folder_list are correct'
-        STOP
-        endif
-        close(io)
-        call free_iounit(io)
-        
-    return
-    end subroutine get_folder_from_Z
 
     !locating essential columns here
     subroutine locate_column_numbers(s,cols)

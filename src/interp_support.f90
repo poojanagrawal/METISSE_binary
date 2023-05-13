@@ -160,7 +160,7 @@ module interp_support
         if (debug_mass) print*,"min_index for mass", m_low+min_index-1,min_index
         if (debug_mass) print*,"mass(min_index)", min_mass
         
-        if(abs(mass-sa(min_index)% initial_mass)< accuracy_limit) then       !if track is already in the database
+        if(abs(mass-sa(min_index)% initial_mass)< mass_accuracy_limit) then       !if track is already in the database
             keyword = no_interpolation
             !allocate(interpolate(1))
             !interpolate = min_index

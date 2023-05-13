@@ -63,21 +63,28 @@
     Extra_EEP2= -1
     Extra_EEP3 = -1
 
-    ! Usually two to four tracks neighbouring are used for interpolation.
+    ! Usually two to four tracks neighboring are used for interpolation.
     ! However, if any of them is incomplete,
     ! then the interpolated track is also rendered incomplete.
     ! If fix_track is, METISSE relaxes the criteria for finding
-    ! the neighbouring tracks in above cases and tries to get a complete track.
+    ! the neighboring tracks in above cases and tries to get a complete track.
     
     fix_track = .true.
 
     ! if fix_track is true, then
     ! the completeness of tracks is determined by the following two:
     
-    ! for stars with M<Mec
+    ! for stars with M< Mec
     low_mass_final_eep = -1
-    ! for stars with M>=Mec
+    ! for stars with M>= Mec
     high_mass_final_eep = -1
+
+    ! When fixing an incomplete track
+    ! Search for the new neighboring tracks for interpolation 
+    ! within the mass range of initial_mass - (initial_mass*lookup_index) 
+    ! and initial_mass + (initial_mass*lookup_index)]
+ 
+    lookup_index = 1.0
 
 
     !-------COLUMN NAMES-------------

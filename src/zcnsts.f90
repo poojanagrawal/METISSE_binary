@@ -24,28 +24,17 @@ subroutine zcnsts(z,zpars)
     call read_defaults(ierr); if (ierr/=0) STOP
 
     !read inputs from evolve_metisse.in
-    call read_input(ierr);if (ierr/=0) STOP
+    call read_input(ierr); if (ierr/=0) STOP
     
     !read metallicity related variables
-    call read_metallicity_file(metallicity_file,ierr);if (ierr/=0) STOP
+    call get_metallcity_file_from_Z(z,ierr); if (ierr/=0) STOP
     
-     !get folder name if read_files_from_Z
-    if (read_files_from_Z) then
-        if (Z_folder_list == '') then
-            print*,"Error: Z_folder_list not defined for read_files_from_Z"
-            STOP
-        else
-            call get_folder_from_Z(INPUT_FILES_DIR,initial_Z,path)
-        endif
-    else
-        path = INPUT_FILES_DIR
-    endif
     
     !reading format file
-    call read_format(format_file,ierr)
+    call read_format(format_file,ierr); if (ierr/=0) STOP
 
     !getting filenames
-    call get_files_from_path(path)
+    call get_files_from_path(INPUT_FILES_DIR,ierr); if (ierr/=0) STOP
 
     if (verbose) print*,"Number of input tracks: ", num_tracks
 

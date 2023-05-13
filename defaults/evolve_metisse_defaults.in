@@ -1,47 +1,55 @@
-!defaults control for METISSE
-!do NOT make any changes to this file
-!use evolve_metisse.in for input
+! Defaults control for METISSE
+! Do NOT make any changes to this file
+! Use evolve_metisse.in for input
 
-!   NOTE: SSE_input_controls in evolve_metisse.in are read only when METISSE is called directly though its main unit/ standalone mode
-!   otherwise, values provided by the overlying code are used.
+! NOTE: SSE_input_controls in evolve_metisse.in are read 
+! only when METISSE is called directly through its main unit/ standalone mode.
+! Otherwise, values provided by the overlying code are used.
 
 
 &SSE_input_controls
 
   ! EVOLUTION CONTROLS
    
-    read_mass_from_file = .false.      !for reading input masses for new tracks
+    ! For reading input masses for new tracks
+    read_mass_from_file = .false.      
 
     input_mass_file = ''
 
-    number_of_tracks = 1
+    number_of_tracks = 0
 
-    max_mass = 1d5
+    max_mass = -1.0
 
-    min_mass = 1.0
+    min_mass = -1.0
     
     initial_Z = -1.0
 
-    max_age = 1d4   !max age in Myrs
+    ! Maximum age in Myrs
+    max_age = -1.0   
 
   ! REMNANT CONTROLS
 
 
+    ! Options - "Mestel", "Modified_mestel"
     WD_mass_scheme = 'Modified_mestel'
 
-    !Options - "Mestel","Modified_mestel"
+    
+    ! Only for White Dwarfs
+    Use_initial_final_mass_relation = .false.       
 
-    Use_Initial_final_mass_relation = .false.       !for White Dwarfs
 
-
+    ! Options - "original_SSE", "Belczynski2002", "Belczynski2008", "Eldridge_Tout2004"
     BHNS_mass_scheme = 'Belczynski2008'
 
-    !Options - "original_SSE", "Belczynski2002", "Belczynski2008","Eldridge_Tout2004"
-
+    
+    ! Maximum neutron star mass 
+    ! Suggested 1.8 for BHNS_mass_scheme="original_SSE", 3.0 otherwise
 
     Max_NS_mass = 3.0
-    !maximum NS mass (suggested 1.8 for BHNS_mass_scheme="original_SSE", 3.0 otherwise).
+   
+    ! Allow electron capture supernovae
 
+    allow_electron_capture = .true.       
     
   ! TIMESCALE CONTROLS
 
@@ -49,46 +57,69 @@
     pts_2 = 0.01
     pts_3 = 0.02
 
-    allow_electron_capture = .true.       !allow electron capture supernovae
-
 /
 
 &METISSE_input_controls
 
     METISSE_DIR = ''
 
-    !INPUT CONTROLS
+    ! A metallicity file contains details about 
+    ! the set of input tracks for a given metallicity,
+    ! such as the path to the folder, their metallicity value
+    ! and other information/metadata (see metallicity_defaults.in)
 
-    !details about the set of input models for a given metallicity
-    !and other information about reading them
+    ! The option 'metallicity_file_list' is used for providing 
+    ! path/location of that metallicity file.
+    ! In the case of a grid of stellar tracks,
+    ! with folders containing tracks of various metallicities,
+    ! location of the metallicity file for each folder/metallicity
+    ! can be provided as a list of comma-separated strings 
+    ! for up to 20 metallicities.
+    ! For example: metallicity_file_list = 'path1',
+    !					                             'path2',
+    !                                       ...
+    !					                             'path20'
+
+    
+	  metallicity_file_list = ''
 
 
-    metallicity_file = ''
-
-    read_files_from_Z = .false.
-
-    !list for getting folder names given Z, used only if read_files_from_Z is true
-
-    Z_folder_list = ''
+    ! if (abs(z1-z2)/MIN(z1,z2)) > Z_accuracy_limit
+    Z_accuracy_limit = 1d-2
 
     ! INTERPOLATION CONTROLS
 
-    
-    !search within this fraction of mass/lookup_index for fixing incomplete track
-    lookup_index = 1.0
+    ! Skip interpolation in mass if there is already
+    ! an input track with initial_mass within the 'mass_accuracy_limit'
 
-    !skip mass interpolation if there is already a track within this difference
-    accuracy_limit = 1d-4
+    mass_accuracy_limit = 1d-4
 
     !   OTHER REMNANT CONTROLS
-    
+    ! If true, 'construct_wd_track' is used (for low-mass stars) to construct the track between 
+    ! Thermally-Pulsating AGB phase or tip of the AGB to the white dwarf cooling track
+    ! It is useful if input tracks do not contain this phase
+    ! but can be used for other tracks as well.
+
     construct_wd_track = .true.
 
     
     !OUTPUT CONTROLS
+
+    ! if true, 'verbose' spits out useful details when reading the files
+
     verbose = .false.
-    write_track_to_file = .true.        !SSE like output file
-    write_eep_file = .false.		!MIST like output file for eep tracks
+
+    ! 'write_track_to_file' generates a SSE style output file 
+    ! only at the END of the evolution
+
+    write_track_to_file = .true. 
+
+    ! 'write_eep_file' generates MIST style output file generated 
+    ! at EVERY step of mass interpolation
+    ! useful for debugging
+
+    write_eep_file = .false.		
+
     !OUTPUT_DIR = ''
 
 /

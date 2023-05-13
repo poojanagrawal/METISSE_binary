@@ -199,7 +199,7 @@ module track_support
     type(eep_track), allocatable,target :: s(:)
     type(track), allocatable,target :: tarr(:)
     integer :: num_tracks
-    real(dp) :: initial_Z, Z_files
+    real(dp) :: initial_Z
 
     !variable declaration-- for main
     integer :: number_of_tracks
@@ -212,7 +212,7 @@ module track_support
 
     !for interp_support
     logical :: fix_track
-    real(dp) :: lookup_index, accuracy_limit
+    real(dp) :: lookup_index, mass_accuracy_limit
     
     !for remnant support
     real(dp) :: max_NS_mass         !maximum NS mass

@@ -19,7 +19,7 @@ module track_support
     logical :: direct_call = .false.
 
 
-    character(len=strlen) :: METISSE_DIR, eep_dir
+    character(len=strlen) :: METISSE_DIR
     real(dp) :: pts_1,pts_2,pts_3
     integer :: low_mass_final_eep, high_mass_final_eep
     integer, allocatable :: key_eeps(:)
@@ -108,10 +108,11 @@ module track_support
                                 he_core_radius, co_core_radius, mass_conv_envelope, &
                                 radius_conv_envelope, moment_of_inertia
 
-    integer :: i_age, i_mass, i_logLH, i_logLHe, i_logTe, i_logL, i_logR
-    integer :: i_logg, i_Tc, i_Rhoc, i_Xc, i_Yc, i_he_core, i_co_core
-    integer :: i_Cc, i_gamma, i_surfH, i_c12,i_o16,i_he4, i_lum, i_rad, i_mdot
+    integer :: i_age, i_mass, i_logTe, i_logL, i_logR, i_he_core, i_co_core
     integer :: i_age2, i_RHe_core,i_RCO_core,i_mcenv, i_Rcenv,i_MoI
+
+    integer :: i_logg, i_Tc, i_Rhoc, i_logLH, i_logLHe, i_gamma, i_surfH
+    integer :: i_Xc, i_Yc, i_Cc, i_he4, i_c12,i_o16, i_lum, i_rad, i_mdot
 
     integer :: number_of_core_columns
     integer, allocatable :: core_cols(:)!, surface_cols(:)
@@ -137,13 +138,12 @@ module track_support
   !holds an evolutionary track for input, use an array of these for multiple tracks
 
     type eep_track
-        character(len=strlen) :: filename, cmd_suffix
-        character(len=8) :: version_string
+        character(len=strlen) :: filename
         type(column), allocatable :: cols(:)
 
         logical :: has_phase = .false., ignore=.false.
         logical :: has_mass_loss
-        integer :: ncol, ntrack, neep, MESA_revision_number
+        integer :: ncol, ntrack, neep
         integer :: star_type = unknown
 
         integer, allocatable :: eep(:), phase(:)
@@ -212,12 +212,12 @@ module track_support
     real(dp) :: Z04, Z_H, Z_He
 
     !for interp_support
-    logical:: fix_track
-    real(dp) :: lookup_index, accuracy_limit
+    logical :: fix_track
+    real(dp) :: lookup_index, mass_accuracy_limit
     
     !for remnant support
     real(dp) :: max_NS_mass         !maximum NS mass
-    logical:: construct_wd_track, allow_electron_capture, use_Initial_final_mass_relation
+    logical :: construct_wd_track, allow_electron_capture, use_Initial_final_mass_relation
     character (len = col_width) :: BHNS_mass_scheme, WD_mass_scheme
 !    real(dp) :: mc1, mc2 !mass cutoffs for Belczynski methods
     contains
@@ -255,7 +255,8 @@ module track_support
     subroutine save_values(new_line,pars)
         type(star_parameters) :: pars
         real(dp),intent (in) :: new_line(:,:)
-real(dp) :: lim_R
+        real(dp) :: lim_R
+        
         pars% mass = new_line(i_mass,1)
         pars% McHe = new_line(i_he_core,1)
         pars% McCO = new_line(i_co_core,1)
@@ -265,10 +266,11 @@ real(dp) :: lim_R
         pars% Teff = 10**(pars% log_Teff)
         pars% log_R = new_line(i_logR,1)
     !        pars% log_R = 2*(3.762+(0.25*pars% log_L)-pars% log_Teff )
-!Todo: also limit radius to prevent track from going beyond the hayashi
-!limit during extrapolation
-lim_R = 2*(3.762+(0.25*pars% log_L)-3.555 )
-if (pars% log_R>lim_R) pars% log_R = lim_R
+    
+        !restrict radius from going beyond the hayashi
+        !limit during extrapolation
+        lim_R = 2*(3.762+(0.25*pars% log_L)-3.555 )
+        if (pars% log_R>lim_R) pars% log_R = lim_R
 
         pars% radius = 10**pars% log_R
         if (pars% phase <= EAGB) then

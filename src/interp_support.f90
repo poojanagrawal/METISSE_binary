@@ -64,7 +64,7 @@ module interp_support
         select case(keyword)
         case(no_interpolation)
             t% tr(1:t% ncol,1:t% ntrack) = a(m)% tr(1:t% ncol,1:t% ntrack)
-            ! t has an extra age column, so cannot use assumed shape arrays in the above
+            ! t has an extra age column (i_age), so cannot use assumed shape arrays in the above
         case(linear)
             !print*, "case1: mlo mhi", mlo, mhi
             alfa = (t% initial_mass - a(mlo)% initial_mass)/(a(mhi)% initial_mass - a(mlo)% initial_mass)
@@ -160,7 +160,7 @@ module interp_support
         if (debug_mass) print*,"min_index for mass", m_low+min_index-1,min_index
         if (debug_mass) print*,"mass(min_index)", min_mass
         
-        if(abs(mass-sa(min_index)% initial_mass)< accuracy_limit) then       !if track is already in the database
+        if(abs(mass-sa(min_index)% initial_mass)< mass_accuracy_limit) then       !if track is already in the database
             keyword = no_interpolation
             !allocate(interpolate(1))
             !interpolate = min_index
@@ -774,7 +774,7 @@ module interp_support
 
     kw = t% pars% phase
     if (t% pars% phase>1 .and. .false.) then
-    !scale the age for the new track
+        !scale the age for the new track
         !TODO: check tscls(kw) and (kw-1) are >0 (defined)
         themold = t% times(kw)-t% times(kw-1)
         them = t% times_new(kw)-t% times_new(kw-1)
@@ -803,13 +803,13 @@ module interp_support
     
     num_list = count(s% ntrack >= eep_m,1)
     allocate(mlist(num_list),mlist1(num_list))
-    !                    cannot use s(:)% tr(i_mass,eep_m), gives error
+    ! NOTE: cannot use s(:)% tr(i_mass,eep_m), gives error
     j=1
     do i =1, size(s)
         if (s(i)% ntrack >= eep_m) then
         mlist1(j) = s(i)% initial_mass
         mlist(j) = s(i)% tr(i_mass,eep_m)   !this eep_m can vary with fractional age
-    !only do until mlist(j)< mnew
+        ! only do until mlist(j)< mnew
         j= j+1
         endif
     end do
@@ -829,10 +829,9 @@ module interp_support
     if(Mlow<1 .or. Mupp > num_list) then
         if (debug) print*,"Error: beyond the bounds for interpolation"
         if (debug) print*, "Mlow,Mupp,num_list,mnew,eep_m,kw", &
-                Mlow,Mupp,num_list,mnew,eep_m,kw!mlist
+                Mlow,Mupp,num_list,mnew,eep_m,kw
         if (Mlow<1) Mlow = 1
         if (Mupp> num_list) Mupp = num_list
-!        stop
         return
     endif
     if (debug)  print*, "Mup =", mlist(Mupp), "mlow", mlist(Mlow),"mnew",mnew

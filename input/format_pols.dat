@@ -9,7 +9,7 @@
 
     extra_char = '#' ! any extra character present in the header line
     total_cols = 20 !number of columns
-    column_name_file = '/Users/pagrawal/METISSE/pols_columns.list'
+    column_name_file = ''
 
     !EEPS
     PreMS_EEP = -1
@@ -29,6 +29,7 @@
     Initial_EEP = 1       !files are used from this line number
     Final_EEP = 708       !to this line
 
+    fix_track = .true.
     low_mass_final_eep = 708
     high_mass_final_eep = 708
 
@@ -57,8 +58,4 @@
     c12_mass_frac = 'cC12'               !c12 mass fraction at the centre
     o16_mass_frac = 'cO16'               !o16 mass fraction at the centre
 
-    !list of columns related to the evolution of core
-    !these are interpolated based on the original age of the star before mass loss
-    !number_of_core_columns = 8
-    !core_columns = 'age,log_L,Mc_He,Mc_CO,log_Tc,cHe4,cC12,cO16'
 /

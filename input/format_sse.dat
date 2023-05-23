@@ -4,12 +4,13 @@
     file_extension = '.eep'
     read_eep_files = .false.
 
-    !the line number where column names are given- e.g. it's 1 for the first line
     header_location = 6
 
     extra_char = '#' ! any extra character present in the header line
+    
+    column_name_file = ''
+    
     total_cols = 7 !number of columns
-    column_name_file = '/Users/pagrawal/METISSE/sse_columns.list'
 
     !EEPS
     PreMS_EEP = -1
@@ -29,6 +30,7 @@
     Initial_EEP = 1       !files are used from this line number
     Final_EEP = 708       !to this line
 
+    fix_track = .true.
     low_mass_final_eep = 708
     high_mass_final_eep = 708
 
@@ -57,8 +59,5 @@
     he4_mass_frac = ''
     
     
-    !list of columns related to the evolution of core
-    !these are interpolated based on the original age of the star before mass loss
-    number_of_core_columns = 4
-    core_columns = 'age,log_L,Mc_He,Mc_CO'
+    
 /

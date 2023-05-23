@@ -66,7 +66,7 @@
     ! Usually two to four tracks neighboring are used for interpolation.
     ! However, if any of them is incomplete,
     ! then the interpolated track is also rendered incomplete.
-    ! If fix_track is, METISSE relaxes the criteria for finding
+    ! If fix_track is true, METISSE relaxes the criteria for finding
     ! the neighboring tracks in above cases and tries to get a complete track.
     
     fix_track = .true.
@@ -87,12 +87,13 @@
     lookup_index = 1.0
 
 
-    !-------COLUMN NAMES-------------
+    !-------COLUMN NAMES---------------------------------
     ! Since columns can be named in different ways
     ! Use this section to names of some important columns
     ! Make sure units are correct
     
-    !ESSENTIAL columns
+    ! ESSENTIAL columns-----------------------------------
+    ! Code will stop if it cannot determine these columns 
 
     !age in units of yrs
     age_colname = ''
@@ -140,8 +141,11 @@
     ! mass of C enriched/He depleted core in solar units
     c_core_mass = ''
 
-    ! (OPTIONAL) additional columns
-    ! SSE formulae are used otherwise
+    !
+    ! (OPTIONAL) additional columns----------------------
+    ! 
+    ! The code will not stop if these column names are not provided
+    ! However, it will revert to using SSE formulae for these quantities
     
     
     ! radius of He enriched/H depleted core
@@ -167,11 +171,10 @@
     !moment of inertia (for tidal/spin calculations)
     moment_of_inertia = ''
     
-    ! (OPTIONAL) columns required for determining Mup and Mhook
-    ! if these are not supplied
-    ! then user-defined values for Mup and Mhook are used
+    ! These are required for determining Mup and Mhook
+    ! If they are not supplied, then user-defined values for Mup and Mhook are used
     ! If Mup and Mhook are not supplied either, then SSE's formulae are used
-    
+
     ! central temperature in log units
     log_Tc = ''
     

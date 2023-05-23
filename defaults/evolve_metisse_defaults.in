@@ -114,9 +114,9 @@
 
     write_track_to_file = .true. 
 
-    ! 'write_eep_file' generates MIST style output file generated 
+    ! 'write_eep_file' generates MIST style output file 
     ! at EVERY step of mass interpolation
-    ! useful for debugging
+    ! useful for debugging and single star evolution calculations with implicit mass loss
 
     write_eep_file = .false.		
 

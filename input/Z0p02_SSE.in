@@ -5,8 +5,6 @@ INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/SSE_EEPs/eeps/Z_02_log_0ml'
 
 z_files = 0.02
 
-key_columns_file = 'input/sse_columns.list'
-
 format_file = 'input/format_sse.dat'
 
 

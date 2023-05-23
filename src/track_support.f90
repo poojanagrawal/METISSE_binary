@@ -108,10 +108,11 @@ module track_support
                                 he_core_radius, co_core_radius, mass_conv_envelope, &
                                 radius_conv_envelope, moment_of_inertia
 
-    integer :: i_age, i_mass, i_logLH, i_logLHe, i_logTe, i_logL, i_logR
-    integer :: i_logg, i_Tc, i_Rhoc, i_Xc, i_Yc, i_he_core, i_co_core
-    integer :: i_Cc, i_gamma, i_surfH, i_c12,i_o16,i_he4, i_lum, i_rad, i_mdot
+    integer :: i_age, i_mass, i_logTe, i_logL, i_logR, i_he_core, i_co_core
     integer :: i_age2, i_RHe_core,i_RCO_core,i_mcenv, i_Rcenv,i_MoI
+
+    integer :: i_logg, i_Tc, i_Rhoc, i_logLH, i_logLHe, i_gamma, i_surfH
+    integer :: i_Xc, i_Yc, i_Cc, i_he4, i_c12,i_o16, i_lum, i_rad, i_mdot
 
     integer :: number_of_core_columns
     integer, allocatable :: core_cols(:)!, surface_cols(:)
@@ -254,7 +255,8 @@ module track_support
     subroutine save_values(new_line,pars)
         type(star_parameters) :: pars
         real(dp),intent (in) :: new_line(:,:)
-real(dp) :: lim_R
+        real(dp) :: lim_R
+        
         pars% mass = new_line(i_mass,1)
         pars% McHe = new_line(i_he_core,1)
         pars% McCO = new_line(i_co_core,1)
@@ -264,10 +266,11 @@ real(dp) :: lim_R
         pars% Teff = 10**(pars% log_Teff)
         pars% log_R = new_line(i_logR,1)
     !        pars% log_R = 2*(3.762+(0.25*pars% log_L)-pars% log_Teff )
-!Todo: also limit radius to prevent track from going beyond the hayashi
-!limit during extrapolation
-lim_R = 2*(3.762+(0.25*pars% log_L)-3.555 )
-if (pars% log_R>lim_R) pars% log_R = lim_R
+    
+        !restrict radius from going beyond the hayashi
+        !limit during extrapolation
+        lim_R = 2*(3.762+(0.25*pars% log_L)-3.555 )
+        if (pars% log_R>lim_R) pars% log_R = lim_R
 
         pars% radius = 10**pars% log_R
         if (pars% phase <= EAGB) then

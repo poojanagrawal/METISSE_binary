@@ -24,8 +24,10 @@ module track_support
     logical :: verbose
     logical :: write_track_to_file, write_eep_file
 
-    character (len = col_width) :: front_end_name
-    integer :: front_end
+    integer :: front_end = -1
+    integer, parameter :: main = 0
+    integer, parameter :: BSE = 1
+    integer, parameter :: COSMIC = 2
 
     character(len=strlen) :: METISSE_DIR
     integer :: low_mass_final_eep, high_mass_final_eep
@@ -210,7 +212,7 @@ module track_support
     !for remnant support in case of direct call
     real(dp) :: max_NS_mass         !maximum NS mass
     logical :: construct_wd_track, allow_electron_capture, use_Initial_final_mass_relation
-    character (len = col_width) :: BHNS_mass_scheme, WD_mass_scheme
+    character (len=*) :: BHNS_mass_scheme, WD_mass_scheme
 !    real(dp) :: mc1, mc2 !mass cutoffs for Belczynski methods
     real(dp) :: pts_1,pts_2,pts_3
 

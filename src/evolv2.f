@@ -210,6 +210,7 @@
 *
 * Save the initial state.
 *
+
       dbg = .false.
       SSE_FLAG = .false.
       irecord = 1

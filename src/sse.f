@@ -100,6 +100,8 @@ c-------------------------------------------------------------c
 *
 * Set parameters which depend on the metallicity 
 *
+      !set the front end for METISSE
+      call initialize_front_end('SSE','')
       CALL zcnsts(z,zpars)
       if(idum.gt.0) idum = -idum
 *

@@ -61,8 +61,6 @@
 
 &METISSE_input_controls
 
-    METISSE_DIR = ''
-
     ! A metallicity file contains details about 
     ! the set of input tracks for a given metallicity,
     ! such as the path to the folder, their metallicity value
@@ -81,7 +79,7 @@
     !					                             'path20'
 
     
-	  metallicity_file_list = ''
+    metallicity_file_list = ''
 
 
     ! if (abs(z1-z2)/MIN(z1,z2)) > Z_accuracy_limit

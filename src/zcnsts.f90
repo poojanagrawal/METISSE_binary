@@ -13,10 +13,7 @@ subroutine zcnsts(z,zpars)
     debug = .false.
     
     initial_Z = z
-    front_end_name = 'BSE'
-    !determine the front end
-    call initialize_front_end(ierr); if (ierr/=0) STOP
-
+    
     !reading defaults option first
     call read_defaults(ierr); if (ierr/=0) STOP
 

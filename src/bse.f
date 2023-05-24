@@ -136,6 +136,8 @@
 *
 * Set parameters which depend on the metallicity 
 *
+      !set the front end for METISSE
+      call initialize_front_end('BSE','')
       CALL zcnsts(z,zpars)
 *
 * Set the collision matrix.

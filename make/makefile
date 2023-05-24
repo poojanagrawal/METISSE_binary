@@ -25,7 +25,8 @@ z_support.o: $(SRC_DIR)/z_support.f90 track_support.o
 sse_support.o: $(SRC_DIR)/sse_support.f90 track_support.o z_support.o 
 remnant_support.o: $(SRC_DIR)/remnant_support.f90 track_support.o sse_support.o
 interp_support.o: $(SRC_DIR)/interp_support.f90 track_support.o z_support.o sse_support.o
-  
+
+initialize_front_end.o: $(SRC_DIR)/initialize_front_end.f90 track_support.o
 alloc_track.o: $(SRC_DIR)/alloc_track.f90 track_support.o
 dealloc_track.o: $(SRC_DIR)/dealloc_track.f90 track_support.o
 assign_commons.o: $(SRC_DIR)/assign_commons.f90 track_support.o remnant_support.o
@@ -67,14 +68,14 @@ SSE_METISSE=sse_metisse
 %.o : $(SRC_DIR)/%.f90
 	$(FC) $(OMP) $(FFLAGS1) -c $<
 
-$(SSE_METISSE): $(OBJT4) star.o sse_support.o hrdiag.o remnant_support.o z_support.o track_support.o interp_support.o zcnsts.o metisse_mlwind.o deltat.o alloc_track.o dealloc_track.o assign_commons.o comenv_lambda.o
+$(SSE_METISSE): $(OBJT4) star.o sse_support.o hrdiag.o remnant_support.o z_support.o track_support.o interp_support.o zcnsts.o metisse_mlwind.o deltat.o alloc_track.o dealloc_track.o assign_commons.o comenv_lambda.o initialize_front_end.o
 	$(FC) $(OMP) -o $(BSE_DIR)/$(SSE_METISSE) $^
 
 
-$(BSE_METISSE): $(OBJT5) star.o sse_support.o hrdiag.o remnant_support.o z_support.o track_support.o interp_support.o zcnsts.o metisse_mlwind.o deltat.o alloc_track.o dealloc_track.o assign_commons.o comenv_lambda.o
+$(BSE_METISSE): $(OBJT5) star.o sse_support.o hrdiag.o remnant_support.o z_support.o track_support.o interp_support.o zcnsts.o metisse_mlwind.o deltat.o alloc_track.o dealloc_track.o assign_commons.o comenv_lambda.o initialize_front_end.o
 	$(FC) $(OMP) -o $(BSE_DIR)/$(BSE_METISSE) $^
 
-popbin: $(OBJT3) star.o sse_support.o hrdiag.o remnant_support.o z_support.o track_support.o interp_support.o zcnsts.o metisse_mlwind.o deltat.o alloc_track.o dealloc_track.o assign_commons.o comenv_lambda.o
+popbin: $(OBJT3) star.o sse_support.o hrdiag.o remnant_support.o z_support.o track_support.o interp_support.o zcnsts.o metisse_mlwind.o deltat.o alloc_track.o dealloc_track.o assign_commons.o comenv_lambda.o initialize_front_end.o
 	$(FC) $(OMP) -o $(BSE_DIR)/popbin $^
 
 all:$(BSE_METISSE) $(SSE_METISSE) popbin

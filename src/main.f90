@@ -14,8 +14,8 @@ program metisse
     real(dp):: z,zpars(20)
     real(dp), allocatable :: mass_array(:)
 
-    direct_call = .true.
-
+    !set the front end for METISSE
+    call initialize_front_end('main')
     !read files of input metallicity and load them
     call zcnsts(z,zpars)
     

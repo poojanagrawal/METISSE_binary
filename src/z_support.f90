@@ -1,10 +1,6 @@
 module z_support
     use track_support
     implicit none
-
-    integer, parameter :: main = 0
-    integer, parameter :: BSE = 1
-    integer, parameter :: COSMIC = 2
     
     character(LEN=strlen) :: format_file, extra_columns_file, INPUT_FILES_DIR
     logical :: read_eep_files, read_all_columns
@@ -51,7 +47,7 @@ module z_support
                         WD_mass_scheme,use_initial_final_mass_relation, allow_electron_capture, &
                         BHNS_mass_scheme, max_NS_mass,pts_1, pts_2, pts_3
                             
-    namelist /METISSE_input_controls/ METISSE_DIR, metallicity_file_list, Z_accuracy_limit,  &
+    namelist /METISSE_input_controls/ metallicity_file_list, Z_accuracy_limit,  &
                         mass_accuracy_limit, construct_wd_track, verbose, &
                         write_eep_file, write_track_to_file
             
@@ -73,47 +69,28 @@ module z_support
 
     contains
 
-    subroutine initialize_front_end(ierr)
-        integer, intent(out) :: ierr
-        
-        ierr = 0
-        if (front_end_name == 'main') then
-            ! METISSE's main code as described in Agrawal et al. 2020
-            ! Can be used to evolve single stars and/or debugging purposes.
-            ! Note: currently not functional.
-            ! Needs to be updated for latest updates.
-            front_end = main
-            
-            if (.not. defined(initial_Z ))then
-                print*,"Error: initial_Z is not defined"
-                ierr = 1
-            endif
-            
-        elseif (front_end_name == 'SSE' .or. front_end_name == 'BSE') then
-            ! SSE (Single Star Evolution) from Hurley et al. 2000
-            ! BSE (Binary Star Evolution) from Hurley et al. 2002
-            front_end = BSE
-        elseif (front_end_name == 'COSMIC') then
-            ! COSMIC (Compact Object Synthesis and Monte Carlo Investigation Code)
-            ! Binary evolution code from Breivik et al 2020
-            front_end = COSMIC
-        else
-            print*, "Error determining the front end for METISSE"
-            print*, "Choose from 'main', 'SSE', 'BSE', 'COSMIC' for front_end_name"
-            ierr = 1
-        endif
-    
-    end subroutine initialize_front_end
-
     subroutine read_defaults(ierr)
         integer :: io
         integer, intent(out) :: ierr
-        
+        character(len=strlen) :: default_infile
+
+
         ierr = 0
         io = alloc_iounit(ierr)
-        open(io, file = 'defaults/evolve_metisse_defaults.in',action='read',iostat=ierr )
+        
+        if (front_end <0) then
+        
+            print*, 'Error: front_end is not initialized'
+            ierr = 1
+            return
+        endif
+        default_infile = trim(METISSE_DIR)// '/defaults/evolve_metisse_defaults.in'
+
+        print*, 'default',METISSE_DIR,default_infile
+        open(io, file = trim(default_infile) ,action='read',iostat=ierr )
             if(ierr/=0)then
-                print*,'Failed while trying to open format_defaults'
+                print*,'Failed while trying to open evolve_metisse_defaults: ', default_infile
+                return
             endif
             read(unit = io, nml = SSE_input_controls)
             read(unit = io, nml = METISSE_input_controls)
@@ -128,9 +105,12 @@ module z_support
         
         !initialize metallicity related variables
         io = alloc_iounit(ierr)
-        open(io, file = 'defaults/metallicity_defaults.in',action='read',iostat=ierr )
+        default_infile = trim(METISSE_DIR)// '/defaults/metallicity_defaults.in'
+
+        open(io, file = default_infile,action='read',iostat=ierr )
             if (ierr /= 0) then
                print*, 'Error: Failed while trying to open metallicity_defaults'
+               return
             end if
             read(unit=io, nml = metallicity_controls)
         close(io)
@@ -138,10 +118,13 @@ module z_support
         
         !initialize file format specs
         io=alloc_iounit(ierr)
-        open(unit=io,file='defaults/format_defaults.in',action='read',iostat=ierr)
+        default_infile = trim(METISSE_DIR)// '/defaults/format_defaults.in'
+
+        open(unit=io,file=default_infile,action='read',iostat=ierr)
 
             if(ierr/=0)then
                 print*,'Failed while trying to open format_defaults'
+                return
             endif
             read(unit = io, nml = format_controls)
         close(io)
@@ -163,7 +146,14 @@ module z_support
                call free_iounit(io)
                return
             end if
-            if (front_end == main) read(unit = io, nml = SSE_input_controls)
+            if (front_end == main) then
+                read(unit = io, nml = SSE_input_controls)
+                if (.not. defined(initial_Z ))then
+                    print*,"Error: initial_Z is not defined"
+                    ierr = 1
+                    return
+                endif
+            endif
             read(unit = io, nml = METISSE_input_controls)
         close(io)
         call free_iounit(io)

@@ -212,7 +212,7 @@ module track_support
     !for remnant support in case of direct call
     real(dp) :: max_NS_mass         !maximum NS mass
     logical :: construct_wd_track, allow_electron_capture, use_Initial_final_mass_relation
-    character (len=*) :: BHNS_mass_scheme, WD_mass_scheme
+    character (len=strlen) :: BHNS_mass_scheme, WD_mass_scheme
 !    real(dp) :: mc1, mc2 !mass cutoffs for Belczynski methods
     real(dp) :: pts_1,pts_2,pts_3
 

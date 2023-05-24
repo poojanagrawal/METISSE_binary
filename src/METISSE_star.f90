@@ -1,4 +1,4 @@
-subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
+subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
 
     use track_support
     use interp_support
@@ -142,5 +142,5 @@ subroutine star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     if (debug) print*, "in star end", mt,delta,kw,tm,tscls(1),tn
     nullify(t)
     return
-end subroutine star
+end subroutine METISSE_star
 

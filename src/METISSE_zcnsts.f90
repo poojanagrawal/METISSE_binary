@@ -1,4 +1,4 @@
-subroutine zcnsts(z,zpars)
+subroutine METISSE_zcnsts(z,zpars)
     use track_support
     use z_support
     use remnant_support
@@ -91,5 +91,5 @@ subroutine zcnsts(z,zpars)
         call assign_commons()
     endif
 
-end subroutine zcnsts
+end subroutine METISSE_zcnsts
 

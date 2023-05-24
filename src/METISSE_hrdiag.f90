@@ -1,4 +1,4 @@
- subroutine hrdiag(mass,aj,mt,tm,tn,tscls,lums,GB,zpars,&
+ subroutine METISSE_hrdiag(mass,aj,mt,tm,tn,tscls,lums,GB,zpars,&
                                 r,lum,kw,mc,rc,menv,renv,k2,mcx,id)
     use track_support
     use interp_support, only: interpolate_age
@@ -181,4 +181,4 @@
 
     
     nullify(t)
-    end subroutine hrdiag
+    end subroutine METISSE_hrdiag

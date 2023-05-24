@@ -302,11 +302,11 @@
 *         if (dbg)
 *         print*, "initial call for" , mass0(k)
          dtm =0.d0
-         CALL star(kstar(k),mass0(k),mass(k),tm,tn,tscls,lums,GB,zpars
-     &    ,dtm,k)
+         CALL METISSE_star(kstar(k),mass0(k),mass(k),tm,tn,tscls,lums,
+     &                      GB,zpars,dtm,k)
 
-         CALL hrdiag(mass0(k),age,mass(k),tm,tn,tscls,lums,GB,zpars,
-     &               rm,lum,kstar(k),mc,rc,me,re,k2,mcx,k)
+         CALL METISSE_hrdiag(mass0(k),age,mass(k),tm,tn,tscls,lums,GB,
+     &               zpars,rm,lum,kstar(k),mc,rc,me,re,k2,mcx,k)
 *            print*, 'ini', tm,tn,kstar(k)
 
          aj(k) = age
@@ -702,8 +702,8 @@
                mass0(k) = mass(k)
 * PA: detached phase call for adjusting epoch
             if (dbg) print*,'detached phase call for adjusting epoch',k
-               CALL star(kstar(k),mass0(k),mass(k),tm,tn,tscls,
-     &                   lums,GB,zpars,dtm,k)
+               CALL METISSE_star(kstar(k),mass0(k),mass(k),tm,tn,
+     &                   tscls,lums,GB,zpars,dtm,k)
 *                print*,'star_ep_dt', mass0(k),mass(k),kstar(k),k
                if(kstar(k).eq.2)then
                   if(GB(9).lt.massc(k).or.m0.gt.zpars(3))then
@@ -770,9 +770,9 @@
 * PA: second (main) call for detached phase
         if(dbg)print*,"second (main) call for detached phase",m0,age,
      &                  kw,k
-         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,k)
+         CALL METISSE_star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,k)
 *         print*, 'star_dt_mn',m0,mt,kw,k
-         CALL hrdiag(m0,age,mt,tm,tn,tscls,lums,GB,zpars,
+         CALL METISSE_hrdiag(m0,age,mt,tm,tn,tscls,lums,GB,zpars,
      &               rm,lum,kw,mc,rc,me,re,k2,mcx,k)
 *
          if (dbg)print*,"after second call",m0,age,kw,k
@@ -840,7 +840,7 @@
 *
          dt = dtmi(k)
          if (dbg) print*, "calling deltat-1",tphys,k,kw
-         CALL deltat(kw,age,tm,tn,tscls,dt,dtr,k)
+         CALL METISSE_deltat(kw,age,tm,tn,tscls,dt,dtr,k)
 
 *
 * Choose minimum of time-scale and remaining interval.
@@ -1243,7 +1243,7 @@
 *
             mass0(j2) = mass(j2)
             if (dbg) print*, 'Rejuvenation, calling star ',j2
-            CALL star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,
+            CALL METISSE_star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,
      &                tscls,lums,GB,zpars,dtm,j2)
 * If the star has no convective core then the effective age decreases,
 * otherwise it will become younger still.
@@ -1261,9 +1261,9 @@
             mass(j2) = mass(j2) + dm2
             if(kstar(j2).eq.2)then
                mass0(j2) = mass(j2)
-                if (dbg) print*, 'RLOF secondary giant, call star',j2
-               CALL star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,tscls,
-     &                   lums,GB,zpars,dtm,j2)
+                if (dbg)print*,'RLOF secondary giant,calling star',j2
+               CALL METISSE_star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,
+     &                   tscls,lums,GB,zpars,dtm,j2)
                aj(j2) = tmsnew + tscls(1)*(aj(j2)-tms(j2))/tbgb(j2)
                epoch(j2) = tphys - aj(j2)
             endif
@@ -1933,8 +1933,8 @@
             m0 = mass0(j1)
             mass0(j1) = mass(j1)
             if (dbg) print*,'adjusting epoch, calling star', j1
-            CALL star(kstar(j1),mass0(j1),mass(j1),tmsnew,tn,tscls,
-     &                lums,GB,zpars,dtm,j1)
+            CALL METISSE_star(kstar(j1),mass0(j1),mass(j1),tmsnew,tn,
+     &                tscls,lums,GB,zpars,dtm,j1)
             if(GB(9).lt.massc(j1))then
                mass0(j1) = m0
             endif
@@ -1943,8 +1943,8 @@
             m0 = mass0(j2)
             mass0(j2) = mass(j2)
             if (dbg) print*,'adjusting epoch, calling star', j2
-            CALL star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,tscls,
-     &                lums,GB,zpars,dtm,j2)
+            CALL METISSE_star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,
+     &               tscls,lums,GB,zpars,dtm,j2)
             if(GB(9).lt.massc(j2))then
                mass0(j2) = m0
             endif
@@ -1974,7 +1974,7 @@
 *
       if(kstar(j1).le.2.or.kstar(j1).eq.7)then
          if (dbg) print*, "reju, calling star",j1,aj(j1),kstar(j1)
-         CALL star(kstar(j1),mass0(j1),mass(j1),tmsnew,tn,tscls,
+         CALL METISSE_star(kstar(j1),mass0(j1),mass(j1),tmsnew,tn,tscls,
      &             lums,GB,zpars,dtm,j1)
          if(kstar(j1).eq.2)then
             aj(j1) = tmsnew + (tscls(1) - tmsnew)*(aj(j1)-tms(j1))/
@@ -1988,7 +1988,7 @@
 *
       if(kstar(j2).le.2.or.kstar(j2).eq.7)then
         if (dbg) print*, "reju, calling star",j2,aj(j2)
-         CALL star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,tscls,
+         CALL METISSE_star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,tscls,
      &             lums,GB,zpars,dtm,j2)
          if(kstar(j2).eq.2)then
             aj(j2) = tmsnew + (tscls(1) - tmsnew)*(aj(j2)-tms(j2))/
@@ -2024,8 +2024,8 @@
          if (dbg) print*,'obtaining parameters for the next step'
          if (dbg) print*,' calling star and hrdiag', k
 
-         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,k)
-         CALL hrdiag(m0,age,mt,tm,tn,tscls,lums,GB,zpars,
+         CALL METISSE_star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,k)
+         CALL METISSE_hrdiag(m0,age,mt,tm,tn,tscls,lums,GB,zpars,
      &               rm,lum,kw,mc,rc,me,re,k2,mcx,k)
 *
 * Check for a supernova and correct the semi-major axis if so.
@@ -2064,7 +2064,7 @@
 *
          if(kw.le.9)then
             if (dbg) print*, "calling deltat-2",tphys,k,kw
-            CALL deltat(kw,age,tm,tn,tscls,dt,dtr,k)
+            CALL METISSE_deltat(kw,age,tm,tn,tscls,dt,dtr,k)
 
             dtmi(k) = MIN(dt,dtr)
 *           dtmi(k) = dtr

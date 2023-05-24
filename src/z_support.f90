@@ -2,6 +2,10 @@ module z_support
     use track_support
     implicit none
 
+    integer, parameter :: main = 0
+    integer, parameter :: BSE = 1
+    integer, parameter :: COSMIC = 2
+    
     character(LEN=strlen) :: format_file, extra_columns_file, INPUT_FILES_DIR
     logical :: read_eep_files, read_all_columns
 
@@ -69,6 +73,38 @@ module z_support
 
     contains
 
+    subroutine initialize_front_end(ierr)
+        integer, intent(out) :: ierr
+        
+        ierr = 0
+        if (front_end_name == 'main') then
+            ! METISSE's main code as described in Agrawal et al. 2020
+            ! Can be used to evolve single stars and/or debugging purposes.
+            ! Note: currently not functional.
+            ! Needs to be updated for latest updates.
+            front_end = main
+            
+            if (.not. defined(initial_Z ))then
+                print*,"Error: initial_Z is not defined"
+                ierr = 1
+            endif
+            
+        elseif (front_end_name == 'SSE' .or. front_end_name == 'BSE') then
+            ! SSE (Single Star Evolution) from Hurley et al. 2000
+            ! BSE (Binary Star Evolution) from Hurley et al. 2002
+            front_end = BSE
+        elseif (front_end_name == 'COSMIC') then
+            ! COSMIC (Compact Object Synthesis and Monte Carlo Investigation Code)
+            ! Binary evolution code from Breivik et al 2020
+            front_end = COSMIC
+        else
+            print*, "Error determining the front end for METISSE"
+            print*, "Choose from 'main', 'SSE', 'BSE', 'COSMIC' for front_end_name"
+            ierr = 1
+        endif
+    
+    end subroutine initialize_front_end
+
     subroutine read_defaults(ierr)
         integer :: io
         integer, intent(out) :: ierr
@@ -114,7 +150,7 @@ module z_support
     end subroutine read_defaults
     
     
-    subroutine read_input(ierr)
+    subroutine read_metisse_input(ierr)
         integer :: io
         integer, intent(out) :: ierr
         
@@ -127,12 +163,12 @@ module z_support
                call free_iounit(io)
                return
             end if
-            if (direct_call) read(unit = io, nml = SSE_input_controls)
+            if (front_end == main) read(unit = io, nml = SSE_input_controls)
             read(unit = io, nml = METISSE_input_controls)
         close(io)
         call free_iounit(io)
         
-    end subroutine read_input
+    end subroutine read_metisse_input
     
     subroutine get_metallcity_file_from_Z(Z_req,ierr)
         real(dp), intent(in) :: Z_req
@@ -289,7 +325,7 @@ module z_support
     subroutine read_eep(x)      !from iso/make_track.f90
     type(eep_track), intent(inout) :: x
     real(dp), allocatable :: temp_tr(:,:)
-    integer :: ierr, io, j, i
+    integer :: ierr, io, i,j
 
     logical :: read_phase
     character(LEN=8) :: phase_info
@@ -365,12 +401,12 @@ module z_support
         if (.not. allocated(key_cols)) call get_key_columns(temp_cols, total_cols)
         
         x% ncol = size(key_cols)
-        if (debug) print*,'j', total_cols,x% ncol,x% initial_mass
+        if (debug) print*,'i', total_cols,x% ncol,x% initial_mass
         allocate(x% tr(x% ncol, x% ntrack), x% cols(x% ncol))
-        do j = 1, x% ncol
-            if (debug) print*, 'key column ',j,':',key_cols(j)% name,key_cols(j)% loc
-            x% cols(j)% name = key_cols(j)% name
-            x% tr(j,:) = temp_tr(key_cols(j)% loc,:)
+        do i = 1, x% ncol
+            if (debug) print*, 'key column ',i,':',key_cols(i)% name,key_cols(i)% loc
+            x% cols(i)% name = key_cols(i)% name
+            x% tr(i,:) = temp_tr(key_cols(i)% loc,:)
         end do
     endif
     deallocate(temp_tr, temp_cols)
@@ -453,12 +489,12 @@ module z_support
             !determine key columns
             if (.not. allocated(key_cols)) call get_key_columns(temp_cols, total_cols)
             x% ncol = size(key_cols)
-            if (debug) print*,'j', total_cols,x% ncol
+            if (debug) print*,'i', total_cols,x% ncol
             allocate(x% tr(x% ncol, x% ntrack), x% cols(x% ncol))
-            do j = 1, x% ncol
-                if (debug) print*, 'key column ',j,':',key_cols(j)% name,key_cols(j)% loc
-                x% cols(j)% name = key_cols(j)% name
-                x% tr(j,:) = temp_tr(key_cols(j)% loc,:)
+            do i = 1, x% ncol
+                if (debug) print*, 'key column ',i,':',key_cols(i)% name,key_cols(i)% loc
+                x% cols(i)% name = key_cols(i)% name
+                x% tr(i,:) = temp_tr(key_cols(i)% loc,:)
             end do
         endif
 

@@ -13,18 +13,6 @@ module track_support
     integer, parameter :: dp = selected_real_kind(p=15)
 
     integer, parameter :: strlen = 256 ! for character (len=strlen)
-
-    logical :: verbose
-    logical :: write_track_to_file, write_eep_file
-    logical :: direct_call = .false.
-
-
-    character(len=strlen) :: METISSE_DIR
-    real(dp) :: pts_1,pts_2,pts_3
-    integer :: low_mass_final_eep, high_mass_final_eep
-    integer, allocatable :: key_eeps(:)
-
-    logical, parameter :: old_core_mass_names=.false.
     integer, parameter :: col_width = 32
 
     real(dp), parameter :: ln10=log(1.0d1)
@@ -32,7 +20,16 @@ module track_support
     real(dp), parameter :: tiny = 1.0d-6
     real(dp), parameter :: undefined  =  -1.0
     integer, parameter :: undefined_i = -1
+    
+    logical :: verbose
+    logical :: write_track_to_file, write_eep_file
 
+    character (len = col_width) :: front_end_name
+    integer :: front_end
+
+    character(len=strlen) :: METISSE_DIR
+    integer :: low_mass_final_eep, high_mass_final_eep
+    integer, allocatable :: key_eeps(:)
 
     ! for use when constructing EEP distance
     logical :: weight_center_rho_T_by_Xc
@@ -51,11 +48,6 @@ module track_support
     character(len=10) :: star_label(4) = ['   unknown', 'substellar', '  low-mass', ' high-mass']
     character(len=5) :: phase_label(16) = ['lm_MS','   MS','   HG','  FGB',' CHeB',' EAGB',&
     'TPAGB','He_MS', 'He_HG','He_GB','He_WD','CO_WD','ONeWD','   NS','   BH','   MR']
-
-    ! default column format specs
-    integer :: head !=29
-    integer :: main !=28
-    integer :: xtra !=0
 
     !sse phases
 
@@ -215,11 +207,13 @@ module track_support
     logical :: fix_track
     real(dp) :: lookup_index, mass_accuracy_limit
     
-    !for remnant support
+    !for remnant support in case of direct call
     real(dp) :: max_NS_mass         !maximum NS mass
     logical :: construct_wd_track, allow_electron_capture, use_Initial_final_mass_relation
     character (len = col_width) :: BHNS_mass_scheme, WD_mass_scheme
 !    real(dp) :: mc1, mc2 !mass cutoffs for Belczynski methods
+    real(dp) :: pts_1,pts_2,pts_3
+
     contains
 
     !linear search alogorithm

@@ -8,32 +8,28 @@ subroutine zcnsts(z,zpars)
 
     integer :: i,ierr
     logical :: debug
-    character(len=strlen):: path
     
     ierr = 0
     debug = .false.
     
-    if (direct_call .and. (.not. defined(z)))then
-        print*,"Error: initial_Z is not defined "
-        STOP
-    endif
-    
     initial_Z = z
-    
+    front_end_name = 'BSE'
+    !determine the front end
+    call initialize_front_end(ierr); if (ierr/=0) STOP
+
     !reading defaults option first
     call read_defaults(ierr); if (ierr/=0) STOP
 
     !read inputs from evolve_metisse.in
-    call read_input(ierr); if (ierr/=0) STOP
+    call read_metisse_input(ierr); if (ierr/=0) STOP
     
     !read metallicity related variables
     call get_metallcity_file_from_Z(z,ierr); if (ierr/=0) STOP
     
-    
-    !reading format file
+    !read file-format
     call read_format(format_file,ierr); if (ierr/=0) STOP
 
-    !getting filenames
+    !get filenames
     call get_files_from_path(INPUT_FILES_DIR,ierr); if (ierr/=0) STOP
 
     if (verbose) print*,"Number of input tracks: ", num_tracks
@@ -83,14 +79,14 @@ subroutine zcnsts(z,zpars)
     !TODO: check for monotonicity of initial masses
     if (debug) print*,s% initial_mass
 
-    !first calculate it SSE way as a default
+    !first calculate it the SSE way for use as backup 
     call calculate_sse_zpars(z,zpars)
 
     !then reset z parameters where available
     !and determine cutoff masses
     call set_zparameters(zpars)
 
-    if (direct_call) then
+    if (front_end == main) then
     ! sets remnant schmeme from SSE_input_controls
         call set_remnant_scheme()
     else

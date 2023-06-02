@@ -83,7 +83,7 @@
             kw = 14
 *           WRITE(66,*)' GNTAGE6: changed to 4'
          else
-            CALL METISSE_star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
+            CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             aj = tscls(13)
          endif
       endif
@@ -98,7 +98,7 @@
             kw = 14
 *           WRITE(66,*)' GNTAGE5: changed to 4'
          else
-            CALL METISSE_star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
+            CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             aj = tscls(2) + tscls(3)
          endif
       endif
@@ -164,7 +164,7 @@
  10      continue
  20      continue
 *
-         CALL METISSE_star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
+         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
          aj = tscls(2) + aj*tscls(3)
 *
       endif
@@ -189,7 +189,7 @@
          else
 * Use Newton-Raphson to find m0 from Lbgb
             m0 = zpars(2)
-            CALL METISSE_star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
+            CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             lum = lmcgbf(mc,GB)
             j = 0
  30         continue
@@ -210,7 +210,7 @@
             goto 30
  40         continue
          endif
-         CALL METISSE_star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
+         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
          aj = tscls(1) + 1.0d-06*(tscls(2) - tscls(1))
 *
       endif
@@ -223,7 +223,7 @@
 *
          kw = 8
          mmin = mc
-         CALL METISSE_star(kw,mmin,mc,tm,tn,tscls,lums,GB,zpars,dtm,id)
+         CALL star(kw,mmin,mc,tm,tn,tscls,lums,GB,zpars,dtm,id)
          mcx = mcgbf(lums(2),GB,lums(6))
          if(mcx.ge.mc)then
 *           WRITE(99,*)' FATAL ERROR! GNTAGE9: mmin too big '
@@ -236,7 +236,7 @@
          f = mcx - mc
          mmax = mt
          do 50 , j = 1,jmax
-            CALL METISSE_star(kw,mmax,mc,tm,tn,tscls,lums,GB,zpars,dtm
+            CALL star(kw,mmax,mc,tm,tn,tscls,lums,GB,zpars,dtm
      &                         ,id)
             mcy = mcgbf(lums(2),GB,lums(6))
             if(mcy.gt.mc) goto 60
@@ -266,7 +266,7 @@
          do 70 , j = 1,jmax
             dm = 0.5d0*dm
             mmid = m0 + dm
-            CALL METISSE_star(kw,mmid,mc,tm,tn,tscls,lums,GB,zpars,dtm
+            CALL star(kw,mmid,mc,tm,tn,tscls,lums,GB,zpars,dtm
      &                             ,id)
             mcy = mcgbf(lums(2),GB,lums(6))
             fmid = mcy - mc
@@ -283,7 +283,7 @@
  70      continue
  80      continue
 *
-         CALL METISSE_star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
+         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
          aj = tm + 1.0d-10*tm
 *
       endif
@@ -294,7 +294,7 @@
          m0 = mt
          mcy = mcagbf(m0)
          aj = mc/mcy
-         CALL METISSE_star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
+         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
          if(m0.le.zpars(2))then
             mcx = mcgbf(lums(4),GB,lums(6))
          else

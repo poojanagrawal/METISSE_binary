@@ -1,5 +1,5 @@
 ***
-      SUBROUTINE star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars)
+      SUBROUTINE SSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars)
 *
 *
 *       Stellar luminosity & evolution time. 

@@ -5,14 +5,14 @@
 
     ! Location of the folder containing input files for a given metallicity
 
-    INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/pols/eeps/OVS01'
+    INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/pols/eeps/OVS02'
 
 
     ! Metallicity of input tracks
     ! It is only used to cross-check 
     ! against input Z to avoid mistakes
 
-    z_files = 0.01
+    z_files = 0.02
 
     ! Details about the file structure (see format_defaults.dat)
     ! Empty string will raise an error

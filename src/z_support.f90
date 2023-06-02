@@ -40,7 +40,7 @@ module z_support
         real(dp) :: mass
     end type critical_mass
 
-    type(critical_mass), allocatable :: Mcrit(:)
+    type(critical_mass) :: Mcrit(9)
 
     namelist /SSE_input_controls/ initial_Z, max_age,read_mass_from_file,&
                         input_mass_file, number_of_tracks, max_mass, min_mass, &
@@ -86,10 +86,12 @@ module z_support
         endif
         default_infile = trim(METISSE_DIR)// '/defaults/evolve_metisse_defaults.in'
 
-        print*, 'default',METISSE_DIR,default_infile
         open(io, file = trim(default_infile) ,action='read',iostat=ierr )
             if(ierr/=0)then
                 print*,'Failed while trying to open evolve_metisse_defaults: ', default_infile
+                print*, 'METISSE_DIR: ',METISSE_DIR
+                print*, 'default_infile: ',default_infile
+
                 return
             endif
             read(unit = io, nml = SSE_input_controls)
@@ -136,13 +138,17 @@ module z_support
     subroutine read_metisse_input(ierr)
         integer :: io
         integer, intent(out) :: ierr
-        
+        character(len=strlen) :: infile
+
+
         ierr = 0
         io = alloc_iounit(ierr)
         !reading user input
-        open(io,FILE='evolve_metisse.in',action="read",iostat=ierr)
+        infile = trim(METISSE_DIR)// '/evolve_metisse.in'
+
+        open(io,FILE=infile,action="read",iostat=ierr)
             if (ierr /= 0) then
-               print*, 'Error: Failed to evolve_metisse.in'
+               print*, 'Error: Failed to open evolve_metisse.in'
                call free_iounit(io)
                return
             end if
@@ -186,7 +192,6 @@ module z_support
             if (len_trim(metallicity_file_list(i))>0) then
                 if (verbose) print*, 'Reading : ', trim(metallicity_file_list(i))
                 call read_metallicity_file(metallicity_file_list(i),ierr)
-                
                 if (ierr/=0) cycle
                 if (.not. defined (Z_files)) then
                     print*, 'Warning: Z_files not defined in "'//trim(metallicity_file_list(i))//'"'
@@ -201,8 +206,7 @@ module z_support
 
             endif
         end do
-        
-        if (found_z .eqv. .false.) then
+        if ((found_z .eqv. .false.) .and. (ierr==0)) then
             print*, 'Error: metallicity value =', Z_req, 'not found amongst given Z_files'
             print*, 'Check metallicity_file_list and value of Z_files for each file'
             print*, 'If needed, Z_accuracy_limit can be relaxed (set to a greater value).'
@@ -214,6 +218,8 @@ module z_support
     
     subroutine read_metallicity_file(filename,ierr)
         character(LEN=strlen), intent(in) :: filename
+        character(LEN=strlen) :: default_infile
+
         integer :: io
         integer, intent(out) :: ierr
 
@@ -221,7 +227,9 @@ module z_support
         
         ! reset the defaults (even if already set)
         io = alloc_iounit(ierr)
-        open(io, file = 'defaults/metallicity_defaults.in',action='read')
+        default_infile = trim(METISSE_DIR)// '/defaults/metallicity_defaults.in'
+
+        open(io, file = default_infile,action='read')
             read(unit=io, nml = metallicity_controls)
         close(io)
         call free_iounit(io)
@@ -230,7 +238,7 @@ module z_support
         io = alloc_iounit(ierr)
         open(io, file=filename, action='read', iostat=ierr)
             if (ierr /= 0) then
-               print*, 'Error: Failed to open metallicity_file "'//trim(filename)//'"'
+               print*, 'Error: failed to open metallicity_file: "'//trim(filename)//'"'
                call free_iounit(io)
                return
             end if
@@ -248,10 +256,10 @@ module z_support
         ierr = 0
         io = alloc_iounit(ierr)
         !read file format specs
-        open(unit=io,file=trim(filename),status='old',action='read',iostat=ierr)
+        open(unit=io,file=trim(filename),action='read',iostat=ierr)
             if(ierr/=0)then
-                print*,'Erorr reading format file'
-                print*,'check if format_file is correct'
+                print*,'Erorr: failed to open format file: "'//trim(filename)//'"'
+                print*,'check if format file is correct'
                 return
             endif
             read(unit = io, nml = format_controls)
@@ -282,7 +290,7 @@ module z_support
         call system(eep_list,ierr)
         
         if (ierr/=0) then
-            print*,'Problem reading input files.'
+            print*,'Error: failed to read input files.'
             print*,'Check if INPUT_FILES_DIR is correct.'
             return
         end if
@@ -495,8 +503,7 @@ module z_support
         allocate(x% eep(x% neep))
         x% eep = pack(key_eeps,mask = key_eeps .le. x% ntrack)
         !print*,x% eep
-        i = locate_column(x% cols, mass_colname)
-        x% initial_mass = x% tr(i,1)
+        x% initial_mass = x% tr(i_mass,1)
         x% initial_Z = initial_Z
 
         if (debug) print*,x% initial_mass, x% initial_Z, x% ncol
@@ -1076,7 +1083,7 @@ module z_support
         Mup_core = 0.0
         Mec_core = 0.0
 
-        allocate(Mcrit(9))
+!        allocate(Mcrit(9))
         Mcrit% mass= -1.0
         Mcrit% loc = 0
 
@@ -1156,9 +1163,9 @@ module z_support
             else        !if (smass>=3.0) then
                 !determining Mup
                 if ((.not. defined(Mcrit(6)% mass)) .and. smass<8.0) then
-!                    j_tagb = min(len_track,cCBurn_EEP,TPAGB_EEP)         !end of agb  min(cCBurn,TPAGB)
                     if (i_c12>0 .and. i_o16 >0) then
-                        j_tagb = min(cCBurn_EEP,TPAGB_EEP)
+                        j_tagb = min(cCBurn_EEP,TPAGB_EEP)      !end of agb
+                        j_tagb = min(len_track,j_tagb)
                         co_fraction = s(i)% tr(i_c12,j_tagb)+s(i)% tr(i_o16,j_tagb)
                         if (old_co_frac>0.0) then
                             change_frac = abs(co_fraction-old_co_frac)
@@ -1348,19 +1355,10 @@ module z_support
         zpars(4) = MAX(6.11044d0 + 1.02167d0*lzs, 5.d0)
         zpars(5) = zpars(4) + 1.8d0
         zpars(6) = 5.37d0 + lzs*0.135d0
-!        zpars(7) = c(1) + lzs*(c(2) + lzs*(c(3) + lzs*(c(4) + lzs*c(5))))
-!        zpars(8) = MAX(0.95d0,MAX(0.95d0-(10.d0/3.d0)*(z-0.01d0),
-!        &           MIN(0.99d0,0.98d0-(100.d0/7.d0)*(z-0.001d0))))
-        !CALL star(kw,zpars(2),zpars(2),tm,tn,tscls,lums,GB,zpars)
-        !zpars(9) = mcgbf(lums(3),GB,lums(6))
-        !zpars(10) = mcgbf(lums(4),GB,lums(6))
         !* set the hydrogen and helium abundances
         zpars(11) = 0.76d0 - 3.d0*z
         zpars(12) = 0.24d0 + 2.d0*z
         !* set constant for low-mass CHeB stars
-        !zpars(13) = rminf(zpars(2))/
-        !&            rgbf(zpars(2),lzahbf(zpars(2),zpars(9),zpars(2)))
-
         zpars(14) = z**0.4d0
 
     end subroutine

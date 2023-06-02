@@ -11,17 +11,30 @@ subroutine METISSE_zcnsts(z,zpars)
     
     ierr = 0
     debug = .false.
+    if (initial_Z >0 .and.(relative_diff(initial_Z,z) < Z_accuracy_limit)) then
+        if (debug) print*, '*****No change in metallicity, exiting METISSE_zcnsts.*****'
+        return
+    else
+        if (debug) print*, '*****New metallicity is******',z,'initializing METISSE_zcnsts'
+        if (allocated(s)) deallocate(s,key_cols,key_eeps)
+        if (allocated(core_cols)) deallocate(core_cols)
+        if (allocated(m_cutoff)) deallocate(m_cutoff)
+
+        i_mass =-1
+        !TODO: re-initailize all such variables with defaults
+    endif
     
-    initial_Z = z
-    
+
     !reading defaults option first
     call read_defaults(ierr); if (ierr/=0) STOP
+                
+    if (front_end /= main) initial_Z = z
 
     !read inputs from evolve_metisse.in
     call read_metisse_input(ierr); if (ierr/=0) STOP
     
     !read metallicity related variables
-    call get_metallcity_file_from_Z(z,ierr); if (ierr/=0) STOP
+    call get_metallcity_file_from_Z(initial_Z,ierr); if (ierr/=0) STOP
     
     !read file-format
     call read_format(format_file,ierr); if (ierr/=0) STOP
@@ -67,7 +80,7 @@ subroutine METISSE_zcnsts(z,zpars)
 
     endif
 
-    if(debug) print*, s(1)% cols% name, s(1)% tr(:,1)
+!    if(debug) print*, s(1)% cols% name, s(1)% tr(:,1)
     
     do i = 1,size(s)
         s(i)% has_mass_loss = check_mass_loss(s(i))

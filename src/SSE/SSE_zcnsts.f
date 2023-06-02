@@ -1,5 +1,5 @@
 ***
-      SUBROUTINE zcnsts(z,zpars)
+      SUBROUTINE SSE_zcnsts(z,zpars)
 * 
       implicit none
       integer kw
@@ -12,7 +12,7 @@
       external tbgbf,thef,lbagbf,lheif,lhef,lzahbf
       external rgbf,ragbf,rminf,mcgbf
 *
-      include 'zdata.h'
+      include '../zdata.h'
       real*8 msp(200),gbp(200),c(5)
       common /MSCFF/ msp
       common /GBCFF/ gbp
@@ -365,7 +365,7 @@
       kw = 0
       tm = 0.d0
       tn = 0.d0
-      CALL star(kw,zpars(2),zpars(2),tm,tn,tscls,lums,GB,zpars)
+      CALL SSE_star(kw,zpars(2),zpars(2),tm,tn,tscls,lums,GB,zpars)
       zpars(9) = mcgbf(lums(3),GB,lums(6))
       zpars(10) = mcgbf(lums(4),GB,lums(6))
 * set the hydrogen and helium abundances

@@ -1,5 +1,5 @@
 ***
-      SUBROUTINE deltat(kw,age,tm,tn,tscls,dt,dtr)
+      SUBROUTINE SSE_deltat(kw,age,tm,tn,tscls,dt,dtr)
       implicit none
 *
       INTEGER kw

@@ -72,25 +72,25 @@ module track_support
 
     !EEPs
 
-    integer :: PreMS_EEP = -1
-    integer :: ZAMS_EEP = -1
-    integer :: IAMS_EEP = -1
-    integer :: TAMS_EEP = -1
-    integer :: BGB_EEP = -1
-    integer :: cHeIgnition_EEP = -1
-    integer :: cHeBurn_EEP = -1
-    integer :: TA_cHeB_EEP = -1
+    integer :: PreMS_EEP
+    integer :: ZAMS_EEP
+    integer :: IAMS_EEP
+    integer :: TAMS_EEP
+    integer :: BGB_EEP
+    integer :: cHeIgnition_EEP
+    integer :: cHeBurn_EEP
+    integer :: TA_cHeB_EEP
 
-    integer :: cCBurn_EEP = -1
-    integer :: TPAGB_EEP = -1
-    integer :: post_AGB_EEP  = -1
-    integer :: WD_EEP  = -1
+    integer :: cCBurn_EEP
+    integer :: TPAGB_EEP
+    integer :: post_AGB_EEP
+    integer :: WD_EEP
 
-    integer :: Initial_EEP = -1       !files will be read from this line number
-    integer :: Final_EEP = -1        !to this line
-    integer :: Extra_EEP1 = -1
-    integer :: Extra_EEP2= -1
-    integer :: Extra_EEP3 = -1
+    integer :: Initial_EEP        !files will be read from this line number
+    integer :: Final_EEP         !to this line
+    integer :: Extra_EEP1
+    integer :: Extra_EEP2
+    integer :: Extra_EEP3
 
 
     !quantities from history file that are needed directly in the code
@@ -141,7 +141,7 @@ module track_support
         integer :: star_type = unknown
 
         integer, allocatable :: eep(:), phase(:)
-        real(dp) :: initial_mass, initial_Y, Fe_div_H, initial_Z, v_div_vcrit, alpha_div_Fe
+        real(dp) :: initial_mass, initial_Z, initial_Y, Fe_div_H,  v_div_vcrit, alpha_div_Fe
         real(dp), allocatable :: tr(:,:)
 
     end type eep_track
@@ -175,17 +175,19 @@ module track_support
         type(column), allocatable :: cols(:)
         logical :: has_RGB=.false., complete=.true.
         logical :: has_mass_loss
-        integer :: ncol, ntrack, neep
-        integer :: star_type = unknown,irecord
-        integer, allocatable :: eep(:), phase(:)
-        real(dp) :: initial_mass, initial_Z , initial_Y, Fe_div_H,  v_div_vcrit, alpha_div_Fe
-        real(dp), allocatable :: tr(:,:)
-
-        real(dp), allocatable :: times(:), times_new(:)           !timescales
         logical :: lost_envelope = .false., post_agb = .false.
-        real(dp) :: zams_mass!, zams_radius, zams_lum      !zams values
+        integer :: ncol, ntrack, neep
+        integer :: star_type = unknown, irecord
+        
+        real(dp) :: initial_mass, initial_Z, initial_Y, Fe_div_H,  v_div_vcrit, alpha_div_Fe
+        real(dp) :: zams_mass      !effective initial mass (M0 of SSE)
         real(dp) :: MS_time, nuc_time
-        type(star_parameters) :: pars!, old_pars    ! parameters at any instant
+        
+        real(dp), allocatable :: tr(:,:)
+        real(dp), allocatable :: times(:), times_new(:)           !timescales
+        integer, allocatable :: eep(:), phase(:)
+
+        type(star_parameters) :: pars    ! parameters at any instant
         type(agb_parameters) :: agb
         type(sse_parameters) :: He_pars
     end type track

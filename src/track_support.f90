@@ -173,9 +173,9 @@ module track_support
     !holds interpolated track
     type track
         type(column), allocatable :: cols(:)
-        logical :: has_RGB=.false., complete=.true.
+        logical :: has_RGB =.false., complete=.true.
         logical :: has_mass_loss
-        logical :: lost_envelope = .false., post_agb = .false.
+        logical :: post_agb = .false.
         integer :: ncol, ntrack, neep
         integer :: star_type = unknown, irecord
         

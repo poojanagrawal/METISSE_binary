@@ -31,64 +31,76 @@
     real(dp) :: mc1 = 5.d0, mc2 = 7.6d0 !mass cutoffs for Belczynski methods
 
     contains
+    
 
-    subroutine check_remnant_phase(t)
-    use track_support
-    implicit none
-    type(track),pointer, intent(inout) :: t
-    real(dp) :: mc_max,mc_threshold,Mc11,Mcbagb
-    integer :: j_bagb
+    logical function check_remnant_phase(pars,mcbagb)
+        implicit none
+        
+        type(star_parameters) :: pars
+        real(dp) :: Mcbagb
 
-    debug_rem = .false.
-    mc_max= 0.d0
-    Mc11 = 0.d0
+        real(dp) :: mc_max,mc_threshold,Mc11
+
+
+        debug_rem = .false.
+        check_remnant_phase = .false.
+        mc_max= 0.d0
+        Mc11 = 0.d0
         !mcmax1 = 0.d0
-    j_bagb=min(t% ntrack, TA_cHeB_EEP)
-    Mcbagb = t% tr(i_he_core, j_bagb)
+    
 
-        if (t% pars% phase>1 .and.t% pars% phase <=6) then       !without envelope loss
+        if (pars% phase>1 .and.pars% phase <=6) then       !without envelope loss
             Mc11 = 0.773* Mcbagb-0.35
             mc_max = MAX(M_ch,Mc11)
             !mc = MAX(mc_max,mc_threshold)
             !mc_max = MIN(pars% mass,mc_max)
-            mc_threshold = t% pars% McCO
-        elseif (t% pars% phase ==8 .or. t% pars% phase ==9) then
-            mc_max = max_core_mass_he(t% pars% mass, t% zams_mass)
-            mc_threshold = t% pars% core_mass
-            Mcbagb= t% zams_mass
+            mc_threshold = pars% McCO
+        elseif (pars% phase ==8 .or. pars% phase ==9) then
+            mc_max = max_core_mass_he(pars% mass, mcbagb)
+            ! Mcbagb = t% zams_mass for naked helium/stripped stars
+            mc_threshold = pars% core_mass
         else
             return
         endif
 
         if (mc_max<=0.0) then
-            print*,"fatal error: incorrect mc_max ", mc_max, t% zams_mass
+            print*,"fatal error: negative mc_max ", mc_max
             STOP
         endif
 
         if(mc_threshold>=mc_max .or. abs(mc_max-mc_threshold)<tiny .or. end_of_file)then
             !mc = MIN(mc_max,mc_threshold)
-            t% pars% core_mass = mc_threshold
-            t% pars% age_old = t% pars% age
-
+            pars% core_mass = mc_threshold
+            pars% age_old = pars% age
+            check_remnant_phase = .true.
             if (debug_rem) then
-                print*, "In remnant section"
-                print*, "mass, core_mass, McCO, mc_max, 0.773*mcbagb-0.35"
-                print*, t% pars% mass, t% pars% core_mass, t% pars% McCO, mc_max, Mc11,Mcbagb
+                print*, "In check_remnant_phase"
+                print*, "mass, core_mass, McCO, mc_max, 0.773*mcbagb-0.35,mcbagb"
+                print*, pars% mass, pars% core_mass, pars% McCO, mc_max, Mc11, Mcbagb
             end if
+        endif
+        
+        end function check_remnant_phase
+        
+        
+        subroutine assign_remnant_METISSE(pars, mcbagb)
+            implicit none
+            type(star_parameters) :: pars
+            real(dp) :: Mcbagb
 
             !Mup_core, Mec_core are calculated in set_zparmeters routine of zfuncs
-            if(t% pars% core_mass < M_ch)then
-                if(Mcbagb< Mup_core)then
-                    t% pars% phase = CO_WD        !Zero-age Carbon/Oxygen White Dwarf
-                    call post_agb_parameters(t)
+            if(pars% core_mass < M_ch)then
+                if(mcbagb< Mup_core)then
+                    pars% phase = CO_WD        !Zero-age Carbon/Oxygen White Dwarf
                 else
-                    if (ec_flag>0 .and. t% pars% McCO >= 1.372)then   !1.372<= mc< 1.44
-                        t% pars% phase = NS
-                        call initialize_ECSNe(t% pars)
-                        if (debug_rem) print*,"ECSNe I: Mc< Mch, Mup> Mcbagb"
+                    if (ec_flag>0 .and. pars% McCO >= 1.372)then
+                     !electron-capture collapse of an ONe core
+                     !1.372<= mc< 1.44
+                        pars% phase = NS
+                        call initialize_ECSNe(pars)
+                        if (debug_rem) print*,"ECSNe I: Mc< Mch, Mcbagb>Mup"
                     else
-                        t% pars% phase = ONeWD    !Zero-age Oxygen/Neon White Dwarf
-                        call post_agb_parameters(t)
+                        pars% phase = ONeWD    !Zero-age Oxygen/Neon White Dwarf
                     endif
                 endif
             else !(mc>mch)
@@ -96,47 +108,62 @@
                 if(Mcbagb < Mup_core)then
                     ! Star is not massive enough to ignite C burning.
                     ! so no remnant is left after the SN
-                    t% pars% phase = Massless_REM
-                    call initialize_massless_rem(t% pars)
+                    pars% phase = Massless_REM
+                    call initialize_massless_rem(pars)
 
                 else if(Mcbagb>= Mup_core .and. Mcbagb<= Mec_core)then
                     !Check for an electron-capture collapse of an ONe core.
-                    !pars% McCO >= 1.372  !this used to be there
                     if(ec_flag>0) then
-                        t% pars% phase = NS
-                        call initialize_ECSNe(t% pars)
+                        pars% phase = NS
+                        call initialize_ECSNe(pars)
                         if (debug_rem) print*,"ECSNe II: Mc> Mch, Mup< Mbagb< Mec"
                     else
-                        call check_ns_bh(t% pars)
+                        call check_ns_bh(pars)
                     endif
                 else
-                    call check_ns_bh(t% pars)
+                    call check_ns_bh(pars)
                 endif
             endif
-        if (debug_rem .and. t% pars% phase>9) print*,"In remnant phase", phase_label(t% pars% phase+1)," , mass", t% pars% mass
-        endif
-    end subroutine check_remnant_phase
-
-    subroutine post_agb_parameters(t)
-        type(track), pointer, intent(inout) :: t
+        if (debug_rem .and. pars% phase>9) print*,"In remnant phase", phase_label(pars% phase+1)," , mass", pars% mass
         
-        if(t% pars% phase <=6 .and. construct_wd_track) then
-            t% agb% phase_wd = t% pars% phase
-            t% pars% phase = TPAGB
-            t% post_agb = .true.
-            t% pars% age_old = 0.0
+    end subroutine assign_remnant_METISSE
 
-            t% agb% age = t% pars% age
-            t% agb% lum = t% pars% luminosity
-            t% agb% radius = t% pars% radius
-            call evolve_after_agb(t)
-            if (debug_rem) print*, "In post-agb phase, mass = ", t% pars% mass
-!            print*,t% pars% luminosity, t% pars% radius
-        else
-            t% zams_mass = t% pars% mass
-            call initialize_white_dwarf(t% pars)
+    subroutine post_agb_parameters(t,old_phase)
+        integer, intent(in) :: old_phase
+        type(track), pointer :: t
+
+        ! If a star becomes a WD, and construct_wd_track is true,
+        ! then we use post_agb_parameters and evolve_after_agb
+        ! to mimic post-agb evolution of star on HRD until WD cooling phase is reached.
+        ! However naked helium stars don't go through this process
+        ! and should directly jump to WD cooling track.
+        ! So we use kw/old_phase as a check.
+        ! kw at this point contains old phase of the star,
+        ! the phase upon entering hrdiag, before the star became a remnant or lost its envelope
+    
+        !first check if the remnant is a WD
+        if (t% pars% phase>=HeWD .and. t% pars% phase<=ONeWD) then
+            if (old_phase <=TPAGB .and. construct_wd_track) then
+                ! contruct the track
+                t% agb% phase_wd = t% pars% phase
+                t% pars% phase = TPAGB
+                t% post_agb = .true.
+                t% pars% age_old = 0.0
+
+                t% agb% age = t% pars% age
+                t% agb% lum = t% pars% luminosity
+                t% agb% radius = t% pars% radius
+                call evolve_after_agb(t)
+                if (debug_rem) print*, "In post-agb phase, mass = ", t% pars% mass
+    !            print*,t% pars% luminosity, t% pars% radius
+            else
+                !jump to the WD cooling track
+                t% zams_mass = t% pars% mass
+                call initialize_white_dwarf(t% pars)
+            endif
         endif
-    end subroutine
+        
+    end subroutine post_agb_parameters
 
     subroutine evolve_after_agb(t)
         type(track),pointer, intent(inout) :: t
@@ -213,27 +240,25 @@
     end subroutine
 
     subroutine check_ns_bh(pars)
-    type(star_parameters) :: pars
-    real(dp):: Mrem
-    logical :: debug
+        type(star_parameters) :: pars
+        real(dp):: Mrem
+        
+        if (debug_rem) print*,"In CCSNe section",pars% core_mass,pars% mass
+        pars% age = 0.0
+        Mrem = calculate_NSBH_mass(pars% core_mass,pars% mass)
+        if(debug_rem) print*, "Mrem= ", Mrem
 
-    debug = .false.
-            if (debug) print*,"In CCSNe section"
-            pars% age = 0.0
-            Mrem = calculate_NSBH_mass(pars% core_mass,pars% mass)
-            if(debug) print*, "Mrem= ", Mrem
+        if(Mrem <= Max_NS_mass)then
+            pars% phase = NS       !Zero-age Neutron star
+            pars% mass = calculate_gravitational_mass(Mrem, pars% phase)
+            call evolve_neutron_star(pars)
+        else
+            pars% phase = BH       !Zero-age Black hole
+            pars% mass = calculate_gravitational_mass(Mrem, pars% phase)
+            call evolve_black_hole(pars)
 
-            if(Mrem <= Max_NS_mass)then
-                pars% phase = NS       !Zero-age Neutron star
-                pars% mass = calculate_gravitational_mass(Mrem, pars% phase)
-                call evolve_neutron_star(pars)
-            else
-                pars% phase = BH       !Zero-age Black hole
-                pars% mass = calculate_gravitational_mass(Mrem, pars% phase)
-                call evolve_black_hole(pars)
-
-            endif
-            if (debug) print*, "NS/BH mass from", BHNS_mass_scheme,"scheme = ",pars% mass
+        endif
+        if (debug_rem) print*, "NS/BH mass from", trim(BHNS_mass_scheme),"scheme = ",pars% mass
     end subroutine
 
     real(dp) function calculate_NSBH_mass(Mc,Mt) result(Mrem)
@@ -300,10 +325,27 @@
         if(ns_flag>=2)then
             if (phase == NS) mt = quadratic(0.075d0, 1.d0, -mass)
             if (phase == BH) mt = 0.9d0* mass
+        else
+            mt = mass
         endif
         calculate_gravitational_mass = mt
     end function
     
+    subroutine evolve_remnants_METISSE(pars)
+    type(star_parameters):: pars
+!        if (debug_rem)print*, 'evolving remnant in METISSE'
+        select case(pars% phase)
+        case(HeWD:ONeWD)
+            call evolve_white_dwarf(pars)
+        case(NS)
+            call evolve_neutron_star(pars)
+        case(BH)
+            call evolve_black_hole(pars)
+        case(Massless_Rem)
+            call initialize_massless_rem(pars)
+        end select
+    end subroutine
+            
     subroutine evolve_white_dwarf(pars)
     type(star_parameters):: pars
     real(dp) :: xx
@@ -321,12 +363,12 @@
 
         if(pars% core_mass >= M_ch)then    !Mch or 1.372 !check for ec_flag
             if(pars% phase == ONeWD)then
-                if (debug) print*, "ECSNe:NS from accn onto WD", pars% mass
+                if (debug_rem) print*, "ECSNe:NS from accn onto WD", pars% mass
                 pars% phase = NS
                 call initialize_ECSNe(pars)
             else
                 !Accretion induced supernova with no remnant
-                if (debug) print*, "ECSNe: massless remnant from accn onto WD", pars% mass
+                if (debug_rem) print*, "ECSNe: massless remnant from accn onto WD", pars% mass
                 pars% phase = Massless_REM
                 call initialize_massless_rem(pars)
             endif
@@ -338,7 +380,7 @@
         endif
     end subroutine
 
-    real(dp) function calculate_wd_lum(mass, age, xx) result(lum)
+    real(dp) function calculate_wd_lum(mass,age,xx) result(lum)
     real(dp), intent(in) :: mass, age, xx
     real(dp) :: fac
         lum = 0.d0
@@ -370,19 +412,19 @@
     subroutine evolve_neutron_star(pars)
     type(star_parameters) :: pars
         !Neutron Star
-        pars% core_mass= pars% mass
+        pars% core_mass = pars% mass
+        !pars% McCO = 0.0
+        !pars% McHe = 0.0
         if(pars% core_mass > Max_NS_mass)then
             pars% phase = BH  !Accretion induced Black Hole
-            !pars% age_old = pars% age
             pars% age = 0.0
-            call evolve_black_hole(pars)
+            pars% luminosity = 1.0E-10
+            pars% radius = 4.24E-06*pars% mass
         else
             pars% luminosity = 0.02*(pars% mass**0.67)/(MAX(pars% age,0.1d0))**2
             pars% radius= 1.4E-05
-            !pars% McCO = 0.0
-            !pars% McHe = 0.0
         endif
-
+        
         !print*,"I am in evolve_neutron_star"
     end subroutine
 
@@ -419,20 +461,13 @@
         pars% luminosity = 0.02*(pars% mass**0.67)/(MAX(pars% age,0.1d0))**2
         pars% radius= 1.4E-05
     end subroutine
-
-    subroutine check_env_loss(t)
-
-    type(track), pointer, intent(inout) :: t
-    real(dp) :: HeI_time, HeB_time
-    logical :: debug
-
-    debug = .false.
-    t% lost_envelope = (t% pars% core_mass.ge.t% pars% mass) &
-                        .or. (t% initial_mass>=10.0 .and. abs(t% pars% core_mass-t% pars% mass)<0.01)
     
-!    if (t% irecord>0)print*,"age, core mass, mass", t%  pars% age, t% pars% core_mass ,t% pars% mass
-!    print*, t% initial_mass, t% pars% core_mass.ge.t% pars% mass
-    if(t% lost_envelope)then
+    subroutine assign_stripped_star_phase(t)
+        type(track), pointer, intent(inout) :: t
+        real(dp) :: HeI_time, HeB_time
+        logical :: debug
+
+        debug = .false.
         if (debug) print*,"Lost envelope at phase", t% pars% phase
         if (debug) print*,"age, core mass, mass", t% pars% age, t% pars% core_mass, t% pars% mass
 
@@ -453,8 +488,6 @@
                     t% pars% McHe = 0.d0
 
                     call calculate_he_timescales(t)
-                    t% lost_envelope = .true.
-                    call evolve_after_envelope_loss(t)
                 endif
 
             case(HeBurn)  !core he Burning
@@ -468,9 +501,6 @@
                 HeB_time = t% times(4)-t% times(3)
                 t% pars% age = t% MS_time*((t% pars% age- HeI_time)/HeB_time)
 
-                t% lost_envelope = .true.
-                call evolve_after_envelope_loss(t)
-                
             case(EAGB) !eAGB
                 t% pars% phase = He_GB       !Evolved naked He star
                 t% pars% mass = t% pars% core_mass
@@ -481,12 +511,8 @@
                 t% pars% age = He_GB_age(t% pars% core_mass,t% times(8), &
                                 t% times(9),t% He_pars% D, t% He_pars% Mx)
                 t% pars% age = MAX(t% pars% age,t% MS_time)
-                t% lost_envelope = .true.
-                call evolve_after_envelope_loss(t)
-            case(TPAGB)
-                call check_remnant_phase(t) !TODO -  check if this works
+                
         end select
-    endif
     end subroutine
 
     subroutine evolve_after_envelope_loss(t)
@@ -541,7 +567,7 @@
 
     if (debug) print*,"End: Phase",t% pars% phase ," core mass",t% pars% core_mass
 !        print*,"lum", t% pars% luminosity, "rad", t% pars% radius
-    end subroutine
+    end subroutine evolve_after_envelope_loss
 
     subroutine set_remnant_scheme()
         if (WD_mass_scheme == 'Mestel') then

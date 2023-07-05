@@ -24,6 +24,8 @@
       integer kw,kwp
       INTEGER ceflag,tflag,ifflag,nsflag,wdflag
       COMMON /FLAGS/ ceflag,tflag,ifflag,nsflag,wdflag
+      integer ecflag
+      parameter (ecflag=1)
 *
       real*8 mass,aj,mt,tm,tn,tscls(20),lums(10),GB(10),zpars(20)
       real*8 r,lum,mc,rc,menv,renv,k2
@@ -51,6 +53,7 @@
       external rzamsf,rtmsf,ralphf,rbetaf,rgammf,rhookf
       external rgbf,rminf,ragbf,rzahbf,rzhef,rhehgf,rhegbf,rpertf
       external mctmsf,mcgbtf,mcgbf,mcheif,mcagbf,lzahbf
+      logical debug
 *
 *
 *       ---------------------------------------------------------------------
@@ -72,10 +75,11 @@
 *
 * Make evolutionary changes to stars that have not reached KW > 5.
 *
+        debug = .false.
       mass0 = mass
-      if(mass0.gt.100.d0) mass = 100.d0
+*     if(mass0.gt.100.d0) mass = 100.d0
       mt0 = mt
-      if(mt0.gt.100.d0) mt = 100.d0
+*     if(mt0.gt.100.d0) mt = 100.d0
 *
       if(kw.gt.6) goto 90
 *
@@ -378,12 +382,15 @@
 *
          mcbagb = mcagbf(mass)
          mcx = mcgbtf(tbagb,GB(8),GB,tscls(7),tscls(8),tscls(9))
-         mcmax = MAX(MAX(mch,0.773d0*mcbagb-0.35d0),1.05d0*mcx)
+*        mcmax = MAX(MAX(mch,0.773d0*mcbagb-0.35d0),1.05d0*mcx)
+         mcmax = MAX(MAX(mch,0.773d0*mcbagb-0.35d0),1.02d0*mcx)
 *
          if(aj.lt.tscls(13))then
+*           write(*,*)'FAGB1 ',mcbagb,0.773d0*mcbagb-0.35d0,1.05d0*mcx
             mcx = mcgbtf(aj,GB(8),GB,tscls(7),tscls(8),tscls(9))
             mc = mcbagb
             lum = lmcgbf(mcx,GB)
+*           write(*,*)' FAGB2 ',mt,mc,mcx,mcmax
             if(mt.le.mc)then
 *
 * Evolved naked helium star as the envelope is lost but the
@@ -415,6 +422,7 @@
 * Approximate 3rd Dredge-up on AGB by limiting Mc.
 *
             lambda = MIN(0.9d0,0.3d0+0.001d0*mass**5)
+*           lambda = 0.3
             tau = tscls(13)
             mcx = mcgbtf(tau,GB(2),GB,tscls(10),tscls(11),tscls(12))
             mcy = mc
@@ -424,11 +432,16 @@
          endif
          r = ragbf(mt,lum,zpars(2))
          rg = r
+*        write(50,*)' HRD ',kw,mt,mcx,mcmax,mcbagb
 *
 * Mc,x represents the C core mass and we now test whether it
 * exceeds either the total mass or the maximum allowed core mass.
 *
          if(mcmax-mcx.lt.tiny)then
+            if (debug) then
+                print*, "Mt, Mc, Mcx, mcmax, kw"
+                print*, mt, mc, mcx, mcmax,kw
+            endif
             aj = 0.d0
             mc = mcmax
             if(mc.lt.mch)then
@@ -461,7 +474,7 @@
                endif
                mass = mt
 *
-            else
+            else    !mc>=mch
                if(mcbagb.lt.1.6d0)then
 *
 * Star is not massive enough to ignite C burning.
@@ -473,24 +486,63 @@
                   lum = 1.0d-10
                   r = 1.0d-10
                else
-                  if(nsflag.eq.0)then
+*
+                  if(nsflag.le.0)then
+* Use the original SSE NS/BH mass. 
                      mt = 1.17d0 + 0.09d0*mc
-                  elseif(nsflag.ge.1)then
-*
-* Use NS/BH mass given by Belczynski et al. 2002, ApJ, 572, 407. 
-*
+                  elseif(nsflag.eq.1)then
+* Use FeNi core mass given by Belczynski et al. 2002, ApJ, 572, 407. 
                      if(mc.lt.2.5d0)then
                         mcx = 0.161767d0*mc + 1.067055d0
                      else
                         mcx = 0.314154d0*mc + 0.686088d0
                      endif
+                  elseif(nsflag.eq.2)then
+* Use FeNi mass given by Belczynski et al. 2008, ApJSS, 174, 223. 
+                     if(mc.lt.4.82d0)then
+                        mcx = 1.5d0
+                     elseif(mc.lt.6.31d0)then
+                        mcx = 2.11d0
+                     elseif(mc.lt.6.75d0)then
+                        mcx = 0.69255d0*mc - 2.26d0
+                     else
+                        mcx = 0.37d0*mc - 0.0828d0
+                     endif
+*                    write(*,*)' FeNi ',mt,mc,mcx
+                  elseif(nsflag.ge.3)then
+* Use remnant masses based on Eldridge & Tout 2004, MNRAS, 353, 87.
+                     if(mc.lt.6.d0)then
+                        mcx = 1.44d0
+                     else
+                        mcx = 1.4512017d0*mc - 6.5913737d-03*mc*mc 
+     &                        - 6.1073371d0
+                     endif
+                     mt = mcx
+                  endif
+                  if(nsflag.eq.1.or.nsflag.eq.2)then
+* For Belczynski methods calculate the remnant mass from the FeNi core. 
                      if(mc.le.5.d0)then
                         mt = mcx
                      elseif(mc.lt.7.6d0)then
                         mt = mcx + (mc - 5.d0)*(mt - mcx)/2.6d0
                      endif
+*                    write(*,*)' NSBH ',mc,mt
+                  endif
+                  if(nsflag.ge.2)then
+* Reduce the mass to the gravitational mass for the relevant cases. 
+                     mcx = (-1.d0 + SQRT(1.d0 + 0.3d0*mt))/0.15d0
+                     if(mcx.le.mxns)then
+                        mt = mcx
+                     elseif(mcx.le.mxns+1.0d0)then
+                        mc = 1.d0/(0.075d0*mxns + 1.d0)
+                        mt = (0.9d0 - (mxns+1.d0-mcx)*(0.9d0-mc))*mt
+                     else
+                        mt = 0.9d0*mt
+                     endif
+*                    write(*,*)' grav ',mcx,mt
                   endif
                   mc = mt
+*
                   if(mt.le.mxns)then
 *
 * Zero-age Neutron star
@@ -502,6 +554,17 @@
 *
                      kw = 14
                   endif  
+*
+               endif
+            endif
+         else
+* Check for an electron-capture collapse of an ONe core. 
+            if(mcbagb.ge.1.6d0.and.mcbagb.le.2.25d0)then
+               if(ecflag.gt.0.and.mcx.ge.1.372d0)then
+                  mt = 1.26d0
+                  mc = mt
+                  kw = 13
+*                 write(50,*)' EC ',mt
                endif
             endif
          endif
@@ -545,9 +608,15 @@
                r = rg
             endif
             mc = mcgbf(lum,GB,lums(6))
+*            print*, mc, mt,kw
             mtc = MIN(mt,1.45d0*mt-0.31d0)
             mcmax = MIN(mtc,MAX(mch,0.773d0*mass-0.35d0))
             if(mcmax-mc.lt.tiny)then
+               if (debug) then
+                 print*, "Mt, Mc, Mtc, mcmax, kw"
+                 print*, mt, mc, mtc, mcmax, kw
+               endif
+*              write(*,*)' HEGB3 ',mass,mc,mtc,mcmax
                aj = 0.d0
                mc = mcmax
                if(mc.lt.mch)then
@@ -577,21 +646,54 @@
                      lum = 1.0d-10
                      r = 1.0d-10
                   else
-                     if(nsflag.eq.0)then
+                     if(nsflag.le.0)then
                         mt = 1.17d0 + 0.09d0*mc
-                     elseif(nsflag.ge.1)then
+                     elseif(nsflag.eq.1)then
                         if(mc.lt.2.5d0)then
                            mcx = 0.161767d0*mc + 1.067055d0
                         else
                            mcx = 0.314154d0*mc + 0.686088d0
                         endif
+                     elseif(nsflag.eq.2)then
+                        if(mc.lt.4.82d0)then
+                           mcx = 1.5d0
+                        elseif(mc.lt.6.31d0)then
+                           mcx = 2.11d0
+                        elseif(mc.lt.6.75d0)then
+                           mcx = 0.69255d0*mc - 2.26d0
+                        else
+                           mcx = 0.37d0*mc - 0.0828d0
+                        endif
+*                       write(*,*)' FeNi ',mt,mc,mcx
+                     elseif(nsflag.ge.3)then
+                        if(mc.lt.6.d0)then
+                           mcx = 1.44d0
+                        else
+                           mcx = 1.4512017d0*mc - 6.5913737d-03*mc*mc 
+     &                           - 6.1073371d0
+                        endif
+                        mt = mcx
+                     endif
+                     if(nsflag.eq.1.or.nsflag.eq.2)then
                         if(mc.le.5.d0)then
                            mt = mcx
                         elseif(mc.lt.7.6d0)then
                            mt = mcx + (mc - 5.d0)*(mt - mcx)/2.6d0
                         endif
                      endif
+                     if(nsflag.ge.2)then
+                        mcx = (-1.d0 + SQRT(1.d0 + 0.3d0*mt))/0.15d0
+                        if(mcx.le.mxns)then
+                           mt = mcx
+                        elseif(mcx.le.mxns+1.0d0)then
+                           mc = 1.d0/(0.075d0*mxns + 1.d0)
+                           mt = (0.9d0 - (mxns+1.d0-mcx)*(0.9d0-mc))*mt
+                        else
+                           mt = 0.9d0*mt
+                        endif
+                     endif
                      mc = mt
+*
                      if(mt.le.mxns)then
 *
 * Zero-age Neutron star
@@ -623,7 +725,7 @@
             if(kw.eq.12)then
                kw = 13
                aj = 0.d0
-               mt = 1.3d0
+               mt = 1.26d0
             else
                kw = 15
                aj = 0.d0
@@ -661,8 +763,9 @@
             r = 0.0115d0*SQRT(MAX(1.48204d-06,(mch/mt)**(2.d0/3.d0)
      &                                      - (mt/mch)**(2.d0/3.d0)))
             r = MIN(0.1d0,r)
-            if(mt.lt.0.0005d0) r = 0.09d0
-            if(mt.lt.0.000005d0) r = 0.009d0
+            if(mt.lt.0.0005d0) r = MIN(r,0.01d0)
+*           if(mt.lt.0.0005d0) r = 0.09d0
+*           if(mt.lt.0.000005d0) r = 0.009d0
 *
          endif
       endif
@@ -751,6 +854,10 @@
          k2 = 0.21d0
       endif
 *
+*     if(mass0.gt.50.d0.and.kw.le.6)then
+*        r = (mass0/50.d0)*r
+*     endif
+*
 * Perturb the luminosity and radius due to small envelope mass.
 *
       if(kw.ge.2.and.kw.le.9.and.kw.ne.7)then
@@ -777,12 +884,12 @@
      &              lums(4),rzams,rtms,rg,menv,renv,k2)
       endif
 *
-      if(mass.gt.99.99d0)then
-         mass = mass0
-      endif
-      if(mt.gt.99.99d0)then
-         mt = mt0
-      endif
+*     if(mass.gt.99.99d0)then
+*        mass = mass0
+*     endif
+*     if(mt.gt.99.99d0)then
+*        mt = mt0
+*     endif
 *
       return
       end

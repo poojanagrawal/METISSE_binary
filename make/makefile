@@ -26,7 +26,8 @@ POPBIN =popbin
 SRCE3 = \
 popbin.f comenv.f corerd.f dgcore.f evolv2.f gntage.f \
 instar.f kick.f mix.f mlwind.f mrenv.f ran3.f rl.f zfuncs.f \
-hrdiag.f star.f zcnsts.f deltat.f mlwind.f
+hrdiag.f star.f zcnsts.f deltat.f mlwind.f \
+assign_remnant.f hrdiag_remnant.f
 
 OBJT3= $(SRCE3:.f=.o)
 
@@ -34,7 +35,8 @@ SSE_METISSE=sse_metisse
 
 SRCE4 = \
 sse.f evolv1.f kick.f ran3.f mlwind.f mrenv.f zfuncs.f \
-hrdiag.f star.f zcnsts.f deltat.f mlwind.f
+hrdiag.f star.f zcnsts.f deltat.f mlwind.f\
+assign_remnant.f hrdiag_remnant.f
 
 OBJT4 = $(SRCE4:.f=.o)
 
@@ -44,7 +46,8 @@ BSE_METISSE=bse_metisse
 SRCE5 = \
 bse.f evolv2.f comenv.f corerd.f dgcore.f gntage.f \
 instar.f kick.f mix.f mlwind.f mrenv.f ran3.f rl.f zfuncs.f \
-hrdiag.f star.f zcnsts.f deltat.f mlwind.f
+hrdiag.f star.f zcnsts.f deltat.f mlwind.f\
+assign_remnant.f hrdiag_remnant.f
 
 OBJT5 = $(SRCE5:.f=.o)
 
@@ -61,7 +64,8 @@ remnant_support.f90 interp_support.f90 \
 alloc_track.f90 dealloc_track.f90 assign_commons.f90 \
 comenv_lambda.f90 initialize_front_end.f90 \
 METISSE_zcnsts.f90 metisse_star.f90 metisse_hrdiag.f90 \
-metisse_deltat.f90 metisse_mlwind.f90
+metisse_deltat.f90 metisse_mlwind.f90 \
+
  
 OBJT_METISSE = $(SRCE_METISSE:.f90=.o)
 

@@ -171,9 +171,11 @@ module z_support
         integer, intent(out) :: ierr
 
         integer :: i,c
-        logical:: found_z
+        logical:: found_z,debug
+        
+        debug = .false.
 
-        if (verbose) print*, 'Input Z is', Z_req
+        if (verbose) write(*,'(a,f7.3)') 'Input Z is', Z_req
         ierr = 0
 !        metallicity_file = ''
         c = 0
@@ -190,15 +192,15 @@ module z_support
         
         do i = 1, size(metallicity_file_list)
             if (len_trim(metallicity_file_list(i))>0) then
-                if (verbose) print*, 'Reading : ', trim(metallicity_file_list(i))
+                if (debug) print*, 'Reading : ', trim(metallicity_file_list(i))
                 call read_metallicity_file(metallicity_file_list(i),ierr)
                 if (ierr/=0) cycle
                 if (.not. defined (Z_files)) then
                     print*, 'Warning: Z_files not defined in "'//trim(metallicity_file_list(i))//'"'
                 else
-                    if (verbose) print*, 'Z_files is', Z_files
+                    if (debug) print*, 'Z_files is', Z_files
                     if (relative_diff(Z_files,Z_req) < Z_accuracy_limit) then
-                        if (verbose) print*, 'Z_files matches with input Z'
+                        if (debug) print*, 'Z_files matches with input Z'
                         found_z = .true.
                         exit
                     endif
@@ -532,12 +534,13 @@ module z_support
         logical :: essential
 
         essential = .true.
+        
+!        if (debug) print*, 'locating essential columns'
+
 
         ! i_age is the extra age column for recording age values of new tracks
         ! it is used for interpolating in surface quantities after any explicit mass gain/loss
         ! It is the same as i_age2 if the input tracks already include mass loss due to winds/no mass loss
-!        if (debug)
-        print*, 'locating essential columns'
         i_age = ncol+1
         
         i_age2 = locate_column(cols, age_colname, essential)
@@ -685,8 +688,7 @@ module z_support
 
         integer :: i,j,n,c,ierr
      
-!        if (debug)
-        print*, 'assigning key columns'
+!        if (debug) print*, 'assigning key columns'
 
         ! Essential columns get reassigned here to match to reduced array format
         temp% loc = -1
@@ -1077,7 +1079,7 @@ module z_support
 
         logical:: debug
 
-        debug = .true.
+        debug = .false.
         
         old_co_frac = 0.0
         Mup_core = 0.0
@@ -1101,8 +1103,8 @@ module z_support
         Mcrit(9)% mass = s(num_tracks)% initial_mass
         Mcrit(9)% loc = num_tracks+1 !TODO: explain why+1?
 
-        if (verbose) print*, 'Minimum initial mass', Mcrit(1)% mass
-        if (verbose) print*, 'Maximum initial mass', Mcrit(9)% mass
+        if (verbose) write(*,'(a,f7.1)') 'Minimum initial mass', Mcrit(1)% mass
+        if (verbose) write(*,'(a,f7.1)') 'Maximum initial mass', Mcrit(9)% mass
         
         if (.not. defined(Mcrit(7)% mass)) then
           do i = 1,size(s)

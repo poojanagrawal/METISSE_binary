@@ -46,6 +46,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                 !Todo: explain what age 2 and Times_new are
                 t% times_new = t% times
                 t% tr(i_age,:) = t% tr(i_age2,:)
+                t% ms_old = t% times(MS)
                 mt = t% tr(i_mass,ZAMS_EEP)
         !            call write_eep_track(t,t% initial_mass)
             else
@@ -71,6 +72,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     nt = t% ntrack
                     call get_initial_mass_for_new_track(idd, delta,interpolate_all)
                     if (debug)print*, 'initial mass for the new track',t% initial_mass
+                    t% ms_old = t% times(MS)
 
                     if (interpolate_all) then
                         ! kw=0,1: main-sequence star, rewrite all columns with new track
@@ -82,6 +84,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                         call calculate_phases_and_times(t)
                         t% times_new = t% times
                         t% tr(i_age,:) = t% tr(i_age2,:)
+                        
                     else
                         !store core properties for post-main sequence evolution
                         if (debug)print*, 'post-main-sequence star'

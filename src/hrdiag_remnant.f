@@ -8,7 +8,7 @@
       real*8 mt,mc,lum,r,aj
       integer kw
       
-      ! it's a dummy file; does nothing 
+      ! it's a dummy file; does nothing
       ! placefolder for other files when compliling METISSE in standalone mode or with BSE/SSE
 *
       end

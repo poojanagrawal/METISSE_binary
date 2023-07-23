@@ -204,6 +204,8 @@
       COMMON /TIMESTEP/ dtm
       INTEGER irecord
       COMMON /REC/ irecord
+      LOGICAL SSE_FLAG
+      COMMON /SE/ SSE_FLAG
 
 *
 * Save the initial state.
@@ -295,9 +297,12 @@
       endif
 *
       do 500 , k = kmin,kmax
-         age = tphys - epoch(k)
-*         if (dbg)
-*         print*, "initial call for" , mass0(k)
+         if ((SSE_FLAG.eqv..TRUE.).or. (kw==7)) then
+            age = tphys - epoch(k)
+         else
+            age = tphys
+         endif
+*         if (dbg) print*, "initial call for" , mass0(k)
          dtm =0.d0
          CALL star(kstar(k),mass0(k),mass(k),tm,tn,tscls,lums,
      &                      GB,zpars,dtm,k)
@@ -694,7 +699,7 @@
 *
          if(ABS(dms(k)).gt.tiny)then
             mass(k) = mass(k) - dms(k)
-            if(kstar(k).le.1.or.kstar(k).eq.7)then
+            if(kstar(k).le.2.or.kstar(k).eq.7)then
                m0 = mass0(k)
                mass0(k) = mass(k)
 * PA: detached phase call for adjusting epoch
@@ -747,7 +752,11 @@
 *
 * Acquire stellar parameters (M, R, L, Mc & K*) at apparent evolution age.
 *
-         age = tphys - epoch(k)
+         if ((SSE_FLAG.eqv..TRUE.).or. (kw==7)) then
+            age = tphys - epoch(k)
+         else
+            age = tphys
+         endif
          aj0(k) = age
          kw = kstar(k)
          m0 = mass0(k)
@@ -2005,7 +2014,11 @@
       tphys = tphys + dtm
 *      if (dbg) print*, "dtm3=",dtm
       do 90 , k = 1,2
-         age = tphys - epoch(k)
+         if ((SSE_FLAG.eqv..TRUE.).or. (kw==7)) then
+            age = tphys - epoch(k)
+         else
+            age = tphys
+         endif
          m0 = mass0(k)
          mt = mass(k)
          mc = massc(k)

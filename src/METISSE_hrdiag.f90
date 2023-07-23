@@ -42,7 +42,16 @@
   
     t% pars% mass = mt
     t% pars% phase = kw
-    t% pars% age = aj
+!    if (kw <=MS) then
+!        t% pars% age = aj*(t% MS_time/t% ms_old)
+!
+!!            them_new = t% times_new(kw)
+!!            frac = (input_age)/t% times(ms)*t% times_new(kw)
+!!            age2 = (frac*them_new)
+!    else
+!        t% pars% age = aj
+!    endif
+     t% pars% age = aj
     t% irecord = irecord
 
     !if(irecord>0) print*,"In Hrdiag aj,tn ",t% pars% age,mt,t% tr(i_age,t% ntrack),t% tr(i_age2,t% ntrack)

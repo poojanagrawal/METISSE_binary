@@ -175,19 +175,19 @@ module track_support
         type(column), allocatable :: cols(:)
         logical :: has_RGB =.false., complete=.true.
         logical :: has_mass_loss
-        logical :: post_agb = .false.
         integer :: ncol, ntrack, neep
         integer :: star_type = unknown, irecord
         
         real(dp) :: initial_mass, initial_Z, initial_Y, Fe_div_H,  v_div_vcrit, alpha_div_Fe
         real(dp) :: zams_mass      !effective initial mass (M0 of SSE)
-        real(dp) :: MS_time, nuc_time
+        real(dp) :: MS_time, nuc_time, ms_old
         
         real(dp), allocatable :: tr(:,:)
         real(dp), allocatable :: times(:), times_new(:)           !timescales
         integer, allocatable :: eep(:), phase(:)
 
         type(star_parameters) :: pars    ! parameters at any instant
+        logical :: post_agb = .false.
         type(agb_parameters) :: agb
         type(sse_parameters) :: He_pars
     end type track

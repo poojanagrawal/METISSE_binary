@@ -65,6 +65,8 @@ c-------------------------------------------------------------c
       INTEGER irecord
       COMMON /REC/ irecord
       integer id
+      LOGICAL SSE_FLAG
+      COMMON /SE/ SSE_FLAG
 *
       ! in evolv1 hrdiag can be called several times
       !with METISSE not everytime the calculations needs to be saved in the pars array
@@ -153,7 +155,7 @@ c-------------------------------------------------------------c
 *
          if(dms.gt.0.d0)then
             mt = mt - dms
-            if(kw.le.1.or.kw.eq.7)then
+            if(kw.le.2.or.kw.eq.7)then
                m0 = mass
                mc1 = mc
                mass = mt
@@ -188,7 +190,11 @@ c-------------------------------------------------------------c
 * Find the landmark luminosities and timescales as well as setting
 * the GB parameters.
 *
-         aj = tphys - epoch
+         if ((SSE_FLAG.eqv..TRUE.).or. (kw==7)) then
+            aj = tphys - epoch
+         else
+            aj = tphys
+         endif
          if(dtm<0) print*,"dtm<0:tphys, aj,epoch, kw"
          if(dtm<0) print*,tphys, aj,epoch, kw
 
@@ -232,7 +238,7 @@ c-------------------------------------------------------------c
                if(dtm.lt.1.0d-07*aj) goto 30
                dms = dtm*dml
                mt = mt2 - dms
-               if(kw.le.1.or.kw.eq.7)then
+               if(kw.le.2.or.kw.eq.7)then
                   mass = mt
                   if (kw<10) print*,"star 3: updating epoch",aj, mt,kw
                   CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,
@@ -250,7 +256,11 @@ c-------------------------------------------------------------c
                   endif
                endif
                tphys = tphys2 + dtm
-               aj = tphys - epoch
+               if ((SSE_FLAG.eqv..TRUE.).or. (kw==7)) then
+                    aj = tphys - epoch
+               else
+                    aj = tphys
+               endif
                mc = mc1
                if (kw<10) print*,"star 4: after updating epoch",aj,mt,kw
                CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm
@@ -435,12 +445,6 @@ c-------------------------------------------------------------c
 
 *        write(*,*)' DT2 ',dtm,dtr,1.0d-07*aj,tsave-tphys,kw
 *         if (kw>1 .and. kw <10) write(*,*)' DT2 ',dtm,dtr,1.0d-07*aj
-*
-
-*        irecord = 1
-*        CALL hrdiag(mass,ajhold,mt,tm,tn,tscls,lums,GB,zpars,
-*        &                     r,lum,kw,mc,rc,menv,renv,k2,mcx,id)
-
 
  10   continue
 *

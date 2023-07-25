@@ -167,6 +167,7 @@ c-------------------------------------------------------------c
      &                          ,id)
 
                 if(kw.eq.2)then
+                  if (SSE_FLAG .eqv. .true.) then
                   if(GB(9).lt.mc1.or.m0.gt.zpars(3))then
                      mass = m0
 *                    print*, "I came here 2.1", tphys,epoch
@@ -174,10 +175,10 @@ c-------------------------------------------------------------c
                      epoch = tm + (tscls(1) - tm)*(ajhold-tmold)/
      &                            (tbgold - tmold)
                      epoch = tphys - epoch
-                     if(dbg)print*, "I came here 2.2",tphys,epoch
+*                     if(dbg)print*, "I came here 2.2",tphys,epoch
                  endif
-
-               elseif (kw<=1) then
+                 endif
+               else
                   epoch = tphys - ajhold*tm/tmold
 *                  print*, "I came here 1", tphys,epoch,tm,tmold
                endif
@@ -190,11 +191,7 @@ c-------------------------------------------------------------c
 * Find the landmark luminosities and timescales as well as setting
 * the GB parameters.
 *
-         if ((SSE_FLAG.eqv..TRUE.).or. (kw==7)) then
-            aj = tphys - epoch
-         else
-            aj = tphys
-         endif
+         aj = tphys - epoch
          if(dtm<0) print*,"dtm<0:tphys, aj,epoch, kw"
          if(dtm<0) print*,tphys, aj,epoch, kw
 
@@ -244,23 +241,21 @@ c-------------------------------------------------------------c
                   CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,
      &                          zpars,dtm,id)
                   if(kw.eq.2)then
-*                     if(GB(9).lt.mc1.or.m0.gt.zpars(3))then
-*                        mass = m0
-*                     else
+                     if (SSE_FLAG .eqv. .true.) then
+                     if(GB(9).lt.mc1.or.m0.gt.zpars(3))then
+                        mass = m0
+                     else
                         epoch = tm + (tscls(1) - tm)*(ajhold-tmold)/
      &                               (tbgold - tmold)
                         epoch = tphys2 - epoch
-*                     endif
+                     endif
+                     endif
                   else
                      epoch = tphys2 - ajhold*tm/tmold
                   endif
                endif
                tphys = tphys2 + dtm
-               if ((SSE_FLAG.eqv..TRUE.).or. (kw==7)) then
-                    aj = tphys - epoch
-               else
-                    aj = tphys
-               endif
+               aj = tphys - epoch
                mc = mc1
                if (kw<10) print*,"star 4: after updating epoch",aj,mt,kw
                CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm

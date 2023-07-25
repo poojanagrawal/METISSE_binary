@@ -297,11 +297,7 @@
       endif
 *
       do 500 , k = kmin,kmax
-         if ((SSE_FLAG.eqv..TRUE.).or. (kw==7)) then
-            age = tphys - epoch(k)
-         else
-            age = tphys
-         endif
+         age = tphys - epoch(k)
 *         if (dbg) print*, "initial call for" , mass0(k)
          dtm =0.d0
          CALL star(kstar(k),mass0(k),mass(k),tm,tn,tscls,lums,
@@ -708,6 +704,7 @@
      &                   tscls,lums,GB,zpars,dtm,k)
 *                print*,'star_ep_dt', mass0(k),mass(k),kstar(k),k
                if(kstar(k).eq.2)then
+                  if (SSE_FLAG.eqv..TRUE.) then
                   if(GB(9).lt.massc(k).or.m0.gt.zpars(3))then
                      mass0(k) = m0
                   else
@@ -715,6 +712,8 @@
      &                               (tbgb(k) - tms(k))
                      epoch(k) = tphys - epoch(k)
                   endif
+                  endif
+                  ! METISSE adjusts the age differently for HG stars
                else
                   epoch(k) = tphys - aj(k)*tm/tms(k)
                endif
@@ -752,11 +751,7 @@
 *
 * Acquire stellar parameters (M, R, L, Mc & K*) at apparent evolution age.
 *
-         if ((SSE_FLAG.eqv..TRUE.).or. (kw==7)) then
-            age = tphys - epoch(k)
-         else
-            age = tphys
-         endif
+         age = tphys - epoch(k)
          aj0(k) = age
          kw = kstar(k)
          m0 = mass0(k)
@@ -1270,8 +1265,10 @@
                 if (dbg)print*,'RLOF secondary giant,calling star',j2
                CALL star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,
      &                   tscls,lums,GB,zpars,dtm,j2)
+               if (SSE_FLAG .eqv. .true.) then
                aj(j2) = tmsnew + tscls(1)*(aj(j2)-tms(j2))/tbgb(j2)
                epoch(j2) = tphys - aj(j2)
+               endif
             endif
          elseif(kstar(j2).le.12)then
 *
@@ -1983,8 +1980,10 @@
          CALL star(kstar(j1),mass0(j1),mass(j1),tmsnew,tn,tscls,
      &             lums,GB,zpars,dtm,j1)
          if(kstar(j1).eq.2)then
+            if (SSE_FLAG.eqv..TRUE.) then
             aj(j1) = tmsnew + (tscls(1) - tmsnew)*(aj(j1)-tms(j1))/
      &                        (tbgb(j1) - tms(j1))
+            endif
          else
             aj(j1) = tmsnew/tms(j1)*aj(j1)
          endif
@@ -1997,8 +1996,10 @@
          CALL star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,tscls,
      &             lums,GB,zpars,dtm,j2)
          if(kstar(j2).eq.2)then
+            if (SSE_FLAG.eqv..TRUE.) then
             aj(j2) = tmsnew + (tscls(1) - tmsnew)*(aj(j2)-tms(j2))/
      &                        (tbgb(j2) - tms(j2))
+            endif
          elseif((mass(j2).lt.0.35d0.or.mass(j2).gt.1.25d0).
      &           and.kstar(j2).ne.7)then
             aj(j2) = tmsnew/tms(j2)*aj(j2)*(mass(j2) - dm22)/mass(j2)
@@ -2014,11 +2015,7 @@
       tphys = tphys + dtm
 *      if (dbg) print*, "dtm3=",dtm
       do 90 , k = 1,2
-         if ((SSE_FLAG.eqv..TRUE.).or. (kw==7)) then
-            age = tphys - epoch(k)
-         else
-            age = tphys
-         endif
+         age = tphys - epoch(k)
          m0 = mass0(k)
          mt = mass(k)
          mc = massc(k)

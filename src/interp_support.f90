@@ -530,8 +530,10 @@ module interp_support
     !print*,t% times(kw),t% times(kw-1),t% times_new(kw),t% times_new(kw-1)
         !t% pars% mass,t% pars% core_mass,t% times_new(kw)
         else
-            age2 = input_age*(t% MS_time/t% ms_old)
+            age2 = input_age
             n_pass = 1
+!            if (kw ==1) age2= input_age*(t% MS_time/t% ms_old)
+!            print*, 'age MS', age2
         endif
 
         do pass = 1, n_pass

@@ -61,10 +61,10 @@ OBJT_SSE = $(SRCE_SSE:.f=.o)
 SRCE_METISSE = \
 track_support.f90 z_support.f90 sse_support.f90 \
 remnant_support.f90 interp_support.f90 \
-alloc_track.f90 dealloc_track.f90 assign_commons.f90 \
+alloc_track.f90 dealloc_track.f90 assign_commons_bse.f90 \
 comenv_lambda.f90 initialize_front_end.f90 \
 METISSE_zcnsts.f90 metisse_star.f90 metisse_hrdiag.f90 \
-metisse_deltat.f90 metisse_mlwind.f90 \
+metisse_deltat.f90 metisse_mlwind.f90 assign_commons_main.f90\
 
  
 OBJT_METISSE = $(SRCE_METISSE:.f90=.o)
@@ -79,13 +79,15 @@ interp_support.o: $(SRC_DIR)/interp_support.f90 track_support.o z_support.o sse_
 initialize_front_end.o: $(SRC_DIR)/initialize_front_end.f90 track_support.o
 alloc_track.o: $(SRC_DIR)/alloc_track.f90 track_support.o
 dealloc_track.o: $(SRC_DIR)/dealloc_track.f90 track_support.o
-assign_commons.o: $(SRC_DIR)/assign_commons.f90 track_support.o remnant_support.o
+assign_commons_main.o: $(SRC_DIR)/assign_commons_main.f90 track_support.o remnant_support.o
 metisse_mlwind.o: $(SRC_DIR)/metisse_mlwind.f90 track_support.o
 metisse_deltat.o: $(SRC_DIR)/metisse_deltat.f90 track_support.o
 metisse_zcnsts.o: $(SRC_DIR)/metisse_zcnsts.f90 z_support.o track_support.o
 metisse_star.o: $(SRC_DIR)/metisse_star.f90 track_support.o interp_support.o sse_support.o
 metisse_hrdiag.o: $(SRC_DIR)/metisse_hrdiag.f90 track_support.o interp_support.o remnant_support.o sse_support.o
 comenv_lambda.o: $(SRC_DIR)/comenv_lambda.f90 track_support.o
+
+assign_commons.o: $(SRC_DIR)/assign_commons_bse.f90 track_support.o remnant_support.o
 
 
 

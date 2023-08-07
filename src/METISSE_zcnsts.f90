@@ -98,7 +98,7 @@ subroutine METISSE_zcnsts(z,zpars)
 
     if (front_end == main) then
     ! sets remnant schmeme from SSE_input_controls
-        call set_remnant_scheme()
+        call assign_commons_main()
     else
     ! reads
         call assign_commons()

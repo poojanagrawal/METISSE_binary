@@ -27,9 +27,6 @@
     integer :: wd_flag = 0
     integer :: ec_flag = 0
     integer :: if_flag = 0
-
-    real(dp) :: mc1 = 5.d0, mc2 = 7.6d0 !mass cutoffs for Belczynski methods
-
     contains
     
 
@@ -307,6 +304,7 @@
 
     real(dp) function calculate_remnant_mass(mc,mcfeni,Mt) result (Mrem)
         real(dp), intent(in) :: mc,mcfeni,mt
+        real(dp) :: mc1 = 5.d0, mc2 = 7.6d0 !mass cutoffs for Belczynski methods
 
         !For Belczynski methods calculate the remnant mass from the FeNi core.
         if(mc<= mc1)then
@@ -569,36 +567,6 @@
 !        print*,"lum", t% pars% luminosity, "rad", t% pars% radius
     end subroutine evolve_after_envelope_loss
 
-    subroutine set_remnant_scheme()
-        if (WD_mass_scheme == 'Mestel') then
-            wd_flag = Mestel
-        elseif (WD_mass_scheme == 'Modified_mestel') then
-            wd_flag = Modified_mestel
-        else
-            print*,"Error: Invalid Option for WD_mass_scheme."
-            print*,"Choose from 'Mestel' and 'Modified_mestel'. "
-            STOP
-        endif
-
-        if (BHNS_mass_scheme == 'original_SSE') then
-            ns_flag = original_SSE
-        elseif (BHNS_mass_scheme == 'Belczynski2002') then
-            ns_flag = Belczynski2002
-        elseif (BHNS_mass_scheme == 'Belczynski2008') then
-            ns_flag = Belczynski2008
-        elseif (BHNS_mass_scheme == 'Eldridge_Tout2004') then
-            ns_flag = Eldridge_Tout2004
-        else
-            print*,"Error: Invalid Option for BHNS_mass_scheme."
-            print*,"Choose from 'original_SSE','Belczynski2002','Belczynski2008','Eldridge_Tout2004'. "
-            STOP
-        endif
-        !call cutoffs_for_Belzynski_methods(ns_flag,mc1,mc2)
-
-        !if (verbose) print*,"For Belzynski methods", mc1,mc2
-        if (allow_electron_capture) ec_flag = 1
-        if (Use_Initial_final_mass_relation) if_flag = 1
-    end subroutine set_remnant_scheme
 
     !for constructing post-main sequence phase if construct_wd_track is true
     real(dp) function fit_Z_t1(Z)

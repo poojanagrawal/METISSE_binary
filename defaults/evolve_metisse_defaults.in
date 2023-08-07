@@ -5,6 +5,7 @@
 ! NOTE: SSE_input_controls in evolve_metisse.in are read 
 ! only when METISSE is called directly through its main unit/ standalone mode.
 ! Otherwise, values provided by the overlying code are used.
+! Make sure to ADD a new line at the end (after / symbol)
 
 
 &SSE_input_controls

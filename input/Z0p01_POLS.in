@@ -54,7 +54,7 @@
     ! If>0 then these values are instead used 
 
     Mhook = -1.0
-    Mhef = -1.0
+    Mhef = 1.96 !table 1 of Pols et al. 1998
     Mfgb = -1.0
     Mup = -1.0
     Mec = -1.0

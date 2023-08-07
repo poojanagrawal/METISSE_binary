@@ -989,6 +989,7 @@ module z_support
     type(eep_track), intent(inout) :: x
     integer :: n
 
+    logical:: debug
     !set the WDCS primary EEP if center_gamma < center_gamma_limit
     !center_gamma_limit = 19
 
@@ -1080,14 +1081,14 @@ module z_support
 
         logical:: debug
 
-        debug = .false.
+        debug = .true.
         
-        old_co_frac = 0.0
-        Mup_core = 0.0
-        Mec_core = 0.0
+        old_co_frac = 0.d0
+        Mup_core = 0.d0
+        Mec_core = 0.d0
 
 !        allocate(Mcrit(9))
-        Mcrit% mass= -1.0
+        Mcrit% mass= -1.d0
         Mcrit% loc = 0
 
         Mcrit(1)% mass = s(1)% initial_mass
@@ -1110,6 +1111,7 @@ module z_support
         if (.not. defined(Mcrit(7)% mass)) then
           do i = 1,size(s)
             call set_star_type_from_history(s(i))
+!            print*, s(i)% initial_mass, s(i)% star_type
           end do
         endif
 

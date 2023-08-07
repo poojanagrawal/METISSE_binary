@@ -8,7 +8,7 @@ subroutine allocate_track(n,mass)
         
 !    n= 1
 !    n = size(mass)
-!    print*,"I am in alloc_track with ", n,mass
+    print*,"I am in alloc_track with ", n,mass
 
     allocate(tarr(n))
     do i = 1,n

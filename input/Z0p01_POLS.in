@@ -17,7 +17,7 @@
     ! Details about the file structure (see format_defaults.dat)
     ! Empty string will raise an error
 
-    format_file = 'input/format_pols.dat'
+    format_file = '/Users/poojan/BSE/bse_metisse/input/format_pols.dat'
 
     ! Interpolating in all columns of input files can slow down computations 
     ! By default METISSE only interpolates in the essential columns 

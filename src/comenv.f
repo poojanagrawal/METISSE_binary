@@ -38,7 +38,7 @@
       EXTERNAL CELAMF,RL,RZAMSF
       REAL*8 MCX
       LOGICAL SSE_FLAG
-      COMMON /SSE/ SSE_FLAG
+      COMMON /SE/ SSE_FLAG
 *
 * mcx is a dummy variable in this subroutine; TODO: this should be fixed
 *
@@ -55,7 +55,8 @@
 * Obtain the core masses and radii.
 *
       KW = KW1
-      CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
+      CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM
+     &                   ,J1)
       CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
      &            R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1)
       OSPIN1 = JSPIN1/(K21*R1*R1*(M1-MC1)+K3*RC1*RC1*MC1)
@@ -67,7 +68,8 @@
         CALL comenv_lambda(KW,M01,L1,R1,MENVD,LAMBDA,J1,LAMB1)
       ENDIF
       KW = KW2
-      CALL star(KW2,M02,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,DTM,J2)
+      CALL star(KW2,M02,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,
+     &                   DTM,J2)
       CALL hrdiag(M02,AJ2,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,
      &            R2,L2,KW2,MC2,RC2,MENV,RENV,K22,MCX,J2)
       OSPIN2 = JSPIN2/(K22*R2*R2*(M2-MC2)+K3*RC2*RC2*MC2)
@@ -148,7 +150,8 @@
             if (dbg) print*,'Primary lost envelope',kw1,kw2
             MF = M1
             M1 = MC1
-            CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
+            CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
+     &                      DTM,J1)
             CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
      &                  R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1)
             if (dbg) print*,kw1,kw2
@@ -245,7 +248,8 @@
             if(dbg)print*,"No merger, removing envelope, calling star"
             MF = M1
             M1 = MC1
-            CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
+            CALL star(KW1,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM
+     &                           ,J1)
             CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
      &                  R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1)
             IF(KW1.GE.13)THEN
@@ -255,7 +259,8 @@
             MF = M2
             KW = KW2
             M2 = MC2
-            CALL star(KW2,M02,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,DTM,J2)
+            CALL star(KW2,M02,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,DTM
+     &                             ,J2)
             CALL hrdiag(M02,AJ2,M2,TM2,TN,TSCLS2,LUMS,GB,ZPARS,
      &                  R2,L2,KW2,MC2,RC2,MENV,RENV,K22,MCX,J2)
             IF(KW2.GE.13.AND.KW.LT.13)THEN
@@ -331,11 +336,13 @@
 * Combine the core masses.
 *
          IF(KW.EQ.2)THEN
-            CALL star(KW,M1,M1,TM2,TN,TSCLS2,LUMS,GB,ZPARS,DTM,J1)
+            CALL star(KW,M1,M1,TM2,TN,TSCLS2,LUMS,GB,ZPARS,DTM
+     &                          ,J1)
             IF(GB(9).GE.MC1)THEN
                M01 = M1
                AJ1 = TM2 + (TSCLS2(1) - TM2)*(AJ1-TM1)/(TSCLS1(1) - TM1)
-               CALL star(KW,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
+               CALL star(KW,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
+     &                                DTM,J1)
             ENDIF
          ELSEIF(KW.EQ.7)THEN
             M01 = M1

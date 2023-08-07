@@ -236,7 +236,8 @@
          f = mcx - mc
          mmax = mt
          do 50 , j = 1,jmax
-            CALL star(kw,mmax,mc,tm,tn,tscls,lums,GB,zpars,dtm,id)
+            CALL star(kw,mmax,mc,tm,tn,tscls,lums,GB,zpars,dtm
+     &                         ,id)
             mcy = mcgbf(lums(2),GB,lums(6))
             if(mcy.gt.mc) goto 60
             mmax = 2.d0*mmax
@@ -265,7 +266,8 @@
          do 70 , j = 1,jmax
             dm = 0.5d0*dm
             mmid = m0 + dm
-            CALL star(kw,mmid,mc,tm,tn,tscls,lums,GB,zpars,dtm,id)
+            CALL star(kw,mmid,mc,tm,tn,tscls,lums,GB,zpars,dtm
+     &                             ,id)
             mcy = mcgbf(lums(2),GB,lums(6))
             fmid = mcy - mc
             if(fmid.lt.0.d0) m0 = mmid

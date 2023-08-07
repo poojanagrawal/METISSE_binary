@@ -1,4 +1,4 @@
-    subroutine deltat(kw,age,tm,tn,tscls,dt,dtr,id)
+    subroutine METISSE_deltat(kw,age,tm,tn,tscls,dt,dtr,id)
     
     !calculates timestep for evolution
     use track_support
@@ -96,4 +96,4 @@
             endif
             
             nullify(t)
-      end subroutine deltat
+      end subroutine METISSE_deltat

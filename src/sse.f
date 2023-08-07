@@ -100,6 +100,11 @@ c-------------------------------------------------------------c
 *
 * Set parameters which depend on the metallicity 
 *
+      SSE_FLAG = .false.
+      
+      !set the front end for METISSE
+      if(SSE_FLAG.eqv..FALSE.) call initialize_front_end('SSE','')
+        
       CALL zcnsts(z,zpars)
       if(idum.gt.0) idum = -idum
 *
@@ -194,7 +199,7 @@ c-------------------------------------------------------------c
       WRITE(*,100)label(kw+1),spp(j,1),spp(j,3)
       goto 50
  60   continue
- 100  format(a30,' Time ',f10.1,' Mass ',f7.3)
+ 100  format(a30,' Time ',f10.4,' Mass ',f7.3)
       WRITE(*,*)
 *
 ************************************************************************

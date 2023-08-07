@@ -53,8 +53,8 @@ c-------------------------------------------------------------c
       parameter(tol=1.0d-10,tiny=1.0d-14)
       real*8 ajhold,rm0,eps,alpha2
       parameter(eps=1.0d-06,alpha2=0.09d0)
-      real*8 metisse_mlwind,vrotf
-      external metisse_mlwind,vrotf
+      real*8 mlwind,vrotf
+      external mlwind,vrotf
       logical iplot,isave,dbg
       REAL*8 neta,bwind,hewind,mxns
       COMMON /VALUE1/ neta,bwind,hewind,mxns
@@ -65,6 +65,8 @@ c-------------------------------------------------------------c
       INTEGER irecord
       COMMON /REC/ irecord
       integer id
+      LOGICAL SSE_FLAG
+      COMMON /SE/ SSE_FLAG
 *
       ! in evolv1 hrdiag can be called several times
       !with METISSE not everytime the calculations needs to be saved in the pars array
@@ -114,7 +116,7 @@ c-------------------------------------------------------------c
 * Calculate mass loss from the previous timestep.
 *
             dt = 1.0d+06*dtm
-            wind = metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
+            wind = mlwind(kw,lum,r,mt,mc,rl,z,id)
             dms = wind*dt
             if(kw.lt.10)then
                dml = mt - mc
@@ -153,7 +155,7 @@ c-------------------------------------------------------------c
 *
          if(dms.gt.0.d0)then
             mt = mt - dms
-            if(kw.le.1.or.kw.eq.7)then
+            if(kw.le.2.or.kw.eq.7)then
                m0 = mass
                mc1 = mc
                mass = mt
@@ -161,9 +163,11 @@ c-------------------------------------------------------------c
                tbgold = tscls(1)
 
                if(dbg)print*,"star1:update epoch",kw,aj,dtm,tphys
-               CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
+               CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm
+     &                          ,id)
 
                 if(kw.eq.2)then
+                  if (SSE_FLAG .eqv. .true.) then
                   if(GB(9).lt.mc1.or.m0.gt.zpars(3))then
                      mass = m0
 *                    print*, "I came here 2.1", tphys,epoch
@@ -171,10 +175,10 @@ c-------------------------------------------------------------c
                      epoch = tm + (tscls(1) - tm)*(ajhold-tmold)/
      &                            (tbgold - tmold)
                      epoch = tphys - epoch
-                     if(dbg)print*, "I came here 2.2",tphys,epoch
+*                     if(dbg)print*, "I came here 2.2",tphys,epoch
                  endif
-
-               elseif (kw<=1) then
+                 endif
+               else
                   epoch = tphys - ajhold*tm/tmold
 *                  print*, "I came here 1", tphys,epoch,tm,tmold
                endif
@@ -231,18 +235,21 @@ c-------------------------------------------------------------c
                if(dtm.lt.1.0d-07*aj) goto 30
                dms = dtm*dml
                mt = mt2 - dms
-               if(kw.le.1.or.kw.eq.7)then
+               if(kw.le.2.or.kw.eq.7)then
                   mass = mt
                   if (kw<10) print*,"star 3: updating epoch",aj, mt,kw
-                  CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
+                  CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,
+     &                          zpars,dtm,id)
                   if(kw.eq.2)then
-*                     if(GB(9).lt.mc1.or.m0.gt.zpars(3))then
-*                        mass = m0
-*                     else
+                     if (SSE_FLAG .eqv. .true.) then
+                     if(GB(9).lt.mc1.or.m0.gt.zpars(3))then
+                        mass = m0
+                     else
                         epoch = tm + (tscls(1) - tm)*(ajhold-tmold)/
      &                               (tbgold - tmold)
                         epoch = tphys2 - epoch
-*                     endif
+                     endif
+                     endif
                   else
                      epoch = tphys2 - ajhold*tm/tmold
                   endif
@@ -251,7 +258,8 @@ c-------------------------------------------------------------c
                aj = tphys - epoch
                mc = mc1
                if (kw<10) print*,"star 4: after updating epoch",aj,mt,kw
-               CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
+               CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm
+     &                          ,id)
                CALL hrdiag(mass,aj,mt,tm,tn,tscls,lums,GB,zpars,
      &                     r,lum,kw,mc,rc,menv,renv,k2,mcx,id)
 *           print*, "aj2",aj,dtm
@@ -416,7 +424,8 @@ c-------------------------------------------------------------c
             kw = kwold
             mass = m0
             mt = mt0
-            CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
+            CALL star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,
+     &                          id)
 *            if (kw<10) print*,"after star5:phase change",aj, mt,mc,kw
          endif
 *
@@ -431,12 +440,6 @@ c-------------------------------------------------------------c
 
 *        write(*,*)' DT2 ',dtm,dtr,1.0d-07*aj,tsave-tphys,kw
 *         if (kw>1 .and. kw <10) write(*,*)' DT2 ',dtm,dtr,1.0d-07*aj
-*
-
-*        irecord = 1
-*        CALL hrdiag(mass,ajhold,mt,tm,tn,tscls,lums,GB,zpars,
-*        &                     r,lum,kw,mc,rc,menv,renv,k2,mcx,id)
-
 
  10   continue
 *

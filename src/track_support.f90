@@ -13,18 +13,6 @@ module track_support
     integer, parameter :: dp = selected_real_kind(p=15)
 
     integer, parameter :: strlen = 256 ! for character (len=strlen)
-
-    logical :: verbose
-    logical :: write_track_to_file, write_eep_file
-    logical :: direct_call = .false.
-
-
-    character(len=strlen) :: METISSE_DIR
-    real(dp) :: pts_1,pts_2,pts_3
-    integer :: low_mass_final_eep, high_mass_final_eep
-    integer, allocatable :: key_eeps(:)
-
-    logical, parameter :: old_core_mass_names=.false.
     integer, parameter :: col_width = 32
 
     real(dp), parameter :: ln10=log(1.0d1)
@@ -32,7 +20,18 @@ module track_support
     real(dp), parameter :: tiny = 1.0d-6
     real(dp), parameter :: undefined  =  -1.0
     integer, parameter :: undefined_i = -1
+    
+    logical :: verbose
+    logical :: write_track_to_file, write_eep_file
 
+    integer :: front_end = -1
+    integer, parameter :: main = 0
+    integer, parameter :: BSE = 1
+    integer, parameter :: COSMIC = 2
+
+    character(len=strlen) :: METISSE_DIR
+    integer :: low_mass_final_eep, high_mass_final_eep
+    integer, allocatable :: key_eeps(:)
 
     ! for use when constructing EEP distance
     logical :: weight_center_rho_T_by_Xc
@@ -51,11 +50,6 @@ module track_support
     character(len=10) :: star_label(4) = ['   unknown', 'substellar', '  low-mass', ' high-mass']
     character(len=5) :: phase_label(16) = ['lm_MS','   MS','   HG','  FGB',' CHeB',' EAGB',&
     'TPAGB','He_MS', 'He_HG','He_GB','He_WD','CO_WD','ONeWD','   NS','   BH','   MR']
-
-    ! default column format specs
-    integer :: head !=29
-    integer :: main !=28
-    integer :: xtra !=0
 
     !sse phases
 
@@ -78,25 +72,25 @@ module track_support
 
     !EEPs
 
-    integer :: PreMS_EEP = -1
-    integer :: ZAMS_EEP = -1
-    integer :: IAMS_EEP = -1
-    integer :: TAMS_EEP = -1
-    integer :: BGB_EEP = -1
-    integer :: cHeIgnition_EEP = -1
-    integer :: cHeBurn_EEP = -1
-    integer :: TA_cHeB_EEP = -1
+    integer :: PreMS_EEP
+    integer :: ZAMS_EEP
+    integer :: IAMS_EEP
+    integer :: TAMS_EEP
+    integer :: BGB_EEP
+    integer :: cHeIgnition_EEP
+    integer :: cHeBurn_EEP
+    integer :: TA_cHeB_EEP
 
-    integer :: cCBurn_EEP = -1
-    integer :: TPAGB_EEP = -1
-    integer :: post_AGB_EEP  = -1
-    integer :: WD_EEP  = -1
+    integer :: cCBurn_EEP
+    integer :: TPAGB_EEP
+    integer :: post_AGB_EEP
+    integer :: WD_EEP
 
-    integer :: Initial_EEP = -1       !files will be read from this line number
-    integer :: Final_EEP = -1        !to this line
-    integer :: Extra_EEP1 = -1
-    integer :: Extra_EEP2= -1
-    integer :: Extra_EEP3 = -1
+    integer :: Initial_EEP        !files will be read from this line number
+    integer :: Final_EEP         !to this line
+    integer :: Extra_EEP1
+    integer :: Extra_EEP2
+    integer :: Extra_EEP3
 
 
     !quantities from history file that are needed directly in the code
@@ -147,7 +141,7 @@ module track_support
         integer :: star_type = unknown
 
         integer, allocatable :: eep(:), phase(:)
-        real(dp) :: initial_mass, initial_Y, Fe_div_H, initial_Z, v_div_vcrit, alpha_div_Fe
+        real(dp) :: initial_mass, initial_Z, initial_Y, Fe_div_H,  v_div_vcrit, alpha_div_Fe
         real(dp), allocatable :: tr(:,:)
 
     end type eep_track
@@ -179,19 +173,21 @@ module track_support
     !holds interpolated track
     type track
         type(column), allocatable :: cols(:)
-        logical :: has_RGB=.false., complete=.true.
+        logical :: has_RGB =.false., complete=.true.
         logical :: has_mass_loss
         integer :: ncol, ntrack, neep
-        integer :: star_type = unknown,irecord
-        integer, allocatable :: eep(:), phase(:)
-        real(dp) :: initial_mass, initial_Z , initial_Y, Fe_div_H,  v_div_vcrit, alpha_div_Fe
+        integer :: star_type = unknown, irecord
+        
+        real(dp) :: initial_mass, initial_Z, initial_Y, Fe_div_H,  v_div_vcrit, alpha_div_Fe
+        real(dp) :: zams_mass      !effective initial mass (M0 of SSE)
+        real(dp) :: MS_time, nuc_time, ms_old
+        
         real(dp), allocatable :: tr(:,:)
-
         real(dp), allocatable :: times(:), times_new(:)           !timescales
-        logical :: lost_envelope = .false., post_agb = .false.
-        real(dp) :: zams_mass!, zams_radius, zams_lum      !zams values
-        real(dp) :: MS_time, nuc_time
-        type(star_parameters) :: pars!, old_pars    ! parameters at any instant
+        integer, allocatable :: eep(:), phase(:)
+
+        type(star_parameters) :: pars    ! parameters at any instant
+        logical :: post_agb = .false.
         type(agb_parameters) :: agb
         type(sse_parameters) :: He_pars
     end type track
@@ -215,11 +211,13 @@ module track_support
     logical :: fix_track
     real(dp) :: lookup_index, mass_accuracy_limit
     
-    !for remnant support
+    !for remnant support in case of direct call
     real(dp) :: max_NS_mass         !maximum NS mass
     logical :: construct_wd_track, allow_electron_capture, use_Initial_final_mass_relation
-    character (len = col_width) :: BHNS_mass_scheme, WD_mass_scheme
+    character (len=strlen) :: BHNS_mass_scheme, WD_mass_scheme
 !    real(dp) :: mc1, mc2 !mass cutoffs for Belczynski methods
+    real(dp) :: pts_1,pts_2,pts_3
+
     contains
 
     !linear search alogorithm

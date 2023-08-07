@@ -196,25 +196,25 @@
       LOGICAL coel,com,prec,inttry,change,snova,sgl,bsymb,esymb,bss
       LOGICAL supedd,novae,disk
       LOGICAL isave,iplot, dbg
-      REAL*8 rl,metisse_mlwind,vrotf,corerd
-      EXTERNAL rl,metisse_mlwind,vrotf,corerd
+      REAL*8 rl,mlwind,vrotf,corerd
+      EXTERNAL rl,mlwind,vrotf,corerd
       REAL bcm(50000,34),bpp(80,10)
       COMMON /BINARY/ bcm,bpp
       REAL*8 dtm
       COMMON /TIMESTEP/ dtm
-      LOGICAL SSE_FLAG
-      COMMON /SSE/ SSE_FLAG
       INTEGER irecord
       COMMON /REC/ irecord
+      LOGICAL SSE_FLAG
+      COMMON /SE/ SSE_FLAG
 
 *
 * Save the initial state.
 *
+
       dbg = .false.
-      SSE_FLAG = .false.
       irecord = 1
 * irecord is useful for evolv1.f but serves no purpose here
-* see decsription in evolv1
+* see description in evolv1
 
       call allocate_track(2,mass0)
 
@@ -298,14 +298,13 @@
 *
       do 500 , k = kmin,kmax
          age = tphys - epoch(k)
-*         if (dbg)
-*         print*, "initial call for" , mass0(k)
+*         if (dbg) print*, "initial call for" , mass0(k)
          dtm =0.d0
-         CALL star(kstar(k),mass0(k),mass(k),tm,tn,tscls,lums,GB,zpars
-     &    ,dtm,k)
+         CALL star(kstar(k),mass0(k),mass(k),tm,tn,tscls,lums,
+     &                      GB,zpars,dtm,k)
 
-         CALL hrdiag(mass0(k),age,mass(k),tm,tn,tscls,lums,GB,zpars,
-     &               rm,lum,kstar(k),mc,rc,me,re,k2,mcx,k)
+         CALL hrdiag(mass0(k),age,mass(k),tm,tn,tscls,lums,GB,
+     &               zpars,rm,lum,kstar(k),mc,rc,me,re,k2,mcx,k)
 *            print*, 'ini', tm,tn,kstar(k)
 
          aj(k) = age
@@ -409,7 +408,7 @@
 *
             if(neta.gt.tiny)then
                rlperi = rol(k)*(1.d0-ecc)
-               dmr(k) = metisse_mlwind(kstar(k),lumin(k),rad(k),mass(k),
+               dmr(k) = mlwind(kstar(k),lumin(k),rad(k),mass(k),
      &                         massc(k),rlperi,z,k)
 *
 * Calculate how much of wind mass loss from companion will be
@@ -608,7 +607,7 @@
          do 503 , k = kmin,kmax
             if(neta.gt.tiny)then
                rlperi = 0.d0
-               dmr(k) = metisse_mlwind(kstar(k),lumin(k),rad(k),mass(k),
+               dmr(k) = mlwind(kstar(k),lumin(k),rad(k),mass(k),
      &                         massc(k),rlperi,z,k)
             else
                dmr(k) = 0.d0
@@ -696,15 +695,16 @@
 *
          if(ABS(dms(k)).gt.tiny)then
             mass(k) = mass(k) - dms(k)
-            if(kstar(k).le.1.or.kstar(k).eq.7)then
+            if(kstar(k).le.2.or.kstar(k).eq.7)then
                m0 = mass0(k)
                mass0(k) = mass(k)
 * PA: detached phase call for adjusting epoch
             if (dbg) print*,'detached phase call for adjusting epoch',k
-               CALL star(kstar(k),mass0(k),mass(k),tm,tn,tscls,
-     &                   lums,GB,zpars,dtm,k)
+               CALL star(kstar(k),mass0(k),mass(k),tm,tn,
+     &                   tscls,lums,GB,zpars,dtm,k)
 *                print*,'star_ep_dt', mass0(k),mass(k),kstar(k),k
                if(kstar(k).eq.2)then
+                  if (SSE_FLAG.eqv..TRUE.) then
                   if(GB(9).lt.massc(k).or.m0.gt.zpars(3))then
                      mass0(k) = m0
                   else
@@ -712,6 +712,8 @@
      &                               (tbgb(k) - tms(k))
                      epoch(k) = tphys - epoch(k)
                   endif
+                  endif
+                  ! METISSE adjusts the age differently for HG stars
                else
                   epoch(k) = tphys - aj(k)*tm/tms(k)
                endif
@@ -1260,11 +1262,13 @@
             mass(j2) = mass(j2) + dm2
             if(kstar(j2).eq.2)then
                mass0(j2) = mass(j2)
-                if (dbg) print*, 'RLOF secondary giant, call star',j2
-               CALL star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,tscls,
-     &                   lums,GB,zpars,dtm,j2)
+                if (dbg)print*,'RLOF secondary giant,calling star',j2
+               CALL star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,
+     &                   tscls,lums,GB,zpars,dtm,j2)
+               if (SSE_FLAG .eqv. .true.) then
                aj(j2) = tmsnew + tscls(1)*(aj(j2)-tms(j2))/tbgb(j2)
                epoch(j2) = tphys - aj(j2)
+               endif
             endif
          elseif(kstar(j2).le.12)then
 *
@@ -1511,7 +1515,7 @@
          do 14 , k = 1,2
             if(neta.gt.tiny)then
                rlperi = rol(k)*(1.d0-ecc)
-               dmr(k) = metisse_mlwind(kstar(k),lumin(k),radx(k),
+               dmr(k) = mlwind(kstar(k),lumin(k),radx(k),
      &                         mass(k),massc(k),rlperi,z,k)
                vwind2 = 2.d0*beta*acc1*mass(k)/radx(k)
                omv2 = (1.d0 + vorb2/vwind2)**(3.d0/2.d0)
@@ -1932,8 +1936,8 @@
             m0 = mass0(j1)
             mass0(j1) = mass(j1)
             if (dbg) print*,'adjusting epoch, calling star', j1
-            CALL star(kstar(j1),mass0(j1),mass(j1),tmsnew,tn,tscls,
-     &                lums,GB,zpars,dtm,j1)
+            CALL star(kstar(j1),mass0(j1),mass(j1),tmsnew,tn,
+     &                tscls,lums,GB,zpars,dtm,j1)
             if(GB(9).lt.massc(j1))then
                mass0(j1) = m0
             endif
@@ -1942,8 +1946,8 @@
             m0 = mass0(j2)
             mass0(j2) = mass(j2)
             if (dbg) print*,'adjusting epoch, calling star', j2
-            CALL star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,tscls,
-     &                lums,GB,zpars,dtm,j2)
+            CALL star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,
+     &               tscls,lums,GB,zpars,dtm,j2)
             if(GB(9).lt.massc(j2))then
                mass0(j2) = m0
             endif
@@ -1976,8 +1980,10 @@
          CALL star(kstar(j1),mass0(j1),mass(j1),tmsnew,tn,tscls,
      &             lums,GB,zpars,dtm,j1)
          if(kstar(j1).eq.2)then
+            if (SSE_FLAG.eqv..TRUE.) then
             aj(j1) = tmsnew + (tscls(1) - tmsnew)*(aj(j1)-tms(j1))/
      &                        (tbgb(j1) - tms(j1))
+            endif
          else
             aj(j1) = tmsnew/tms(j1)*aj(j1)
          endif
@@ -1990,8 +1996,10 @@
          CALL star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,tscls,
      &             lums,GB,zpars,dtm,j2)
          if(kstar(j2).eq.2)then
+            if (SSE_FLAG.eqv..TRUE.) then
             aj(j2) = tmsnew + (tscls(1) - tmsnew)*(aj(j2)-tms(j2))/
      &                        (tbgb(j2) - tms(j2))
+            endif
          elseif((mass(j2).lt.0.35d0.or.mass(j2).gt.1.25d0).
      &           and.kstar(j2).ne.7)then
             aj(j2) = tmsnew/tms(j2)*aj(j2)*(mass(j2) - dm22)/mass(j2)

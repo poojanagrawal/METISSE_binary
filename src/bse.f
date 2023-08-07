@@ -136,6 +136,10 @@
 *
 * Set parameters which depend on the metallicity 
 *
+      SSE_FLAG = .false.
+      
+      !set the front end for METISSE
+      if(SSE_FLAG.eqv..FALSE.) call initialize_front_end('SSE','')
       CALL zcnsts(z,zpars)
 *
 * Set the collision matrix.

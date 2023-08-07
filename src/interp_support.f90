@@ -34,7 +34,6 @@ module interp_support
     
         debug_mass = .false.
         ierr=0
-!if (t% ntrack<nt) print*, '***WARNING: track length reduced***',t% initial_mass,nt,t% ntrack
 
         !this line is to avoid array length problem while multiple calls to fix-track
         if (allocated(t% tr)) call deallocate_arrays(t)
@@ -491,7 +490,7 @@ module interp_support
         real(dp), intent(out), optional :: val
         integer :: jstart, jend, age_col, kw
         real(dp) ::  them, them_new, frac, age, age2
-!real(dp) :: lim_R
+
 
         integer, allocatable :: min_eeps(:)
         real(dp) :: f(3), dx, x(4), y(4), alfa, beta
@@ -524,6 +523,8 @@ module interp_support
             them_new = t% times_new(kw)-t% times_new(kw-1)
             frac = (input_age-t% times(kw-1))/them
             age2 = t% times_new(kw-1)+(frac*them_new)
+!            age2 = new_age(t% times(kw),t% times(kw-1),t% times_new(kw),t% times_new(kw-1),input_age)
+            
             n_pass = 2
             if (t% irecord>0 .and. debug) print*, "in interp2", age2, t% pars% age,kw
     !print*,t% times(kw),t% times(kw-1),t% times_new(kw),t% times_new(kw-1)
@@ -531,6 +532,8 @@ module interp_support
         else
             age2 = input_age
             n_pass = 1
+!            if (kw ==1) age2= input_age*(t% MS_time/t% ms_old)
+!            print*, 'age MS', age2
         endif
 
         do pass = 1, n_pass
@@ -569,8 +572,8 @@ module interp_support
                 interpolate = check_core_quant(j,n_pass, pass)
                 if (interpolate) then
                     new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
-                    if (new_line(j,1)/=new_line(j,1)) then
-                    print*, '**Warning: NaN encountered** ',t% initial_mass,input_age,j,mhi,mlo
+                    if (new_line(j,1)/= new_line(j,1)) then
+                    print*, '**Warning: NaN encountered during interpolation age** ',t% initial_mass,input_age,j,mhi,mlo
 !                    stop
                     endif
                 endif
@@ -609,33 +612,32 @@ module interp_support
             call save_values(new_line,t% pars)
         endif
 
-!        if (t% pars% phase <=4) then
-!        !Todo: also limit radius to prevent track from going beyond the hayashi
-!        !limit during extrapolation
-!            lim_R = 2*(3.762+(0.25*t% pars% log_L)-3.555 )
-!            if (t% pars% log_R>lim_R) t% pars% log_R = lim_R
-!        endif
-
         if (t% pars% mass <0.0) then
             print*,"fatal error: mass <0 "
             stop
         endif
-!        if (kw==4) then
-!        frac = (age2-t% times_new(kw-1))/(t% times_new(kw)-t% times_new(kw-1))
-!        if (t% irecord>0) write(53,'(4(1pes32.16e3))') t% pars% log_R, frac,t% times_new(kw),t% times_new(kw-1)
-!
-!        endif
-
-        !if (t% irecord>0 ) print*,'***************'
 
         deallocate(new_line)
-        !        nullify(a)
 
     end subroutine interpolate_age
-
+    
+    real(dp) function new_age(tc,tprev,tnew,tnew_prev,age)
+        real(dp), intent(in) :: tc,tprev,tnew,tnew_prev,age
+        real(dp) ::  frac
+    
+!    tc = t% times(kw)
+!    tprev = t% times(kw-1)
+!    tnew = t% times_new(kw)
+!    tnew_prev = t% times_new(kw-1)
+        
+        frac = (age-tprev)/(tc-tprev)
+        new_age = tnew_prev+(frac*(tnew-tnew_prev))
+    end function
+            
+    
     logical function check_core_quant(j,n_pass, pass)
         integer :: j, pass, n_pass
-    check_core_quant = .true.
+        check_core_quant = .true.
 
         if (any(j .eq. core_cols,1) .or. j == i_age2) then
             if (n_pass>1 .and. pass==1) check_core_quant = .false.    !do not interpolate in core quantities
@@ -804,7 +806,7 @@ module interp_support
     num_list = count(s% ntrack >= eep_m,1)
     allocate(mlist(num_list),mlist1(num_list))
     ! NOTE: cannot use s(:)% tr(i_mass,eep_m), gives error
-    j=1
+    j = 1
     do i =1, size(s)
         if (s(i)% ntrack >= eep_m) then
         mlist1(j) = s(i)% initial_mass

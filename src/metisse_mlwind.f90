@@ -11,8 +11,8 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
     real(dp) :: tnext,tprev, mnext,mprev
 
     logical :: add_mass_loss
-    real(dp) :: mlwind
-    external mlwind
+    real(dp) :: SSE_mlwind
+    external SSE_mlwind
     logical :: debug
     type(track), pointer :: t
 
@@ -67,13 +67,13 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
 !        endif
 !        dms = max(dms,dml)
     else
-        if (add_mass_loss) dms = mlwind(kw,lum,r,mt,mc,rl,z)
+        if (add_mass_loss) dms = SSE_mlwind(kw,lum,r,mt,mc,rl,z)
 !        if (kw<=9) print*,"mlwind function",dms,mt,mc,kw,id
     endif
 
     !Todo: at present these stars and modelled
     if (kw ==6 .and. t% post_agb) dms = 0.d0
-    if (debug) print*,"in mlwind, dms",dms, t% pars% mass, t% pars% phase
+    if (debug) print*,"in metisse_mlwind, dms",dms, t% pars% mass, t% pars% phase
     metisse_mlwind = dms
 end function
 

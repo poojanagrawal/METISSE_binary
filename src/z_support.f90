@@ -996,7 +996,7 @@ module z_support
     center_carbon_limit = 0.05
 
     !set star_type to high_mass_star if max(log_center_T) > this
-    log_center_T_limit = 8.5
+    log_center_T_limit = 8.7 !changing from 8.5
 
     !set star_type to high mass star if M_init >= this
     high_mass_limit = 10.0 !Msun
@@ -1006,6 +1006,8 @@ module z_support
 
     n = x% ntrack
     
+    !- can be based on co mass in the end<1.4 maybe
+    
     !only reach center_gamma_limit if the star evolves to a WD
     !if( x% tr(i_gamma,n) > center_gamma_limit) then
        !x% star_type = star_low_mass
@@ -1014,6 +1016,18 @@ module z_support
 
     x% star_type = star_low_mass
 
+    !last gasp test for high-mass stars is the initial mass...
+    if(x% initial_mass >= high_mass_limit) then
+       x% star_type = star_high_mass
+       return
+    endif
+    
+    !i_he_core
+    if (x% tr(i_he_core,n)>= he_core_mass_limit) then
+        x% star_type = star_high_mass
+        return
+    endif
+    
     !simple test for high-mass stars is that central C is depleted
     if (i_c12 >0) then
         if(maxval(x% tr(i_c12,:)) > 0.4d0 .and. x% tr(i_c12,n) < center_carbon_limit)then
@@ -1029,19 +1043,6 @@ module z_support
             x% star_type = star_high_mass
             return
         endif
-        return
-    endif
-
-    !i_he_core
-    if (x% tr(i_he_core,n)>= he_core_mass_limit) then
-        x% star_type = star_high_mass
-        return
-    endif
-
-    !last gasp test for high-mass stars is the initial mass...
-    if(x% initial_mass >= high_mass_limit) then
-       x% star_type = star_high_mass
-       return
     endif
 
   end subroutine set_star_type_from_history
@@ -1132,6 +1133,10 @@ module z_support
             len_track = s(i)% ntrack
             if (smass<=3.0) then
                 !determining Mhook
+                !where the maximum of the central temperature (Tc) between
+                !the IAMS and the TAMS EEPs is greater than the Tc at
+                !the TAMS EEP i.e., Tc,max>Tc,TAMS
+
                 if (.not. defined(Mcrit(3)% mass))then
                     if (len_track >= TAMS_EEP) then
                     !T_centre = s(i)%tr(i_Tc,IAMS_EEP:TAMS_EEP)
@@ -1149,6 +1154,11 @@ module z_support
                 endif
 
                 !determining Mhef
+                !the minimum temperature for core helium burning is about 100 million Kelvin.
+                !In stars that undergo the helium flash, a slight expansion of the core
+                ! following the flash causes the central temperature to decrease
+                !a little before increasing again with stable helium burning.
+                
                 if (.not. defined(Mcrit(4)% mass))then
                 if (len_track>=TA_cHeB_EEP) then
                     allocate(T_centre,source=s(i)% tr(i_Tc,cHeIgnition_EEP:TA_cHeB_EEP-1))
@@ -1164,6 +1174,9 @@ module z_support
 
             else        !if (smass>=3.0) then
                 !determining Mup
+                !where the absolute fractional change in the
+                !central carbon-oxygen mass fraction exceeds
+                !0.01 at the end of the AGB (TPAGB EEP)
                 if ((.not. defined(Mcrit(6)% mass)) .and. smass<8.0) then
                     if (i_c12>0 .and. i_o16 >0) then
                         j_tagb = min(cCBurn_EEP,TPAGB_EEP)      !end of agb
@@ -1173,9 +1186,12 @@ module z_support
                             change_frac = abs(co_fraction-old_co_frac)
                             change_frac = change_frac/old_co_frac
                             if (change_frac>0.01) then
-                                Mcrit(6)% mass = smass
-                                Mcrit(6)% loc = i
-                                if (debug) print*,"Mup",smass,i
+                                ! this is the mass at which C/O ignition occur
+                                ! we need the mass preceeding it
+                                ! (Mup = M below which C/O ignition doesn't occur)
+                                Mcrit(6)% loc = i-1
+                                Mcrit(6)% mass = s(Mcrit(6)% loc)% initial_mass
+                                if (debug) print*,"Mup",Mcrit(6)% mass, Mcrit(6)% loc
                             endif
                         endif
                     old_co_frac = co_fraction
@@ -1197,7 +1213,7 @@ module z_support
                 endif
             endif
 
-            !determining Mec- can be based on co mass in the end>1.4 maybe
+            !determining Mec
             if (.not. defined(Mcrit(7)% mass))then
                 if (s(i)% star_type == star_high_mass) then
                 Mcrit(7)% mass = smass
@@ -1226,33 +1242,28 @@ module z_support
             endif
         end do
 
-        Mcrit(7)% loc = max(Mcrit(7)% loc-1,1)
+        Mcrit(7)% loc = max(Mcrit(7)% loc,1)
         j_bagb = min(s(Mcrit(7)% loc)% ntrack,TA_cHeB_EEP)
         Mec_core = s(Mcrit(7)% loc)% tr(i_he_core,j_bagb)
         
         !if cannot locate Mup or located it beyond Mec (which is incorrect),
 
-        if (Mcrit(6)% loc < 1 .or. Mcrit(6)% loc > Mcrit(7)% loc) then
-            !modify Mup by SSE way
-            if (debug) print*, 'Mcrit(6)/Mup can not be found from input files.'
-            if (debug) print*, 'Using value closest to Mec-1.8'
+        if (Mcrit(6)% loc < 1 .or. Mcrit(6)% loc >=  Mcrit(7)% loc) then
+            if (debug) print*, 'Mcrit(6)/Mup not found or is incorrect (exceeds Mcrit(7)/Mec)'
+            if (debug) print*, 'Using value closest to Mec-1.8 (the SSE way)'
+            !modify Mup by SSE's way
             Mcrit(6)% mass = Mcrit(7)% mass - 1.8d0
             call index_search (num_tracks, mass_list, Mcrit(6)% mass, Mcrit(6)% loc)
-            !Mup cannot exceed Mec
+            !make sure the new location for Mup does not exceed Mec
             Mcrit(6)% loc = max(1,min(Mcrit(6)% loc,Mcrit(7)% loc-1))
             Mcrit(6)% mass = s(Mcrit(6)% loc)% initial_mass
-            if (debug) print*,"Mup",Mcrit(6)% mass, Mcrit(6)% loc
-
-            Mcrit(6)% loc = Mcrit(6)% loc +1 !one is reduced later for normal cases
+            if (debug) print*,"new Mup",Mcrit(6)% mass, Mcrit(6)% loc
         endif
 
-        Mcrit(6)% loc = max(Mcrit(6)% loc-1,1)
 
         j_bagb = min(s(Mcrit(6)% loc)% ntrack,TA_cHeB_EEP)
         Mup_core = s(Mcrit(6)% loc)% tr(i_he_core,j_bagb)
 
-!        Mup_core = 1.7816
-!        Mec_core = 2.3660
         if (debug) print*,"Mup_core =", Mup_core
         if (debug) print*,"Mec_core =", Mec_core
 

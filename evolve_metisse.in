@@ -4,14 +4,12 @@
 
 &SSE_input_controls
 
-!initial_Z = 0.0142
 initial_Z = 0.02
-!initial_Z = 0.00134
 
 max_age = 1.2d4   !max age in Myrs
 
 read_mass_from_file = .false.
-input_mass_file = '/Users/poojan/BSE/bse_metisse/input_mass.in'
+input_mass_file = ''
 
 number_of_tracks = 10
 min_mass = 1.0
@@ -25,45 +23,17 @@ BHNS_mass_scheme = 'Belczynski2008'
 
 /
 
-&extra_controls
-
-METISSE_DIR = '/Users/poojan/BSE/bse_metisse'
-
-!INPUT_FILES_DIR = '/Users/poojan/Dori/BIST/dwarfA'
-!key_columns_file = 'input/bist_read_cols.txt'
-!format_file = 'input/format_bist.dat'
-
-!INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/MESA/eeps'
-!INPUT_FILES_DIR = '/Users/poojan/mist/v1.2/MIST_v1.2_feh_p0.00_afe_p0.0_vvcrit0.0_EEPS'
-!INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/MESA/grid2'
-!INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/MESA/ml_test/Zp0/0ml/'
+&METISSE_input_controls
 
 
-!INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/MESA/ovs/zsun_ovs0p11/eeps'
-!key_columns_file = 'input/eep_read_columns.dat'
+    metallicity_file_list = 'input/Z0p01_POLS.in',
+				'input/Z0p02_POLS.in'
 
-!INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/pols/eeps/OVS02'
-!key_columns_file = 'input/pols_columns.list'
-!format_file = 'input/format_pols.dat'
+!Z_accuracy_limit = 5d-1
 
-INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/SSE_EEPs/eeps/Z_02_log_0ml'
-key_columns_file = 'input/sse_columns.list'
-format_file = 'input/format_sse.dat'
+verbose = .true.
+write_track_to_file = .false.        !SSE like output file
 
-Mhook = 1.0185  
-Mhef = 1.995  
-Mfgb = 14.032     
-Mup = 6.110     
-Mec = 7.910
-
-!Mec = 49.0
-!Mhook= 0.8
-!Mfgb = 12.8
-
-!write_eep_file = .true.
-!write_track_to_file = .false.
-
-!verbose = .false.
 
 /
 

@@ -19,6 +19,7 @@ subroutine allocate_track(n,mass)
     !    tarr(i)% old_pars% mass = undefined
         tarr(i)% pars% delta = 0.d0
         tarr(i)% pars% bhspin = 0.d0
+        tarr(i)% ierr = 0 
     end do
     
 end subroutine allocate_track

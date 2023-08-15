@@ -91,8 +91,12 @@
                 print*,"fatal error: invalid timestep", t% pars% dt ,"for phase and id", t% pars% phase,id
                 print*,"t% zams_mass, t% nuc_time, age, t% pars% mass"
                 print*,t% zams_mass, t% nuc_time, age, t% pars% mass
-                
-                stop
+                ! forcing stellar type to 15 to avoid crashing of code outside this function
+                !
+                t% ierr = -1
+                t% pars% dt = 1e+10
+                t% pars% phase = 15
+!                stop
             endif
             
             nullify(t)

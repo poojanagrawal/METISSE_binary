@@ -581,7 +581,7 @@
     subroutine calculate_rc(t, tscls,zpars,rc)
      ! Calculate the core radius 
      implicit none
-     type(track), pointer :: t
+     type(track), pointer, intent(in) :: t
      real(dp) :: tscls(20), zpars(20)
      real(dp) :: tau, lx,rx, rc,am,mt,mc,aj
      real(dp) :: tbagb,mass,lums1,lums2,tn

@@ -4,7 +4,7 @@
 &metallicity_controls
     ! Location of the folder containing input files for a given metallicity
 
-    INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/MESA/ovs/zsun_p0_0ml_ovs0p33/eeps'
+    INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/MESA/ovs/zsun_p0_0ml_ovs0p11/eeps'
 
     ! Metallicity of input tracks
     ! It is only used to cross-check 
@@ -15,7 +15,7 @@
     ! Details about the file structure (see format_defaults.dat)
     ! Empty string will raise an error
 
-    format_file = 'input/format_mist.dat'
+    format_file = '/Users/poojan/bse/bse_metisse/input/format_mist.dat'
 
 
     ! Interpolating in all columns of input files can slow down computations 

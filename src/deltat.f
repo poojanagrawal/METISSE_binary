@@ -11,7 +11,7 @@
           CALL SSE_deltat(kw,age,tm,tn,tscls,dt,dtr)
       else!if (METISSE_FLAG.eqv..TRUE.) then
           !WRITE(*,*) 'Calling METISSE_deltat'
-          CALL METISSE_deltat(kw,age,tm,tn,tscls,dt,dtr,id)
+          CALL METISSE_deltat(id,age,dt,dtr)
       endif
 
       END

@@ -30,7 +30,7 @@ contains
         real(dp), pointer :: age(:)=> NULL()
         logical :: debug
         debug = .false.
-       
+
 !        print*,"pt",t% tr(i_age,cHeIgnition_EEP), t% pars% phase
 
         age => t% tr(i_age2,:)
@@ -77,7 +77,7 @@ contains
         enddo
         !print*,"bgb",BGB_EEP,identified(BGB_EEP)
 !        if (.not. defined(t% nuc_time))t% nuc_time = t% tr(i_age,t% ntrack) - t% tr(i_age,ZAMS_EEP)
-    
+
         t% times(11) = age(min(Final_EEP,t% ntrack))
         t% nuc_time = t% times(11)
         !determine the base of the giant branch times, if present
@@ -91,9 +91,9 @@ contains
                     j_bgb = j_bgb+TAMS_EEP-1
                     t% phase(j_bgb: cHeIgnition_EEP) = RGB           !Red giant Branch
                     t% times(HG) = age(j_bgb)
-                    elseif (debug) then
-                        print*, "Unable to locate BGB ", j_bgb
-                        STOP
+                elseif (debug) then
+                    print*, "Unable to locate BGB ", j_bgb
+                    STOP
                 end if
             endif
         endif
@@ -158,14 +158,17 @@ contains
                 endif
             end do
         end if
+        
+        deallocate(Lum,Teff,core_mass)
+        deallocate(diff_L,diff_Te,dLdTe)
     end function
 
     subroutine calculate_SSE_parameters(t,zpars,tscls,lums,GB,tm,tn)
-        type(track), pointer :: t
+        type(track), pointer, intent(in) :: t
         real(dp) :: tscls(20),lums(10),GB(10),zpars(20),tm,tn
     
         ! Other SSE parameters
-        call calculate_SSE_tscls(t, zpars,tscls,tm,tn)
+        call calculate_SSE_tscls(t, tscls,tm,tn)
         call calculate_SSE_lums(t, zpars, lums)
         call calculate_SSE_GB(t, zpars, GB)
     end subroutine calculate_SSE_parameters
@@ -177,11 +180,10 @@ contains
     !10; SAGB t(inf1)    11; SAGB t(inf2) 12; SAGB  t(Mx) Second Giant Branch
     !13; TP            Thermal Pulsations  14; t(Mcmax)  maximum age
     
-    subroutine calculate_SSE_tscls(t, zpars, tscls,tm,tn)
+    subroutine calculate_SSE_tscls(t, tscls,tm,tn)
     !only for phase upto 6 (TPAGB)
     implicit none
     type(track), pointer, intent(in) :: t
-    real(dp),  intent(in) :: zpars(20)
     real(dp) , intent(out):: tscls(20),tm,tn
 
     tscls = 0.d0

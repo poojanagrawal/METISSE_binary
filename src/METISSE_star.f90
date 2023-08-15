@@ -23,14 +23,14 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     t => tarr(idd)
         
     ierr=0
-    consvR = .false.
+    
     debug = .false.
 !    if ((id == 1) .and. (kw>=6))debug = .true.
 
     if (debug) print*, '-----------STAR---------------'
     if (debug) print*, "in star", mass,mt,kw,id
 
-
+    consvR = .false.
     delta = 0.d0
     t% zams_mass = mass
 
@@ -40,7 +40,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                 ! Initial call- just do normal interpolation
                 if (debug) print*, "normal interpolate mass", t% initial_mass,t% zams_mass,t% pars% mass,mt,kw
                 t% initial_mass = mass
-                call interpolate_mass(t% initial_mass,idd)
+                call interpolate_mass(t% initial_mass,t)
                 call calculate_phases_and_times(t)
 
                 !Todo: explain what age 2 and Times_new are
@@ -70,21 +70,20 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                                                     t% initial_mass,delta,t% tr(i_mass,1),id
                     t% times_new = -1.0
                     nt = t% ntrack
-                    call get_initial_mass_for_new_track(idd, delta,interpolate_all)
+                    call get_initial_mass_for_new_track(t, delta,interpolate_all)
                     if (debug)print*, 'initial mass for the new track',t% initial_mass
                     t% ms_old = t% times(MS)
 
                     if (interpolate_all) then
                         ! kw=0,1: main-sequence star, rewrite all columns with new track
                         if (debug)print*, 'main-sequence star, rewrite with new track'
-                        call interpolate_mass(t% initial_mass,idd)
+                        call interpolate_mass(t% initial_mass,t)
                         if (t% ntrack<nt) print*, '***WARNING: track length reduced***',t% initial_mass,nt,t% ntrack
                         
                         ! Calculate timescales and assign SSE phases (Hurley et al.2000)
                         call calculate_phases_and_times(t)
                         t% times_new = t% times
                         t% tr(i_age,:) = t% tr(i_age2,:)
-                        
                     else
                         !store core properties for post-main sequence evolution
                         if (debug)print*, 'post-main-sequence star'
@@ -97,9 +96,9 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                         nuc_old = t% nuc_time
                         age_list = t% tr(i_age,:)
                         rlist = t% tr(i_logR,:)
-                        if (t% pars% cenv_frac.ge.0.2) consvR= .true.
+                        if ((t% pars% mcenv/t% pars% mass).ge.0.2) consvR= .true.
 !                            .and.(t% pars% env_frac.ge.0.2)
-                        call interpolate_mass(t% initial_mass,idd)
+                        call interpolate_mass(t% initial_mass,t)
                        !write the mass interpolated track if write_eep_file is true
                         if (kw>=1 .and. kw<=4 .and. .false.) then
                             call write_eep_track(t,mt)

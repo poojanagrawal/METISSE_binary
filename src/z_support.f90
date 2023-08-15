@@ -989,7 +989,6 @@ module z_support
     type(eep_track), intent(inout) :: x
     integer :: n
 
-    logical:: debug
     !set the WDCS primary EEP if center_gamma < center_gamma_limit
     !center_gamma_limit = 19
 
@@ -1081,7 +1080,7 @@ module z_support
 
         logical:: debug
 
-        debug = .true.
+        debug = .false.
         
         old_co_frac = 0.d0
         Mup_core = 0.d0
@@ -1284,7 +1283,7 @@ module z_support
 
         if (debug) print*, 'zpars:',  zpars(1:5)
 
-
+        deallocate(mass_list)
 !        call sort(Mcrit% loc, m_cutoff)
     end subroutine set_zparameters
 
@@ -1321,6 +1320,7 @@ module z_support
         !        mloc = m_cutoff
         
         m_cutoff = pack(m_cutoff,mask = m_cutoff .ne. 0)
+        deallocate(mloc)
     end subroutine sort_mcutoff
 
     subroutine sort(mloc, list)

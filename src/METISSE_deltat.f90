@@ -1,11 +1,11 @@
-    subroutine METISSE_deltat(kw,age,tm,tn,tscls,dt,dtr,id)
+    subroutine METISSE_deltat(id,age,dt,dtr)
     
     !calculates timestep for evolution
     use track_support
     integer, intent(in), optional :: id
 
-    INTEGER :: kw, idd
-    REAL(dp) :: age,tm,tn,tscls(20)
+    INTEGER :: idd!,kw
+    REAL(dp) :: age!,tm,tn,tscls(20)
     REAL(dp) :: pts1,pts2,pts3
     COMMON /POINTS/ pts1,pts2,pts3
     
@@ -50,7 +50,7 @@
                     dt = pts3*(t% times(6) - t% agb% age)
                     dtr = t% times(6) - age
 !                    print*,"aj,tn",age,t% nuc_time,t% times(TPAGB),t% agb% age
-                !t% times(6) gets recalculated for post_agb phase- see remnant_support.f
+                !t% times(6) gets recalculated for t% post_agb- see remnant_support.f
                 else
                     dt = pts3*(t% times(6)-t% times(5))
                     dt = MIN(dt,0.001d0)
@@ -59,6 +59,7 @@
             case(He_MS)
                 dt = pts1* t% times(7)
                 dtr = t% times(7) - age
+!                print*, dt, dtr,t% times(7),age
                 !this gets modified if star is losing too much mass
             case(He_HG:He_GB)
                 if(age < t% times(10))then
@@ -85,13 +86,12 @@
 
             t% pars% dt = min(dt,dtr)
             
-!           if (kw>=5) print*,"dt dtr phase",dt,dtr,t% pars%phase,t% pars% dt
-!            if (kw==5) print*, t% nuc_time, tn
             if (t% pars% dt<=0.0) then
                 !open a file and write the error, continue the code
                 print*,"fatal error: invalid timestep", t% pars% dt ,"for phase and id", t% pars% phase,id
                 print*,"t% zams_mass, t% nuc_time, age, t% pars% mass"
                 print*,t% zams_mass, t% nuc_time, age, t% pars% mass
+                
                 stop
             endif
             

@@ -16,12 +16,19 @@ subroutine assign_commons()
         if (Mec_core > 0.d0) ecsn = Mec_core
         d = (Mec_core-Mup_core)
         if (Mup_core > 0.d0 .and. d>tiny ) ecsn_mlow = Mup_core
-        print*, 'assigning commons cosmic', Mup_core,Mec_core,ecsn, ecsn_mlow
         
     else
         print*,'Error: Front end mismtach in assign commons'
         print*,'expected 2 (COSMIC); got ', front_end
     endif
 
-    end subroutine
+end subroutine
 
+subroutine get_bhspin(bhspin,id)
+    use track_support
+    implicit none
+    integer, intent(in) :: id
+    real(dp), intent(out) :: bhspin
+
+    bhspin = tarr(id)% pars% bhspin
+end subroutine

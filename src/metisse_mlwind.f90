@@ -4,10 +4,10 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
     implicit none
     integer, intent(in), optional :: id
     
-    integer:: kw
+    integer:: kw,idd
 
     real(dp) :: lum,r,mt,mc,rl,z
-    real(dp) :: dms,neta,hewind
+    real(dp) :: dms
     real(dp) :: tnext,tprev, mnext,mprev
 
     logical :: add_mass_loss
@@ -16,17 +16,14 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
     logical :: debug
     type(track), pointer :: t
 
-    if(present(id))then
-        t=> tarr(id)
-    else
-        t=> tarr(1)
-    endif
+    idd = 1
+    if(present(id)) idd = id
+    t => tarr(idd)
 
     debug = .false.
-
-    neta = 0.5
-    hewind = 0.5
-    add_mass_loss = .true.  !TODO: move it to input file
+    ! if tracks don't have mass loss already, use SSE's wind routine
+    ! TODO: move it to input file
+    add_mass_loss = .true.
 
     
     dms = 0.d0
@@ -75,5 +72,6 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
     if (kw ==6 .and. t% post_agb) dms = 0.d0
     if (debug) print*,"in metisse_mlwind, dms",dms, t% pars% mass, t% pars% phase
     metisse_mlwind = dms
+    nullify(t)
 end function
 

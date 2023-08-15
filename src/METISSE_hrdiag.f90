@@ -31,7 +31,7 @@
 !    if ((id == 2))debug = .true.
 
     if (debug) print*, '-----------HRDIAG-------------'
-    if (debug) print*,"started hrdiag",mt,mc,aj,kw,tn
+    if (debug) print*,"started hrdiag",mt,mc,aj,kw,tn,id
 
     end_of_file = .false. !this is just the end of eep track
     has_become_remnant = .false.
@@ -65,11 +65,13 @@
                 Mcbagb = t% tr(i_he_core, j_bagb)
                 if (check_remnant_phase(t% pars, mcbagb)) has_become_remnant = .true.
             else
+           
                 !interpolation in age and other checks for nuclear burning phases
                 t% pars% core_radius = -1.0
+!                print*, 'test', t% pars% core_mass,mc,id
                 call interpolate_age(t,t% pars% age)
                 if (debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
-
+!                print*, "test2",t% pars% core_mass,t% pars% mass,t% initial_mass
                 t% pars% mass = mt
                 !check if phase/type/kw of the star has changed
                 do i = t% pars% phase,6
@@ -124,14 +126,16 @@
       
       
     if(has_become_remnant) then
+!        print*, 'star',id,'is remnant',t% pars% mass,mcbagb,t% pars% core_mass
         if (front_end == main .or. front_end == BSE) then
             call assign_remnant_METISSE(t% pars, mcbagb)
             call post_agb_parameters(t,kw)
         elseif (front_end == COSMIC) then
             call assign_remnant(zpars,t% pars% core_mass,mcbagb,t% zams_mass,&
                                 t% pars% mass,t% pars% phase,bhspin,id)
+            t% pars% bhspin = bhspin
+            !kw at this point contains old phase of the star
             call post_agb_parameters(t,kw)
-            ! maybe instead set mt here
             call hrdiag_remnant(zpars,t% pars% mass,t% pars% core_mass,t% pars% luminosity,&
                                 t% pars% radius,t% pars% age,t% pars% phase)
         endif
@@ -144,7 +148,6 @@
     lum = t% pars% luminosity
     r =  t% pars% radius
     mc = t% pars% core_mass
-    rc = t% pars% core_radius
     mcx = t% pars% McCO
 
     mt = t% pars% mass
@@ -158,17 +161,20 @@
 
     select case(t% pars% phase)
     case(low_mass_MS:TPAGB)
-        !rc is calculated during age interpolation if neccessary columns are present,
+        !rc, menv and renv are calculated during age interpolation if neccessary columns are present,
         !revert to SSE method if those columns are not present
-        if (rc<0) CALL calculate_rc(t,tscls,zpars,rc)
-        t% pars% core_radius = rc
-        if (i_mcenv>0) then
-            !calculate mass of convective envelope
-            call interpolate_age(t,t% pars% age,i_mcenv,menv)
+
+        if (t% pars% core_radius<0) CALL calculate_rc(t,tscls,zpars,t% pars% core_radius)
+        rc = t% pars% core_radius
+
+        if (i_mcenv>0 ) then
+            !mass of convective envelope
+            menv = t% pars% mcenv
             menv = min(menv,mt-mc)  ! limit it to the total envelope mass
+            menv = MAX(menv,1.0d-10)
 
             if (i_rcenv>0) then
-                call interpolate_age(t,t% pars% age,i_rcenv,renv)
+                renv = t% pars% rcenv
             else
                 if((mt-mc)>0) then
                     renv = (r - rc)*menv/(mt - mc)
@@ -176,11 +182,8 @@
                     renv = 0.d0
                 endif
             endif
-
-            !following two lines have been copied from SSE's mrenv.f
-            !1.0d-10 can be replaced by 0.d0
-            menv = MAX(menv,1.0d-10)
             renv = MAX(renv,1.0d-10)
+           
             k2 = 0.21
             !TODO: add similar lines K2(M.I.) if column is present)
         else
@@ -191,7 +194,6 @@
             CALL mrenv(kw,mass,mt,mc,lum,r,rc,aj,tm,lums(2),lums(3),&
             lums(4),rzams,rtms,rg,menv,renv,k2)
         endif
-
     case(He_MS:He_GB)
         CALL calculate_rc(t,tscls,zpars,rc)
         CALL calculate_rg(t,rg)
@@ -204,9 +206,10 @@
             k2 = 0.21d0
     end select
 
+    t% pars% mcenv = menv
+    t% pars% rcenv = renv
+!    t% pars% env_frac = (mt-t% pars% McHe)/mt
 
-    t% pars% cenv_frac = menv/mt
-    t% pars% env_frac = (mt-t% pars% McHe)/mt
 
     if (irecord>0) then
 !        if (kw<10 .and. debug) print*, "delta in hrdiag",t% pars% delta

@@ -153,7 +153,7 @@ module track_support
         real(dp) :: luminosity,Teff,radius
         real(dp) :: log_L,log_Teff,log_R                !log values
         real(dp) :: epoch, age, age_old
-        real(dp) :: delta, dt, dms, cenv_frac,env_frac
+        real(dp) :: delta, dt, dms, mcenv, rcenv,bhspin
     end type star_parameters
     
 
@@ -176,7 +176,7 @@ module track_support
         logical :: has_RGB =.false., complete=.true.
         logical :: has_mass_loss
         integer :: ncol, ntrack, neep
-        integer :: star_type = unknown, irecord
+        integer :: star_type = unknown, irecord,ierr
         
         real(dp) :: initial_mass, initial_Z, initial_Y, Fe_div_H,  v_div_vcrit, alpha_div_Fe
         real(dp) :: zams_mass      !effective initial mass (M0 of SSE)
@@ -273,11 +273,16 @@ module track_support
         pars% radius = 10**pars% log_R
         if (pars% phase <= EAGB) then
             pars% core_mass = pars% McHe
-            if (i_RHe_core > 0) pars% core_radius = new_line(i_RHe_core,1)
+            if (i_RHe_core>0) pars% core_radius = new_line(i_RHe_core,1)
         else
             pars% core_mass = pars% McCO
-            if (i_RCO_core > 0) pars% core_radius = new_line(i_RCO_core,1)
+            if (i_RCO_core>0) pars% core_radius = new_line(i_RCO_core,1)
         endif
+        
+        if (i_mcenv>0) pars% mcenv = new_line(i_mcenv,1)
+        if (i_rcenv>0) pars% rcenv = new_line(i_rcenv,1)
+
+            
     !        if (pars% phase>=5) print*, "mass",pars% McHe,pars% McCO,pars% phase
 end subroutine
 

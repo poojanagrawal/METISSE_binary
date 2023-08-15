@@ -14,11 +14,11 @@ module interp_support
     contains
 
     !   interpolates a new track given initial mass
-    subroutine interpolate_mass(mass,id)
+    subroutine interpolate_mass(mass,t)
         implicit none
         real(dp), intent(in) :: mass
         type(track), pointer :: t
-        integer, intent(in), optional :: id
+!        integer, intent(in), optional :: id
         
         integer :: iseg, m,keyword,min_index
         type(eep_track), pointer :: a(:)
@@ -27,10 +27,8 @@ module interp_support
 
     
         a => NULL()
-        t => tarr(1)
-        if(present(id))then
-        	t => tarr(id)
-    	endif
+!        t => tarr(1)
+!        if(present(id)) t => tarr(id)
     
         debug_mass = .false.
         ierr=0
@@ -114,7 +112,7 @@ module interp_support
         if(ierr/=0) then
         write(0,*) 'interpolate_track: interpolation failed for ', mass
         endif
- 	nullify(t,a)
+ 	nullify(a)
     end subroutine interpolate_mass
 
     subroutine findtracks_for_interpolation(mass,a,iseg,m,min_index,keyword)
@@ -200,8 +198,8 @@ module interp_support
 !        if (mass < sa(1)% initial_mass) print*, "doing extrapolation", mass, sa(1)% initial_mass, a% initial_mass
 !        print*, mass, sa(1)% initial_mass
 
-		deallocate(mass_list)
         nullify(sa)
+		deallocate(mass_list)
     end subroutine findtracks_for_interpolation
 
     subroutine write_header(b,a)
@@ -243,7 +241,7 @@ module interp_support
         integer :: i, m1, up_count,low_count,temp(4)
         integer :: min_ntrack,temp_ntrack, low_lim, upp_lim
         real(dp) :: upper_tol, lower_tol
-        type(eep_track) :: a(2) ! or pointer***
+        type(eep_track) :: a(2)
         real(dp), allocatable :: c(:,:)
         integer, allocatable :: min_eeps(:)
         
@@ -268,6 +266,7 @@ module interp_support
         if (debug_mass) print*,"checking length now"
         if ((t% ntrack >= min_ntrack) ) then
           if (debug_mass) print*,"length ok", t% initial_mass, t% ntrack
+          return
         else
             if (debug_mass) print*,"not complete", t% initial_mass, t% ntrack, min_ntrack
             m_low = m_cutoff(iseg)
@@ -369,8 +368,8 @@ module interp_support
                 t% tr = 0d0
                 t% tr(1: t% ncol,1: temp_ntrack) = c(:,1:temp_ntrack)
                 call linear_interp(a,t,temp_ntrack)
-                deallocate(c,mass_list)
                 nullify(sa)
+                deallocate(c,mass_list)
             end if
         endif
         !t% tr = reshape(t%tr, (/t% ncol, t% ntrack/))
@@ -463,9 +462,11 @@ module interp_support
             do j= 1,m
                 y(j+start) = y(start)+ j*h
             end do
-            old_start=start
+            old_start = start
             if (debug) print*,last,start,y(last),y(start),h,m
         end do
+        
+        deallocate(d)
     end subroutine mod_PAV
   
     integer function locate(y)
@@ -483,8 +484,8 @@ module interp_support
     
     subroutine interpolate_age(t, input_age, icolumn, val)
         implicit none
-        type(track), pointer :: t
         real(dp), intent(in) :: input_age
+
 
         integer, intent(in), optional :: icolumn
         real(dp), intent(out), optional :: val
@@ -497,6 +498,7 @@ module interp_support
         integer :: j, k, mlo, mhi, pass, n_pass
         real(dp), allocatable :: new_line(:,:)
         logical :: debug, interpolate
+        type(track), pointer :: t
 
         debug = .false.
 
@@ -553,8 +555,8 @@ module interp_support
         mlo = minval(min_eeps)
         mhi = maxval(min_eeps)
 
-        if (t% irecord>0 .and. debug) print*, n_pass,pass, age, kw
-        if (t% irecord>0 .and. debug) print*,"neighbouring_eeps", min_eeps
+        if (debug) print*, n_pass,pass, age, kw
+        if (debug) print*,"neighbouring_eeps", min_eeps, t% tr(i_he_core,mhi),t% tr(i_he_core,mlo)
 
         if (mhi == mlo) then
         if (t% irecord>0 .and. debug) print*, "no interp in age needed"
@@ -565,7 +567,7 @@ module interp_support
 
         elseif ((mhi-mlo)<4) then
             !linear interpolation
-            if (t% irecord>0 .and. debug) print*, "doing linear interp in age"
+            if (debug) print*, "doing linear interp in age"
             alfa = (age - t% tr(age_col,mlo))/(t% tr(age_col,mhi) - t% tr(age_col,mlo))
             beta = 1d0 - alfa
             do j=jstart,jend
@@ -579,7 +581,7 @@ module interp_support
                 endif
             end do
         else
-            if (t% irecord>0 .and. debug) print*, "doing cubic interp in age"
+            if (debug) print*, "doing cubic interp in age"
 
 !            mlo = 1!min(max(1,m-1),n-3)  !1
 !            mhi = 4!max(min(m+2,n),4)     !4
@@ -617,7 +619,7 @@ module interp_support
             stop
         endif
 
-        deallocate(new_line)
+        deallocate(new_line,min_eeps)
 
     end subroutine interpolate_age
     
@@ -751,15 +753,14 @@ module interp_support
     end subroutine interp_4pt_pm
     
 
-    subroutine get_initial_mass_for_new_track(id, delta,interpolate_all)
+    subroutine get_initial_mass_for_new_track(t, delta,interpolate_all)
 
-    integer, intent(in) :: id
     real(dp), intent(in) :: delta
+    type(track), pointer :: t
 
     integer :: min_index,num_list,Mupp,Mlow,i,j,nt,kw
     real(dp), allocatable :: mlist(:),mlist1(:), age_list(:)
     real(dp) :: Mnew,alfa,beta,them, themold, age
-    type(track), pointer :: t
     integer :: eep_m, eep_core
 
     logical :: debug, interpolate_all
@@ -767,7 +768,6 @@ module interp_support
     debug = .false.
     interpolate_all = .false.
 
-    t => tarr(id)
     !nt is the length of the track before new interpolation
     eep_m = -1
     nt = t% ntrack
@@ -853,8 +853,6 @@ module interp_support
     endif
     deallocate(mlist,mlist1)
     deallocate(age_list)
-
-    nullify(t)
 
     end subroutine
     end module interp_support

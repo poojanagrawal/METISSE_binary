@@ -45,11 +45,11 @@ module z_support
     namelist /SSE_input_controls/ initial_Z, max_age,read_mass_from_file,&
                         input_mass_file, number_of_tracks, max_mass, min_mass, &
                         WD_mass_scheme,use_initial_final_mass_relation, allow_electron_capture, &
-                        BHNS_mass_scheme, max_NS_mass,pts_1, pts_2, pts_3
+                        BHNS_mass_scheme, max_NS_mass,pts_1, pts_2, pts_3, write_track_to_file
                             
     namelist /METISSE_input_controls/ metallicity_file_list, Z_accuracy_limit,  &
                         mass_accuracy_limit, construct_wd_track, verbose, &
-                        write_eep_file, write_track_to_file
+                        write_eep_file
             
     namelist /metallicity_controls/ INPUT_FILES_DIR, Z_files,format_file, extra_columns_file, &
                         read_all_columns, extra_columns,Mhook, Mhef, Mfgb, Mup, Mec, Mextra, Z_H, Z_He

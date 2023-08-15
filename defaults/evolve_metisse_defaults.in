@@ -58,6 +58,13 @@
     pts_2 = 0.01
     pts_3 = 0.02
 
+  !OUTPUT CONTROLS
+
+    ! 'write_track_to_file' generates a SSE style output file 
+    ! only at the END of the evolution
+
+    write_track_to_file = .true.
+
 /
 
 &METISSE_input_controls
@@ -83,7 +90,7 @@
     metallicity_file_list = ''
 
 
-    ! if (abs(z1-z2)/MIN(z1,z2)) > Z_accuracy_limit
+    ! if (abs(Z_input-Z_required)/MIN(Z_input,Z_required)) > Z_accuracy_limit
     Z_accuracy_limit = 1d-2
 
     ! INTERPOLATION CONTROLS
@@ -93,25 +100,20 @@
 
     mass_accuracy_limit = 1d-4
 
-    !   OTHER REMNANT CONTROLS
+    ! OTHER REMNANT CONTROLS
     ! If true, 'construct_wd_track' is used (for low-mass stars) to construct the track between 
     ! Thermally-Pulsating AGB phase or tip of the AGB to the white dwarf cooling track
     ! It is useful if input tracks do not contain this phase
-    ! but can be used for other tracks as well.
+    ! but can be used otherwise too.
 
     construct_wd_track = .true.
 
     
-    !OUTPUT CONTROLS
+    ! OUTPUT CONTROLS
 
-    ! if true, 'verbose' spits out useful details when reading the files
+    ! if true, 'verbose' prints useful details when reading the files
 
-    verbose = .false.
-
-    ! 'write_track_to_file' generates a SSE style output file 
-    ! only at the END of the evolution
-
-    write_track_to_file = .true. 
+    verbose = .false. 
 
     ! 'write_eep_file' generates MIST style output file 
     ! at EVERY step of mass interpolation

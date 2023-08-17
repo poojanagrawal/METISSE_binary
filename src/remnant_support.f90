@@ -150,6 +150,7 @@
                 t% agb% age = t% pars% age
                 t% agb% lum = t% pars% luminosity
                 t% agb% radius = t% pars% radius
+                t% initial_mass = t% pars% mass
                 call evolve_after_agb(t)
                 if (debug_rem) print*, "In post-agb phase, mass = ", t% pars% mass
     !            print*,t% pars% luminosity, t% pars% radius
@@ -177,34 +178,35 @@
         mass_wd = t% pars% core_mass
         radius_wd = calculate_wd_radius(mass_wd)
         lum_wd = calculate_wd_lum(mass_wd, 0.d0, A_CO)  !xx = a_co
-            dt= t% pars% age- t% agb% age
-!            print*,"aj",t% pars% age,age_agb, t% pars% age- age_agb
+        dt= t% pars% age- t% agb% age
+!        print*,"aj",t% pars% age,t% agb% age, dt,t1
 !            print*, t% nuc_time,t% times(TPAGB),dt
-            alfa = 0d0; beta = 0d0
-            r3 = 0.3*(t% agb% radius+radius_wd)
+        alfa = 0d0; beta = 0d0
+        r3 = 0.3*(t% agb% radius+radius_wd)
 
-            if (dt<t1) then
-                alfa = dt/t1
-                beta = 1d0-alfa
-                t% pars% mass = alfa* mass_wd + beta*t% pars% mass
-                t% pars% radius = alfa* r3 + beta* t% agb% radius
-                t% pars% luminosity = alfa* 0.9*t% agb% lum + beta*t% agb% lum
-                t% pars% extra =1
-            else
-                alfa = (dt-t1)/t2
-                beta = 1d0-alfa
-                t% pars% radius = (radius_wd*r3)/(alfa*(r3-radius_wd)+radius_wd)
-                t% pars% luminosity = alfa* lum_wd + beta* 0.9*t% agb% lum
-                t% pars% extra = 2
-            endif
-            if (check_ge(t% pars% age,t% times(TPAGB))) then
-                t% post_agb = .false.
-                t% pars% extra = 0
-                t% pars% age_old = t% pars% age
-                t% pars% phase = t% agb% phase_wd   !TODO: Should phase_wd be recalculated?
-                t% zams_mass = t% pars% mass
-                call initialize_white_dwarf(t% pars)
-            endif
+        if (dt<t1) then
+            alfa = dt/t1
+            beta = 1d0-alfa
+            t% pars% mass = alfa* mass_wd + beta*t% initial_mass
+            t% pars% radius = alfa* r3 + beta* t% agb% radius
+            t% pars% luminosity = alfa* 0.9*t% agb% lum + beta*t% agb% lum
+            t% pars% extra =1
+        else
+            alfa = (dt-t1)/t2
+            beta = 1d0-alfa
+            t% pars% radius = (radius_wd*r3)/(alfa*(r3-radius_wd)+radius_wd)
+            t% pars% luminosity = alfa* lum_wd + beta* 0.9*t% agb% lum
+            t% pars% extra = 2
+        endif
+        if (check_ge(t% pars% age,t% times(TPAGB))) then
+            t% post_agb = .false.
+            t% pars% extra = 0
+            t% pars% age_old = t% pars% age
+            t% pars% phase = t% agb% phase_wd   !TODO: Should phase_wd be recalculated?
+            t% zams_mass = t% pars% mass
+            call initialize_white_dwarf(t% pars)
+        endif
+!        print*, 'mass',t% pars% core_mass,t% pars% mass
     end subroutine
 
     subroutine initialize_white_dwarf(pars)

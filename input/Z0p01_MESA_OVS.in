@@ -4,7 +4,7 @@
 &metallicity_controls
     ! Location of the folder containing input files for a given metallicity
 
-    INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/MESA/ovs/zsun_p0_0ml_ovs0p11/eeps'
+    INPUT_FILES_DIR = '/Users/poojan/stellar_tracks/MESA/ovs/zsun_p0_0ml_ovs0p33/eeps'
 
     ! Metallicity of input tracks
     ! It is only used to cross-check 

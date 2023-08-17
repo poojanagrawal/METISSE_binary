@@ -28,7 +28,7 @@
     if(present(id)) idd = id
     t => tarr(idd)
     
-!    if ((id == 2))debug = .true.
+!    if ((id == 1) .and. kw>=5)debug = .true.
 
     if (debug) print*, '-----------HRDIAG-------------'
     if (debug) print*,"started hrdiag",mt,mc,aj,kw,tn,id
@@ -44,6 +44,7 @@
     t% pars% phase = kw
     t% pars% age = aj
     t% irecord = irecord
+!    t% pars% core_mass = mc
 
     !if(irecord>0) print*,"In Hrdiag aj,tn ",t% pars% age,mt,t% tr(i_age,t% ntrack),t% tr(i_age2,t% ntrack)
     !print*, 'age, final time',t% pars% age,t% tr(i_age,t% ntrack),abs(t% pars% age-t% tr(i_age,t% ntrack))
@@ -68,10 +69,8 @@
            
                 !interpolation in age and other checks for nuclear burning phases
                 t% pars% core_radius = -1.0
-!                print*, 'test', t% pars% core_mass,mc,id
                 call interpolate_age(t,t% pars% age)
                 if (debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
-!                print*, "test2",t% pars% core_mass,t% pars% mass,t% initial_mass
                 t% pars% mass = mt
                 !check if phase/type/kw of the star has changed
                 do i = t% pars% phase,6
@@ -117,13 +116,7 @@
                 call hrdiag_remnant(zpars,t% pars% mass,t% pars% core_mass,t% pars% luminosity,&
                                 t% pars% radius,t% pars% age,t% pars% phase)
             endif
-            rc = r
-            menv = 1.0d-10
-            renv = 1.0d-10
-            k2 = 0.21d0
-        
     end select
-      
       
     if(has_become_remnant) then
 !        print*, 'star',id,'is remnant',t% pars% mass,mcbagb,t% pars% core_mass
@@ -131,11 +124,15 @@
             call assign_remnant_METISSE(t% pars, mcbagb)
             call post_agb_parameters(t,kw)
         elseif (front_end == COSMIC) then
+            ! storing mass that remnant would be in mt
+            mt = t% pars% mass
             call assign_remnant(zpars,t% pars% core_mass,mcbagb,t% zams_mass,&
-                                t% pars% mass,t% pars% phase,bhspin,id)
+                                mt,t% pars% phase,bhspin,id)
             t% pars% bhspin = bhspin
             !kw at this point contains old phase of the star
             call post_agb_parameters(t,kw)
+            ! if t% post_agb is not true, assign correct remnant mass
+            if(t% pars% phase >=10) t% pars% mass = mt
             call hrdiag_remnant(zpars,t% pars% mass,t% pars% core_mass,t% pars% luminosity,&
                                 t% pars% radius,t% pars% age,t% pars% phase)
         endif

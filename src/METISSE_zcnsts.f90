@@ -20,7 +20,7 @@ subroutine METISSE_zcnsts(z,zpars)
         if (allocated(core_cols)) deallocate(core_cols)
         if (allocated(m_cutoff)) deallocate(m_cutoff)
 
-        i_mass =-1
+        i_mass = -1
         !TODO: re-initailize all such variables with defaults
     endif
     
@@ -31,17 +31,34 @@ subroutine METISSE_zcnsts(z,zpars)
     if (front_end /= main) initial_Z = z
 
     !read inputs from evolve_metisse.in
-    call read_metisse_input(ierr); if (ierr/=0) STOP
-    
+    if (front_end == main .or. front_end == bse) then
+        call read_metisse_input(ierr); if (ierr/=0) STOP
+    elseif (front_end == COSMIC) then
+        call get_metisse_input(TRACKS_DIR)
+    else
+        print*, "Error: Unrecongnized front_end_name for METISSE"
+    endif
+        
+        
     !read metallicity related variables
     call get_metallcity_file_from_Z(initial_Z,ierr); if (ierr/=0) STOP
+    
+    
+    if (front_end == COSMIC) then
+        format_file = trim(TRACKS_DIR)//'/'//trim(format_file)
+        INPUT_FILES_DIR = trim(TRACKS_DIR)//'/'//trim(INPUT_FILES_DIR)
+    endif
     
     !read file-format
     call read_format(format_file,ierr); if (ierr/=0) STOP
 
     !get filenames
-    call get_files_from_path(INPUT_FILES_DIR,ierr); if (ierr/=0) STOP
+    call get_files_from_path(INPUT_FILES_DIR,file_extension,track_list,ierr); if (ierr/=0) STOP
 
+
+    num_tracks = size(track_list)
+    allocate(s(num_tracks))
+    s% filename = track_list
     if (verbose) print*,"Number of input tracks: ", num_tracks
 
     call read_key_eeps()

@@ -29,7 +29,7 @@ module track_support
     integer, parameter :: BSE = 1
     integer, parameter :: COSMIC = 2
 
-    character(len=strlen) :: METISSE_DIR
+    character(len=strlen) :: METISSE_DIR,TRACKS_DIR
     integer :: low_mass_final_eep, high_mass_final_eep
     integer, allocatable :: key_eeps(:)
 

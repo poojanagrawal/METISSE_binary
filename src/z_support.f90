@@ -2,10 +2,11 @@ module z_support
     use track_support
     implicit none
 
-    character(LEN=strlen) :: format_file, extra_columns_file, INPUT_FILES_DIR
+    character(LEN=strlen) :: INPUT_FILES_DIR
     logical :: read_eep_files, read_all_columns
 
-    character(LEN=strlen) :: metallicity_file
+    integer :: max_metallicity_files = 50
+    character(LEN=strlen) :: metallicity_file,format_file, extra_columns_file
     character(LEN=strlen) :: metallicity_file_list(50)
     character(LEN=col_width) :: extra_columns(100)
 
@@ -48,7 +49,7 @@ module z_support
                         WD_mass_scheme,use_initial_final_mass_relation, allow_electron_capture, &
                         BHNS_mass_scheme, max_NS_mass,pts_1, pts_2, pts_3, write_track_to_file
 
-    namelist /METISSE_input_controls/ metallicity_file_list, Z_accuracy_limit,  &
+    namelist /METISSE_input_controls/ metallicity_file_list, Z_accuracy_limit, &
                         mass_accuracy_limit, construct_wd_track, verbose, &
                         write_eep_file
             
@@ -106,8 +107,8 @@ module z_support
         ierr = 0
         io = alloc_iounit(ierr)
         !reading user input
+        
         infile = trim(METISSE_DIR)// '/evolve_metisse.in'
-
         open(io,FILE=infile,action="read",iostat=ierr)
             if (ierr /= 0) then
                print*, 'Error: Failed to open evolve_metisse.in'
@@ -127,6 +128,34 @@ module z_support
         call free_iounit(io)
         
     end subroutine read_metisse_input
+    
+    
+    subroutine get_metisse_input(path_to_tracks)
+
+    character(LEN=strlen) :: path_to_tracks
+    character(LEN=strlen) :: format_file
+    character(LEN=strlen), allocatable :: temp_list(:)
+
+    integer :: ierr, i
+
+        ierr = 0
+        ! use inputs from COSMIC
+        call get_files_from_path(path_to_tracks,'_metallicity.in',temp_list,ierr)
+        
+        if (.not. allocated(temp_list)) then
+            print*, 'Could not find metallicity file(s) in ',trim(path_to_tracks)
+            ierr = 1
+        elseif (size(temp_list)<=max_metallicity_files) then
+            print*, 'Error: more than',max_metallicity_files,'metallicity files supplied'
+            ierr = 1
+        else
+            do i = 1, size(temp_list)
+                metallicity_file_list(i) = trim(path_to_tracks)//'/'//temp_list(i)
+            end do
+        endif
+        
+    end subroutine get_metisse_input
+    
     
     subroutine get_metallcity_file_from_Z(Z_req,ierr)
         real(dp), intent(in) :: Z_req
@@ -190,13 +219,15 @@ module z_support
         ierr = 0
         
         ! reset the defaults (even if already set)
-        io = alloc_iounit(ierr)
-        default_infile = trim(METISSE_DIR)// '/defaults/metallicity_defaults.in'
-
-        open(io, file = default_infile,action='read')
-            read(unit=io, nml = metallicity_controls)
-        close(io)
-        call free_iounit(io)
+        include 'defaults/metallicity_defaults.inc'
+        
+!        io = alloc_iounit(ierr)
+!        default_infile = trim(METISSE_DIR)// '/defaults/metallicity_defaults.in'
+!
+!        open(io, file = default_infile,action='read')
+!            read(unit=io, nml = metallicity_controls)
+!        close(io)
+!        call free_iounit(io)
         
         
         io = alloc_iounit(ierr)
@@ -233,14 +264,16 @@ module z_support
     end subroutine read_format
 
     
-    subroutine get_files_from_path(path,ierr)
+    subroutine get_files_from_path(path,extension,file_list,ierr)
     character(LEN=strlen), intent(in) :: path
+    character(LEN=*), intent(in) :: extension
+    character(LEN=strlen), allocatable :: file_list(:)
+
     integer, intent (out) ::  ierr
 
-    character(LEN=strlen) :: str,eep_list
+    character(LEN=strlen) :: str,find_cmd
     integer :: n,i, io
     
-
         ierr = 0
         
         if (trim(path) == '' )then
@@ -250,8 +283,8 @@ module z_support
         
         if (verbose) print*,"Reading input files from: ", trim(path)
         
-        eep_list = 'find '//trim(path)//'/*'//trim(file_extension)//' -maxdepth 1 > .file_name.txt'
-        call system(eep_list,ierr)
+        find_cmd = 'find '//trim(path)//'/*'//trim(extension)//' -maxdepth 1 > .file_name.txt'
+        call system(find_cmd,ierr)
         
         if (ierr/=0) then
             print*,'Error: failed to read input files.'
@@ -270,15 +303,15 @@ module z_support
             n = n+1
         end do
 
-        allocate(s(n))
+        allocate(file_list(n))
         rewind(io)
         ierr = 0
         do i = 1,n
             read(io,'(a)',iostat=ierr)str
             if (ierr/=0) exit
-            s(i)% filename = trim(str)
+            file_list(i) = trim(str)
         end do
-        num_tracks = n
+        
         close(io)
         call free_iounit(io)
         

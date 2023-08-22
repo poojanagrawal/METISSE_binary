@@ -1,7 +1,7 @@
 module z_support
     use track_support
     implicit none
-    
+
     character(LEN=strlen) :: format_file, extra_columns_file, INPUT_FILES_DIR
     logical :: read_eep_files, read_all_columns
 
@@ -20,9 +20,10 @@ module z_support
 
     character:: extra_char
 
+    real(dp) :: mass, max_age, min_mass, max_mass
+
     character(LEN=strlen), allocatable :: track_list(:)
 
-    real(dp) :: mass, max_age, min_mass, max_mass
     !used to set star_type_from_history
     ! central limits for high- / intermediate-mass stars, set these from input eep_controls nml
     real(dp) :: center_gamma_limit = 1d2
@@ -46,7 +47,7 @@ module z_support
                         input_mass_file, number_of_tracks, max_mass, min_mass, &
                         WD_mass_scheme,use_initial_final_mass_relation, allow_electron_capture, &
                         BHNS_mass_scheme, max_NS_mass,pts_1, pts_2, pts_3, write_track_to_file
-                            
+
     namelist /METISSE_input_controls/ metallicity_file_list, Z_accuracy_limit,  &
                         mass_accuracy_limit, construct_wd_track, verbose, &
                         write_eep_file
@@ -70,67 +71,28 @@ module z_support
     contains
 
     subroutine read_defaults(ierr)
-        integer :: io
         integer, intent(out) :: ierr
-        character(len=strlen) :: default_infile
-
 
         ierr = 0
-        io = alloc_iounit(ierr)
-        
         if (front_end <0) then
-        
-            print*, 'Error: front_end is not initialized'
+            print*, 'Error: front_end is not initialized for METISSE'
             ierr = 1
             return
         endif
-        default_infile = trim(METISSE_DIR)// '/defaults/evolve_metisse_defaults.in'
-
-        open(io, file = trim(default_infile) ,action='read',iostat=ierr )
-            if(ierr/=0)then
-                print*,'Failed while trying to open evolve_metisse_defaults: ', default_infile
-                print*, 'METISSE_DIR: ',METISSE_DIR
-                print*, 'default_infile: ',default_infile
-
-                return
-            endif
-            read(unit = io, nml = SSE_input_controls)
-            read(unit = io, nml = METISSE_input_controls)
-        close(io)
-        call free_iounit(io)
-    
+        include 'defaults/evolve_metisse_defaults.inc'
+        
         ! Note that unlike other variables, metallicity_file_list = ''
         ! in the namelist only sets the value of the first element and not the whole array
         ! that's why the default for metallicity is specified here
+        ! Todo: this might be removable now
         metallicity_file_list = ''
         extra_columns = ''
         
         !initialize metallicity related variables
-        io = alloc_iounit(ierr)
-        default_infile = trim(METISSE_DIR)// '/defaults/metallicity_defaults.in'
+        include 'defaults/metallicity_defaults.inc'
 
-        open(io, file = default_infile,action='read',iostat=ierr )
-            if (ierr /= 0) then
-               print*, 'Error: Failed while trying to open metallicity_defaults'
-               return
-            end if
-            read(unit=io, nml = metallicity_controls)
-        close(io)
-        call free_iounit(io)
-        
         !initialize file format specs
-        io=alloc_iounit(ierr)
-        default_infile = trim(METISSE_DIR)// '/defaults/format_defaults.in'
-
-        open(unit=io,file=default_infile,action='read',iostat=ierr)
-
-            if(ierr/=0)then
-                print*,'Failed while trying to open format_defaults'
-                return
-            endif
-            read(unit = io, nml = format_controls)
-        close(io)
-        call free_iounit(io)
+        include 'defaults/format_defaults.inc'
     
     end subroutine read_defaults
     

@@ -15,7 +15,7 @@ module track_support
     integer, parameter :: strlen = 256 ! for character (len=strlen)
     integer, parameter :: col_width = 32
 
-    real(dp), parameter :: ln10=log(1.0d1)
+    real(dp), parameter :: ln10 = log(1.0d1)
     real(sp), parameter :: ln10_sp = log(10.0)
     real(dp), parameter :: tiny = 1.0d-6
     real(dp), parameter :: undefined  =  -1.0
@@ -206,7 +206,7 @@ module track_support
     !for z_support
     real(dp) :: Mhook, Mhef,Mfgb, Mup, Mec, Mextra,Mup_core,Mec_core
     real(dp) :: Z04, Z_H, Z_He
-
+    
     !for interp_support
     logical :: fix_track
     real(dp) :: lookup_index, mass_accuracy_limit
@@ -217,7 +217,7 @@ module track_support
     character (len=strlen) :: BHNS_mass_scheme, WD_mass_scheme
 !    real(dp) :: mc1, mc2 !mass cutoffs for Belczynski methods
     real(dp) :: pts_1,pts_2,pts_3
-
+    
     contains
 
     !linear search alogorithm

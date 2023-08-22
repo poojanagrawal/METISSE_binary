@@ -66,6 +66,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                 if (t% pars% core_mass.ge.mt) then
                     if (debug) print*, 'star has lost envelope, exiting star',t% pars% core_mass,mt
                 elseif (abs(delta) .gt. 1.0d-6) then
+!                debug=.true.
                     if (debug) print*, "mass loss in interpolate mass called for", &
                                                     t% initial_mass,delta,t% tr(i_mass,1),id
                     t% times_new = -1.0

@@ -29,7 +29,7 @@ module z_support
     real(dp) :: center_carbon_limit = 1d-4
     real(dp) :: log_center_T_limit = 9d0
     real(dp) :: high_mass_limit = 1d1 !Msun
-    real(dp) :: very_low_mass_limit = 0.5d0 !Msun
+    real(dp) :: very_low_mass_limit = 0.75d0 !Msun
     real(dp) :: he_core_mass_limit = 2.2
     real(dp) :: T_bgb_limit = 3.8
 !    real(dp) ::  Mup_core,Mec_core
@@ -361,6 +361,7 @@ module z_support
     read(io,*) !comment line
     read(io,'(2x,1p1e16.10,3i8,a8,2x,a10)') x% initial_mass, x% ntrack, x% neep, total_cols, phase_info, type_label
 
+    if (debug) print*,'reading',eepfile,x% neep
     call set_star_type_from_label(type_label,x)
 
     if(index(phase_info,'YES')/=0) then
@@ -969,7 +970,7 @@ module z_support
     key_eeps = pack(temp,temp > 0)
     
     !define initial and final eep if not already defined
-    if (Initial_EEP < minval(key_eeps))  Initial_EEP = ZAMS_EEP
+    if (Initial_EEP <0 .or. Initial_EEP< minval(key_eeps))  Initial_EEP = ZAMS_EEP
     if (Final_EEP < 0 .or. Final_EEP > maxval(key_eeps))  Final_EEP = maxval(key_eeps)
     
     end subroutine
@@ -1080,7 +1081,7 @@ module z_support
 
         logical:: debug
 
-        debug = .false.
+        debug = .true.
         
         old_co_frac = 0.d0
         Mup_core = 0.d0
@@ -1093,7 +1094,7 @@ module z_support
         Mcrit(1)% mass = s(1)% initial_mass
         Mcrit(1)% loc = 1
 
-        Mcrit(2)% mass = 0.75 !  TODO: -- MheWd ?
+        Mcrit(2)% mass = very_low_mass_limit
         Mcrit(3)% mass = Mhook
         Mcrit(4)% mass = Mhef
         Mcrit(5)% mass = Mfgb
@@ -1202,11 +1203,11 @@ module z_support
 
             !determining Mfgb- all masses
             if (.not. defined(Mcrit(5)% mass))then
-                if (smass<=20.0 .and. len_track>TAMS_EEP) then
-                    Teff = s(i)%tr(i_logTe,cHeIgnition_EEP-1)       !temp at the end of HG/FGB
+                if (smass<=20.0 .and. len_track>=cHeIgnition_EEP) then
+                    Teff = s(i)% tr(i_logTe,cHeIgnition_EEP-1)       !temp at the end of HG/FGB
                     he_diff = abs(s(i)% tr(i_he4, cHeIgnition_EEP-1)-s(i)% tr(i_he4, TAMS_EEP))
 !                    print*,"bgb",smass,Teff, he_diff
-                    if (Teff> T_bgb_limit ) then !.or. he_diff >0.001
+                    if (Teff> T_bgb_limit .or. he_diff >0.01) then !
                         Mcrit(5)% mass = smass
                         Mcrit(5)% loc = i
                         if (debug) print*,"Mfgb",smass,i

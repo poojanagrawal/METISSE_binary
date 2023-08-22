@@ -122,7 +122,7 @@ contains
         mass = t% initial_mass
         Lum =  t% tr(i_logL,jini:jfinal)
         Teff = t% tr(i_logTe,jini:jfinal)            !TODO: make this wrt radius
-        core_mass = t%tr(i_he_core,jini:jfinal)
+        core_mass = t% tr(i_he_core,jini:jfinal)
         if (Teff(j_diff)> T_bgb_limit) then
         !j_bgb = -1000
         return

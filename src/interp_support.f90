@@ -24,7 +24,8 @@ module interp_support
         type(eep_track), pointer :: a(:)
         real(dp) :: f(3), dx, x(4), y(4), alfa, beta
         integer :: i, j, k, mlo, mhi,ierr
-
+        integer, allocatable :: min_eeps(:)
+        
     
         a => NULL()
 !        t => tarr(1)
@@ -44,17 +45,13 @@ module interp_support
         mlo = 1
         mhi = size(a)
 
-        k = minloc(a(mlo:mhi)% neep,dim=1)
+        k = minloc(a(mlo:mhi)% ntrack,dim=1)
         if (a(m)% initial_mass .ge. Mcrit(2)% mass) then
             t% ntrack = min(Final_eep, a(k)% ntrack)
-            t% neep = min(size(key_eeps),a(k)% neep)
-        else                        
-            t% ntrack = min(TAMS_EEP, a(k)% ntrack) ! TODO: - is it necessary?
-            t% neep = min(4,a(k)% neep)
+        else
+            t% ntrack = min(TAMS_EEP, a(k)% ntrack)
         endif
-!        if (.not. allocated(t% eep))
-        allocate(t% eep(t% neep))
-        t% eep = key_eeps(1:t% neep)  ! TODO: initial eep instead of 1?
+        
         call write_header(t,a(m))
 
         !	doing interpolation based on keyword
@@ -92,8 +89,37 @@ module interp_support
             
         end select
         
+
         if (fix_track) call fix_incomplete_tracks(iseg,t,min_index)
 
+        ! get eeps
+        
+!        if (mass > Mcrit(2)% mass .and. mass< Mcrit(5)% mass) then
+!        if (a(m)% initial_mass .ge. Mcrit(2)% mass) then
+!            t% ntrack = min(Final_eep, a(k)% ntrack)
+!            t% neep = min(size(key_eeps),a(k)% neep)
+!        else
+!            t% ntrack = min(TAMS_EEP, a(k)% ntrack)
+!            t% neep = min(4,a(k)% neep)
+!        endif
+!        allocate(t% eep(t% neep))
+!        t% eep = key_eeps(1:t% neep)  !
+        
+        allocate(min_eeps(size(key_eeps)))
+        min_eeps= -1
+        do i = 1, size(key_eeps)
+            if (key_eeps(i)<= t% ntrack) min_eeps(i) = key_eeps(i)
+!            if (identified(BGB_EEP) .and. key_eeps(i)= BGB_EEP) then
+!                if (t% initial_mass >= Mcrit(5)% mass) min_eeps(i)-1
+!            endif
+        end do
+
+        t% neep = count(min_eeps>0,1)
+
+        allocate(t% eep(t% neep))
+        t% eep = pack(min_eeps, min_eeps>0)
+        if (debug_mass) print*, 'eeps',t% neep,t% eep(t% neep), key_eeps(size(key_eeps))
+        
         !   check if mass and age are monotonic
         call smooth_track(t)
 
@@ -243,25 +269,8 @@ module interp_support
         real(dp) :: upper_tol, lower_tol
         type(eep_track) :: a(2)
         real(dp), allocatable :: c(:,:)
-        integer, allocatable :: min_eeps(:)
         
-
-        min_ntrack = 0
-
-        allocate(min_eeps(size(key_eeps)))
-        min_eeps= -1
-        
-        !calculating min required length to the new track  --TODO
-        if (t% initial_mass >= Mcrit(2)% mass) then
-            if (t% star_type == star_low_mass) then     !use Mec here?
-                min_ntrack = min(low_mass_final_eep,final_eep)
-            else if (t% star_type == star_high_mass)then
-                min_ntrack = min(high_mass_final_eep,final_eep)
-            endif
-        else
-            min_ntrack = TAMS_EEP    !a(m)% ntrack
-        endif
-
+        min_ntrack = get_min_ntrack(t% initial_mass, t% star_type)
         !check length
         if (debug_mass) print*,"checking length now"
         if ((t% ntrack >= min_ntrack) ) then
@@ -269,6 +278,7 @@ module interp_support
           return
         else
             if (debug_mass) print*,"not complete", t% initial_mass, t% ntrack, min_ntrack
+            
             m_low = m_cutoff(iseg)
             m_high = m_cutoff(iseg+1)-1
             num_list = m_high-m_low+1      !to include count for m_low point
@@ -336,46 +346,59 @@ module interp_support
                     if (debug_mass) print*,"2,1"
                 else  !extrapolate
                     !m=1
-                    temp(3)=temp(1) !linearly increasing order
-                    temp(1)=0
+                    temp(3) = temp(1) !linearly increasing order
+                    temp(1) = 0
                     a = sa(pack(temp,mask = temp .ne. 0))
                     if (debug_mass) print*,"2,0"
                 endif
             end select
-            if (debug_mass .and. t% complete) print*, "new masses for interpolate", a% initial_mass
+            
             if (t% complete) then
+                if (debug_mass) print*, "new masses for interpolate", a% initial_mass
+                
                 !store orginal track tr in c
                 temp_ntrack = t% ntrack
+                t% ntrack = min_ntrack
+                
+
 !                print*, t% ntrack, size(t% tr, dim=2)
                 allocate(c(t% ncol, t% ntrack))
                 c(:,:) = t% tr(1: t% ncol,:)
-                min_eeps(1:t% neep) = t% eep
 
-                !reallocate eep and tr for rewriting with new length
-                deallocate(t% tr,t% eep)
-                    
-                t% ntrack = min_ntrack
-
-                do i = t% neep+1, size(key_eeps)
-                    if (key_eeps(i)<= min_ntrack) min_eeps(i) = key_eeps(i)
-                end do
-
-                t% neep = count(min_eeps>0,1)
-
-                allocate(t% tr(t% ncol+1, t% ntrack),t% eep(t% neep))
-                t% eep = pack(min_eeps, min_eeps>0)
+                !reallocate tr for rewriting with new length
+                deallocate(t% tr)
+                allocate(t% tr(t% ncol+1, t% ntrack))
 
                 t% tr = 0d0
                 t% tr(1: t% ncol,1: temp_ntrack) = c(:,1:temp_ntrack)
                 call linear_interp(a,t,temp_ntrack)
-                nullify(sa)
+                deallocate(sa); nullify(sa)
                 deallocate(c,mass_list)
+                if (debug_mass) print*, "new length", t% ntrack
             end if
         endif
         !t% tr = reshape(t%tr, (/t% ncol, t% ntrack/))
-        if (debug_mass) print*, "new length", t% ntrack
-        deallocate(min_eeps)
+        
+        
     end subroutine fix_incomplete_tracks
+    
+    
+    integer function get_min_ntrack(initial_mass, star_type)
+    real(dp) :: initial_mass
+    integer:: star_type
+        get_min_ntrack = 0
+        !calculating min required length to the new track
+        if (initial_mass >= Mcrit(2)% mass) then
+            if (star_type == star_low_mass) then     !use Mec here?
+                get_min_ntrack = min(low_mass_final_eep,final_eep)
+            else if (star_type == star_high_mass)then
+                get_min_ntrack = min(high_mass_final_eep,final_eep)
+            endif
+        else
+            get_min_ntrack = TAMS_EEP    !a(m)% ntrack
+        endif
+    end function
+    
     
     subroutine linear_interp(a,t,n)
     !this has been modified for use with fix_icomplete_tracks only
@@ -493,10 +516,12 @@ module interp_support
         real(dp) ::  them, them_new, frac, age, age2
 
 
-        integer, allocatable :: min_eeps(:)
         real(dp) :: f(3), dx, x(4), y(4), alfa, beta
         integer :: j, k, mlo, mhi, pass, n_pass
+        
         real(dp), allocatable :: new_line(:,:)
+        integer, allocatable :: min_eeps(:)
+
         logical :: debug, interpolate
         type(track), pointer :: t
 
@@ -515,6 +540,7 @@ module interp_support
 
         kw = t% pars% phase
         !TODO: this is temporary, to avoid NaN during interpolation
+        ! it happens due to gntage
         if (kw >1) then
             if(t% times(kw)-t% times(kw-1)<1d-12) kw = kw+1
         endif
@@ -539,75 +565,73 @@ module interp_support
         endif
 
         do pass = 1, n_pass
-
-        if (pass == 1) then
-            age = age2
-            age_col = i_age2     !i_age2 = new age, age col in the main array
-        else
-            age = input_age
-            age_col = i_age     !i_age = old age, stored at t% ncol+1
-        endif
-
-!        print*, age,age_col
-
-        call find_nearest_eeps(t,min_eeps, age, age_col)
-        
-        mlo = minval(min_eeps)
-        mhi = maxval(min_eeps)
-
-        if (debug) print*, n_pass,pass, age, kw
-        if (debug) print*,"neighbouring_eeps", min_eeps, t% tr(i_he_core,mhi),t% tr(i_he_core,mlo)
-
-        if (mhi == mlo) then
-        if (t% irecord>0 .and. debug) print*, "no interp in age needed"
-            do j=jstart,jend
-                interpolate = check_core_quant(j,n_pass, pass)
-                if (interpolate) new_line(j,1) = t% tr(j,mlo)
-            end do
-
-        elseif ((mhi-mlo)<4) then
-            !linear interpolation
-            if (debug) print*, "doing linear interp in age"
-            alfa = (age - t% tr(age_col,mlo))/(t% tr(age_col,mhi) - t% tr(age_col,mlo))
-            beta = 1d0 - alfa
-            do j=jstart,jend
-                interpolate = check_core_quant(j,n_pass, pass)
-                if (interpolate) then
-                    new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
-                    if (new_line(j,1)/= new_line(j,1)) then
-                    print*, '**Warning: NaN encountered during interpolation age** ',t% initial_mass,input_age,j,mhi,mlo
-!                    stop
-                    endif
-                endif
-            end do
-        else
-            if (debug) print*, "doing cubic interp in age"
-
-!            mlo = 1!min(max(1,m-1),n-3)  !1
-!            mhi = 4!max(min(m+2,n),4)     !4
-
-            x = t% tr(age_col,mlo:mhi)
-            dx = new_line(age_col,1) - x(2)
-
-            if (age< x(2) .or. age> x(3)) then
-               print*,"Error in age interpolation in interp_support"
-               stop        
+            if (pass == 1) then
+                age = age2
+                age_col = i_age2     !i_age2 = new age, age col in the main array
+            else
+                age = input_age
+                age_col = i_age     !i_age = old age, stored at t% ncol+1
             endif
 
-            do j=jstart,jend
-                interpolate = check_core_quant(j,n_pass, pass)
-                if (interpolate) then
-                    do k=1,4
-                    y(k) = t% tr(j,mlo-1+k)
-                    enddo
-                    call interp_4pt_pm(x, y, f)
-                    new_line(j,1) = y(2) + dx*(f(1) + dx*(f(2) + dx*f(3)))
-                end if
-            enddo
-        endif
-        
-        end do
+    !        print*, age,age_col
+            call find_nearest_eeps(t,min_eeps, age, age_col)
+            mlo = minval(min_eeps)
+            mhi = maxval(min_eeps)
 
+            if (debug) print*, 'pass', n_pass,pass, age, kw
+            if (debug) print*,"neighbouring_eeps", min_eeps
+
+            if (mhi == mlo) then
+                if (t% irecord>0 .and. debug) print*, "no interp in age needed"
+                do j=jstart,jend
+                    interpolate = check_core_quant(j,n_pass, pass)
+                    if (interpolate) new_line(j,1) = t% tr(j,mlo)
+                end do
+
+            elseif ((mhi-mlo)<4) then
+                !linear interpolation
+                if (debug) print*, "doing linear interp in age"
+                alfa = (age - t% tr(age_col,mlo))/(t% tr(age_col,mhi) - t% tr(age_col,mlo))
+                beta = 1d0 - alfa
+                do j=jstart,jend
+                    interpolate = check_core_quant(j,n_pass, pass)
+                    if (interpolate) then
+                        new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
+                        if (new_line(j,1)/= new_line(j,1)) then
+                        print*, '**Warning: NaN encountered during interpolation age** ',t% initial_mass,input_age,j,mhi,mlo
+    !                    stop
+                        endif
+                    endif
+                end do
+                if (debug) print*, "ending linear interp in age"
+
+            else
+                if (debug) print*, "doing cubic interp in age"
+
+    !            mlo = 1!min(max(1,m-1),n-3)  !1
+    !            mhi = 4!max(min(m+2,n),4)     !4
+
+                x = t% tr(age_col,mlo:mhi)
+                dx = new_line(age_col,1) - x(2)
+
+                if (age< x(2) .or. age> x(3)) then
+                   print*,"Error in age interpolation in interp_support"
+                   stop
+                endif
+
+                do j=jstart,jend
+                    interpolate = check_core_quant(j,n_pass, pass)
+                    if (interpolate) then
+                        do k=1,4
+                            y(k) = t% tr(j,mlo-1+k)
+                        enddo
+                        call interp_4pt_pm(x, y, f)
+                        new_line(j,1) = y(2) + dx*(f(1) + dx*(f(2) + dx*f(3)))
+                    end if
+                enddo
+            endif
+            
+        end do
         if (present(icolumn)) then
             val = new_line(icolumn,1)
         else
@@ -618,9 +642,9 @@ module interp_support
             print*,"fatal error: mass <0 "
             stop
         endif
-
         deallocate(new_line,min_eeps)
-
+         
+        if (debug) print*, 'exiting interpolate_age'
     end subroutine interpolate_age
     
     real(dp) function new_age(tc,tprev,tnew,tnew_prev,age)
@@ -667,9 +691,8 @@ module interp_support
 
         last_age = 0.d0
         do i = 1,t% neep-1
-            if (debug) print*,"loc_low", t% eep(i), t% eep(i+1)
+            if (debug) print*,"loc_low", t% eep(i), t% eep(i+1),t%neep
 
-           
             last_age = t% tr(age_col,t% eep(i+1))
             if (debug) print*,"ages", age,last_age, t% eep(i)< initial_eep
 
@@ -719,7 +742,7 @@ module interp_support
             deallocate(age_list)
             exit
         end do
-
+        if (.not. allocated(min_eeps)) print*, 'error finding nearest eeps'
     end subroutine find_nearest_eeps
 
 
@@ -785,16 +808,16 @@ module interp_support
     age = t% pars% age
     endif
 
-    if (kw>10 .and.debug) print*,"clear0",age,age_list(1),age_list(t% ntrack)
+    if (kw>4 .and.debug) print*,"clear0",age,age_list(1),age_list(t% ntrack)
 
     call index_search(nt,age_list, age,eep_m)
 
-    if (kw>10 .and.debug) print*,"clear1: eep_m, nt :",eep_m,nt,kw
+    if (kw>4 .and.debug) print*,"clear1: eep_m, nt :",eep_m,nt,kw
 
     !if (age_list(eep_m)<age) eep_m = eep_m+1
     if (eep_m > nt) eep_m = nt
 
-    if (kw>10 .and.debug) print*,"clear2",age,age_list(eep_m),age_list(1), age_list(nt)
+    if (kw>4 .and.debug) print*,"clear2",age,age_list(eep_m),age_list(1), age_list(nt)
 
 
 !    Mnew = t% tr(i_mass,eep_m)-delta  !TEST

@@ -46,7 +46,7 @@
     ! Maximum neutron star mass 
     ! Suggested 1.8 for BHNS_mass_scheme="original_SSE", 3.0 otherwise
 
-    Max_NS_mass = 3.0
+    Max_NS_mass = 3.d0
    
     ! Allow electron capture supernovae
 

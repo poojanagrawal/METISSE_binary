@@ -17,15 +17,17 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
     type(track), pointer :: t
 
     idd = 1
+
     if(present(id)) idd = id
     t => tarr(idd)
+        
 
     debug = .false.
+    if (debug) print*, 'in mlwind', id,idd
     ! if tracks don't have mass loss already, use SSE's wind routine
     ! TODO: move it to input file
     add_mass_loss = .true.
 
-    
     dms = 0.d0
 
     if (t% has_mass_loss .and. kw<6) then
@@ -33,12 +35,12 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
         tprev = t% pars% age-t% pars% dt
         if (tprev<=0.d0) then
             !Forward finite difference
-            if (debug) print*, 'calling interpolate age for ', tnext
+            if (debug) print*, 'calling interpolate age for ini', tnext
             call interpolate_age(t, tnext, i_mass, mnext)
             if (t% pars% dt>0.d0) dms = abs(mt-mnext)/(t% pars% dt*1E+6)
 
         elseif (tnext>= t% nuc_time) then
-            if (debug) print*, 'calling interpolate age for ', tprev
+            if (debug) print*, 'calling interpolate age for fin', tprev
             call interpolate_age(t, tprev, i_mass, mprev)
             if (t% pars% dt>0.d0) dms = abs(mprev-mt)/(t% pars% dt*1E+6)
         else
@@ -67,11 +69,11 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
         if (add_mass_loss) dms = SSE_mlwind(kw,lum,r,mt,mc,rl,z)
 !        if (kw<=9) print*,"mlwind function",dms,mt,mc,kw,id
     endif
-
     !Todo: at present these stars and modelled
     if (kw ==6 .and. t% post_agb) dms = 0.d0
     if (debug) print*,"in metisse_mlwind, dms",dms, t% pars% mass, t% pars% phase
     metisse_mlwind = dms
+    
     nullify(t)
 end function
 

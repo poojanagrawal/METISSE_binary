@@ -19,6 +19,7 @@ subroutine METISSE_zcnsts(z,zpars)
         if (allocated(s)) deallocate(s,key_cols,key_eeps)
         if (allocated(core_cols)) deallocate(core_cols)
         if (allocated(m_cutoff)) deallocate(m_cutoff)
+        if (allocated(metallicity_file_list)) deallocate(metallicity_file_list)
 
         i_mass = -1
         !TODO: re-initailize all such variables with defaults
@@ -32,6 +33,7 @@ subroutine METISSE_zcnsts(z,zpars)
 
     !read inputs from evolve_metisse.in
     if (front_end == main .or. front_end == bse) then
+        
         call read_metisse_input(ierr); if (ierr/=0) STOP
     elseif (front_end == COSMIC) then
         call get_metisse_input(TRACKS_DIR)

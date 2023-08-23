@@ -7,7 +7,7 @@ module z_support
 
     integer :: max_metallicity_files = 50
     character(LEN=strlen) :: metallicity_file,format_file, extra_columns_file
-    character(LEN=strlen) :: metallicity_file_list(50)
+    character(LEN=strlen), allocatable :: metallicity_file_list(:)
     character(LEN=col_width) :: extra_columns(100)
 
     real(dp) :: Z_files, Z_accuracy_limit
@@ -80,6 +80,9 @@ module z_support
             ierr = 1
             return
         endif
+        
+        allocate(metallicity_file_list(max_metallicity_files))
+
         include 'defaults/evolve_metisse_defaults.inc'
         
         ! Note that unlike other variables, metallicity_file_list = ''
@@ -133,7 +136,6 @@ module z_support
     subroutine get_metisse_input(path_to_tracks)
 
     character(LEN=strlen) :: path_to_tracks
-    character(LEN=strlen) :: format_file
     character(LEN=strlen), allocatable :: temp_list(:)
 
     integer :: ierr, i
@@ -145,12 +147,12 @@ module z_support
         if (.not. allocated(temp_list)) then
             print*, 'Could not find metallicity file(s) in ',trim(path_to_tracks)
             ierr = 1
-        elseif (size(temp_list)<=max_metallicity_files) then
-            print*, 'Error: more than',max_metallicity_files,'metallicity files supplied'
-            ierr = 1
+            return
         else
+            if (allocated(metallicity_file_list)) deallocate(metallicity_file_list)
+            allocate(metallicity_file_list(size(temp_list)))
             do i = 1, size(temp_list)
-                metallicity_file_list(i) = trim(path_to_tracks)//'/'//temp_list(i)
+                metallicity_file_list(i) = temp_list(i)
             end do
         endif
         
@@ -211,7 +213,6 @@ module z_support
     
     subroutine read_metallicity_file(filename,ierr)
         character(LEN=strlen), intent(in) :: filename
-        character(LEN=strlen) :: default_infile
 
         integer :: io
         integer, intent(out) :: ierr
@@ -220,15 +221,6 @@ module z_support
         
         ! reset the defaults (even if already set)
         include 'defaults/metallicity_defaults.inc'
-        
-!        io = alloc_iounit(ierr)
-!        default_infile = trim(METISSE_DIR)// '/defaults/metallicity_defaults.in'
-!
-!        open(io, file = default_infile,action='read')
-!            read(unit=io, nml = metallicity_controls)
-!        close(io)
-!        call free_iounit(io)
-        
         
         io = alloc_iounit(ierr)
         open(io, file=filename, action='read', iostat=ierr)

@@ -27,7 +27,6 @@ subroutine initialize_front_end(front_end_name,path_to_tracks)
         front_end = COSMIC
 !        METISSE_DIR = path_to_metisse
         TRACKS_DIR = path_to_tracks
-        !TODO: make sure this path ends with '/'
 !        print*, 'setting front end to cosmic'
     else
         print*, "Error: Unrecongnized front_end_name for METISSE"

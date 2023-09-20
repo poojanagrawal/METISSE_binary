@@ -785,7 +785,7 @@ module interp_support
     real(dp), intent(in) :: delta
     type(track), pointer :: t
 
-    integer :: min_index,num_list,Mupp,Mlow,i,j,nt,kw
+    integer :: min_index,num_list,Mupp,Mlow,i,j,k,nt,kw
     real(dp), allocatable :: mlist(:),mlist1(:), age_list(:)
     real(dp) :: Mnew,alfa,beta,them, themold, age
     integer :: eep_m, eep_core
@@ -838,7 +838,6 @@ module interp_support
         if (s(i)% ntrack >= eep_m) then
         mlist1(j) = s(i)% initial_mass
         mlist(j) = s(i)% tr(i_mass,eep_m)   !this eep_m can vary with fractional age
-        ! only do until mlist(j)< mnew
         j= j+1
         endif
     end do
@@ -847,15 +846,52 @@ module interp_support
     call index_search (num_list,mlist,Mnew,min_index)
     if (min_index > num_list) min_index = num_list
 
-    if (kw<10 .and. debug)  print*,"clear2, min index mass", mlist(min_index)
+    if (kw<10 .and. debug)  print*,"clear2, min index mass", mlist(min_index),mlist(min_index-1),mlist(min_index+1)
+    
+    
     if (mlist(min_index)<Mnew) then
         Mlow = min_index
-        Mupp = min_index+1
+        Mupp = -1
+!            Mupp = min_index+1
+        do k = 1,num_list
+            if(min_index+k <= num_list) then
+                if (mlist(min_index+k)>Mnew) then
+                    Mupp = min_index+k
+                    exit
+                endif
+            endif
+            
+            if (min_index-k>=1) then
+                if (mlist(min_index-k)>Mnew) then
+                    Mupp = min_index-k
+                    exit
+                endif
+            endif
+!            dm_max = max(dm1,dm2)
+        end do
     else
-        Mlow = min_index-1
         Mupp = min_index
+        Mlow = -1
+!            Mlow = min_index-1
+        do k = 1,num_list
+            if (min_index-k>=1) then
+                if (mlist(min_index-k)<Mnew) then
+                    Mlow = min_index-k
+                    exit
+                endif
+            endif
+            if(min_index+k <= num_list) then
+                if (mlist(min_index+k)<Mnew) then
+                    Mlow = min_index+k
+                    exit
+                endif
+            endif
+        end do
     endif
-    if(Mlow<1 .or. Mupp > num_list) then
+    
+    
+    
+    if(Mlow < 0 .or. Mupp <0) then
         if (debug) print*,"Error: beyond the bounds for interpolation"
         if (debug) print*, "Mlow,Mupp,num_list,mnew,eep_m,kw", &
                 Mlow,Mupp,num_list,mnew,eep_m,kw

@@ -262,8 +262,8 @@ module interp_support
         integer, intent(in) :: min_index,iseg
 
         type(eep_track), pointer :: sa(:)
-        integer :: m_low,m_high,num_list
         real(dp), pointer :: mass_list(:)
+        integer :: m_low,m_high,num_list
         integer :: i, m1, up_count,low_count,temp(4)
         integer :: min_ntrack,temp_ntrack, low_lim, upp_lim
         real(dp) :: upper_tol, lower_tol
@@ -284,7 +284,7 @@ module interp_support
             num_list = m_high-m_low+1      !to include count for m_low point
             sa => s(m_low:m_high)
             allocate(mass_list(num_list))
-            mass_list = sa% initial_mass
+            mass_list = s(m_low:m_high)% initial_mass
 
 
             temp =0
@@ -358,22 +358,26 @@ module interp_support
                 
                 !store orginal track tr in c
                 temp_ntrack = t% ntrack
-                t% ntrack = min_ntrack
                 
 
-!                print*, t% ntrack, size(t% tr, dim=2)
+!                print*, t% ntrack, size(t% tr, dim=2),t% initial_mass
                 allocate(c(t% ncol, t% ntrack))
                 c(:,:) = t% tr(1: t% ncol,:)
 
                 !reallocate tr for rewriting with new length
                 deallocate(t% tr)
+                t% ntrack = min_ntrack
+
                 allocate(t% tr(t% ncol+1, t% ntrack))
 
                 t% tr = 0d0
                 t% tr(1: t% ncol,1: temp_ntrack) = c(:,1:temp_ntrack)
+                
+                !complete the track between temp_ntrack and t% ntrack
                 call linear_interp(a,t,temp_ntrack)
-                deallocate(sa); nullify(sa)
                 deallocate(c,mass_list)
+                nullify(mass_list,sa)
+
                 if (debug_mass) print*, "new length", t% ntrack
             end if
         endif

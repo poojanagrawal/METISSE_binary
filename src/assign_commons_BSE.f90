@@ -18,7 +18,7 @@ subroutine assign_commons()
         if_flag = ifflag
         Max_NS_mass = mxns
         ec_flag = 1
-        print*, 'bse assign commons', ns_flag,nsflag,Max_NS_mass
+!        print*, 'bse assign commons', ns_flag,nsflag,Max_NS_mass
         
     !neta,bwind,hewind,sigma
     !pts1,pt2,pts3

@@ -268,21 +268,10 @@ module z_support
     
         ierr = 0
         
-        if (trim(path) == '' )then
-            print*,"Error: INPUT_FILES_DIR is not defined"
-            return
-        endif
-        
-        if (verbose) print*,"Reading input files from: ", trim(path)
-        
         find_cmd = 'find '//trim(path)//'/*'//trim(extension)//' -maxdepth 1 > .file_name.txt'
         call system(find_cmd,ierr)
         
-        if (ierr/=0) then
-            print*,'Error: failed to read input files.'
-            print*,'Check if INPUT_FILES_DIR is correct.'
-            return
-        end if
+        if (ierr/=0) return
 
         io = alloc_iounit(ierr)
         open(io,FILE='.file_name.txt',action="read")
@@ -1068,7 +1057,7 @@ module z_support
 
         logical:: debug
 
-        debug = .true.
+        debug = .false.
         
         old_co_frac = 0.d0
         Mup_core = 0.d0

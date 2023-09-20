@@ -11,6 +11,7 @@ subroutine METISSE_zcnsts(z,zpars)
     
     ierr = 0
     debug = .false.
+    
     if (initial_Z >0 .and.(relative_diff(initial_Z,z) < Z_accuracy_limit)) then
         if (debug) print*, '*****No change in metallicity, exiting METISSE_zcnsts.*****'
         return
@@ -28,7 +29,7 @@ subroutine METISSE_zcnsts(z,zpars)
 
     !reading defaults option first
     call read_defaults(ierr); if (ierr/=0) STOP
-                
+     verbose =.true.           
     if (front_end /= main) initial_Z = z
 
     !read inputs from evolve_metisse.in
@@ -55,8 +56,20 @@ subroutine METISSE_zcnsts(z,zpars)
     call read_format(format_file,ierr); if (ierr/=0) STOP
 
     !get filenames
-    call get_files_from_path(INPUT_FILES_DIR,file_extension,track_list,ierr); if (ierr/=0) STOP
-
+    if (trim(INPUT_FILES_DIR) == '' )then
+        print*,"Error: INPUT_FILES_DIR is not defined"
+        STOP
+    endif
+        
+    if (verbose) print*,"Reading input files from: ", trim(INPUT_FILES_DIR)
+    
+    call get_files_from_path(INPUT_FILES_DIR,file_extension,track_list,ierr)
+    
+    if (ierr/=0) then
+        print*,'Error: failed to read input files.'
+        print*,'Check if INPUT_FILES_DIR is correct.'
+        STOP
+    endif
 
     num_tracks = size(track_list)
     allocate(s(num_tracks))

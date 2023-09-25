@@ -7,8 +7,9 @@
 ! Otherwise, values provided by the overlying code are used.
 ! Make sure to ADD a new line at the end (after / symbol)
 
-
-&SSE_input_controls
+    METISSE_DIR = '.'
+    
+!SSE_input_controls
 
   ! EVOLUTION CONTROLS
    
@@ -65,10 +66,8 @@
 
     write_track_to_file = .true.
 
-/
-
-&METISSE_input_controls
-
+!METISSE_input_controls
+    
     ! A metallicity file contains details about 
     ! the set of input tracks for a given metallicity,
     ! such as the path to the folder, their metallicity value
@@ -121,9 +120,7 @@
 
     write_eep_file = .false.		
 
-    !OUTPUT_DIR = ''
-
-/
+  
 
 
 

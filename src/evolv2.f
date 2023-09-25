@@ -216,7 +216,7 @@
 * irecord is useful for evolv1.f but serves no purpose here
 * see description in evolv1
 
-      call allocate_track(2,mass0)
+      if (SSE_FLAG.eqv..FALSE.) call allocate_track(2,mass0)
 
       mass1i = mass0(1)
       mass2i = mass0(2)
@@ -395,7 +395,8 @@
       kw2 = kstar(2)
 *
       dt = 1.0d+06*dtm
-*        print*,'dt = ', dt
+      if (dbg) print*,'dt at 5 = ', dt
+
       eqspin = 0.d0
       djtt = 0.d0
 *
@@ -505,7 +506,7 @@
                if(djmb.gt.tiny)then
                   dtj = 0.03d0*jspin(k)/ABS(djmb)
                   dt = MIN(dt,dtj)
-*                    print*, 'MB',dt,djmb
+*                  print*, 'MB',dt,djmb
                endif
             endif
 *
@@ -599,7 +600,7 @@
             dt = MIN(dt,dtj)
          endif
          dtm = dt/1.0d+06
-*         if (kstar(1)>=4) print*, "dtm7=",dtm,jorb,djtt
+*         if (kstar(1)>=1) print*, "dtm7=",dtm,jorb,djtt
 *        if (dtm<=9d-6)stop
 
 *
@@ -624,15 +625,17 @@
             endif
  503     continue
          dtm = dt/1.0d+06
-*         if (dbg) print*, "dtm8=",dtm
+         if (dbg) print*, "dtm8=",dtm
       endif
 *
       do 504 , k = kmin,kmax
 *
          dms(k) = (dmr(k) - dmt(k))*dt
-        if (dbg)print*, 'dms', dms*1.0d-06
+*         print*, 'dmr=',dmr(k),dmt(k),dt
+        if (dbg)print*, 'dms=', dms*1.0d-06,dtm
          if(kstar(k).lt.10)then
             dml = mass(k) - massc(k)
+*            print*, 'test dml',dml
             if(dml.lt.dms(k))then
                dml = MAX(dml,2.d0*tiny)
                dtm = (dml/dms(k))*dtm
@@ -640,7 +643,7 @@
                dms(k) = dml
                dt = 1.0d+06*dtm
             endif
-            if (dbg) print*, "env check,dtm5=",dtm
+            if (dbg) print*, "env check,dtm5=",dtm,dms
 *
 * Limit to 1% mass loss.
 *
@@ -694,12 +697,16 @@
          endif
 *
          if(ABS(dms(k)).gt.tiny)then
+*            if (k==1)print*, 'main',mass(k),dms(k)
+*                    if (abs(dms(k))>mass(k)) stop
+
             mass(k) = mass(k) - dms(k)
+            
             if(kstar(k).le.2.or.kstar(k).eq.7)then
                m0 = mass0(k)
                mass0(k) = mass(k)
 * PA: detached phase call for adjusting epoch
-            if (dbg) print*,'detached phase call for adjusting epoch',k
+        if(dbg)print*,'detached phase call for adjusting epoch',k,tphys
                CALL star(kstar(k),mass0(k),mass(k),tm,tn,
      &                   tscls,lums,GB,zpars,dtm,k)
 *                print*,'star_ep_dt', mass0(k),mass(k),kstar(k),k
@@ -744,8 +751,10 @@
          tphys0 = tphys
          dtm0 = dtm
       endif
+      if (dbg) print*, "dtm=",dtm,tphys
+
       tphys = tphys + dtm
-*      if (dbg) print*, "dtm4=",dtm
+      if (dbg) print*, "dtm4=",dtm,tphys
 *
       do 6 , k = kmin,kmax
 *
@@ -769,7 +778,7 @@
 *            goto 140
 *         endif
 * PA: second (main) call for detached phase
-        if(dbg)print*,"second (main) call for detached phase",m0,age,
+        if(dbg)print*,"second (main) call for detached phase",m0,mt,age,
      &                  kw,k
          CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,k)
 *         print*, 'star_dt_mn',m0,mt,kw,k
@@ -833,6 +842,7 @@
 *
          if(ABS(dtm).gt.tiny)then
             rdot(k) = ABS(rm - rad(k))/dtm
+*            if(k==1) print*, 'rdot=',rdot(k), rm,rad(k),dtm
          else
             rdot(k) = 0.d0
          endif
@@ -842,11 +852,12 @@
          dt = dtmi(k)
          if (dbg) print*, "calling deltat-1",tphys,k,kw
          CALL deltat(kw,age,tm,tn,tscls,dt,dtr,k)
-
 *
 * Choose minimum of time-scale and remaining interval.
 *
          dtmi(k) = MIN(dt,dtr)
+*        print*, "after deltat",dt,dtr,dtmi(k)
+
 *
 * Save relevent solar quantities.
 *
@@ -897,7 +908,9 @@
 
             if(ABS(dtm).gt.tiny)then
                rdot(k) = rdot(k) + (rol(k) - rol0(k))/dtm
-               rol0(k) = rol(k)
+               
+*         if(dbg.and.k==1)print*,'rdot2',rdot(k),rol(k),rol0(k),dtm
+                rol0(k) = rol(k)
             endif
  507     continue
       else
@@ -971,16 +984,17 @@
             if(isave) tsave = tsave + dtp
          endif
       endif
-      if (dbg) print*, "regular save",iter, mass,dtmi
+      if (dbg) print*, "regular save",iter, mass,dtmi,dtm
 *
 * If not interpolating set the next timestep.
 *
+
       if(intpol.eq.0)then
          dtm = MAX(1.0d-07*tphys,MIN(dtmi(1),dtmi(2)))
          dtm = MIN(dtm,tsave-tphys)
          if(iter.eq.0) dtm0 = dtm
       endif
-*      if (dbg) print*, "dtm=", dtm
+      if (dbg) print*, "dtm b4 RLOF=", dtm
       if(sgl) goto 98
 *   PA: Roche phase begin- probably
 * Set j1 to the donor - the primary
@@ -1002,7 +1016,10 @@
 *
 * Interpolate back until the primary is just filling its Roche lobe.
 *
+*        print*, 'RLOF',dtm,iter,intpol
+
          if(rad(j1).ge.1.002d0*rol(j1))then
+         
             if(intpol.eq.0) tphys00 = tphys
             intpol = intpol + 1
             if(iter.eq.0) goto 7
@@ -1016,7 +1033,10 @@
                goto 7
             endif
             dtm = -dr/ABS(rdot(j1))
+*            print*, 'test r',rad(j1),rol(j1),rdot(j1)
+*            print*, 'test dtm',dtm,iter,intpol
             if(ABS(tphys0-tphys).gt.tiny) dtm = MAX(dtm,tphys0-tphys)
+*            print*, 'test2 dtm',dtm,tphys0-tphys
             if(kstar(1).ne.kw1)then
                kstar(1) = kw1
                mass0(1) = mass00(1)
@@ -1051,6 +1071,7 @@
             else
                dr = rad(j1) - 1.001d0*rol(j1)
                dtm = -dr/ABS(rdot(j1))
+*               print*, 'test3 dtm',dtm
             endif
             if((tphys+dtm).ge.tphys00)then
 *
@@ -1067,7 +1088,7 @@
          endif
       endif
       
-*      if (dbg) print*, "dtm2 = ",dtm
+      if (dbg) print*, "dtm2 = ",dtm
 *
 * Check for collision at periastron.
 *
@@ -1325,7 +1346,6 @@
          m2ce = mass(j2)
          if (dbg) print*, 'calling comenv at phase', kstar(j1)
          if(dbg) print*,'conditions',q(j1).gt.qc,radx(j1).le.radc(j1)
-          print*,'conditions',q(j1),qc,massc(j1),mass(j1)
          CALL comenv(mass0(j1),mass(j1),massc(j1),aj(j1),jspin(j1),
      &               kstar(j1),mass0(j2),mass(j2),massc(j2),aj(j2),
      &               jspin(j2),kstar(j2),zpars,ecc,sep,jorb,coel,
@@ -2477,7 +2497,7 @@
       bcm(ip+1,1) = -1.0
       bpp(jp+1,1) = -1.0
 *
-      call dealloc_track()
+      if (SSE_FLAG.eqv..FALSE.) call dealloc_track()
       RETURN
       END
 ***

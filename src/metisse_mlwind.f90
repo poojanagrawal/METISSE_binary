@@ -21,9 +21,9 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
     if(present(id)) idd = id
     t => tarr(idd)
         
-
     debug = .false.
-    if (debug) print*, 'in mlwind', id,idd
+!    if (id==1) debug = .true.
+    if (debug) print*, 'in MLWIND', id,idd,mt,t% pars% mass
     ! if tracks don't have mass loss already, use SSE's wind routine
     ! TODO: move it to input file
     add_mass_loss = .true.
@@ -32,7 +32,8 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
 
     if (t% has_mass_loss .and. kw<6) then
         tnext = t% pars% age+ t% pars% dt
-        tprev = t% pars% age-t% pars% dt
+        tprev = max(0.d0,t% pars% age-t% pars% dt)
+!        print*,'in mlwind',t% pars% age,t% pars% dt,tprev,tnext
         if (tprev<=0.d0) then
             !Forward finite difference
             if (debug) print*, 'calling interpolate age for ini', tnext
@@ -57,19 +58,10 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
 
         !Using 'abs' as sometime dms is negative due to rounding errors
         if (debug) print*, 'track has mass loss',t% initial_mass,dms,kw,mt,t% pars% mass
-
-        !TodO: below is only needed for mdflag<=2, check this
-        ! Check for any tidally enhanced mass loss in binary systems (optional):
-        ! see Tout & Eggleton (1988, MNRAS, 231, 823).
-!        if(t% pars% phase>2 .and. rl.gt.0.d0)then
-!          dml = dml*(1.d0 + bwind*(MIN(0.5d0,(r/rl)))**6)
-!        endif
-!        dms = max(dms,dml)
     else
         if (add_mass_loss) dms = SSE_mlwind(kw,lum,r,mt,mc,rl,z)
 !        if (kw<=9) print*,"mlwind function",dms,mt,mc,kw,id
     endif
-    !Todo: at present these stars and modelled
     if (kw ==6 .and. t% post_agb) dms = 0.d0
     if (debug) print*,"in metisse_mlwind, dms",dms, t% pars% mass, t% pars% phase
     metisse_mlwind = dms

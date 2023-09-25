@@ -15,7 +15,7 @@ module track_support
     integer, parameter :: strlen = 256 ! for character (len=strlen)
     integer, parameter :: col_width = 32
 
-    real(dp), parameter :: ln10=log(1.0d1)
+    real(dp), parameter :: ln10 = log(1.0d1)
     real(sp), parameter :: ln10_sp = log(10.0)
     real(dp), parameter :: tiny = 1.0d-6
     real(dp), parameter :: undefined  =  -1.0
@@ -29,7 +29,7 @@ module track_support
     integer, parameter :: BSE = 1
     integer, parameter :: COSMIC = 2
 
-    character(len=strlen) :: METISSE_DIR
+    character(len=strlen) :: METISSE_DIR,TRACKS_DIR
     integer :: low_mass_final_eep, high_mass_final_eep
     integer, allocatable :: key_eeps(:)
 
@@ -128,6 +128,9 @@ module track_support
     ! between the primaries
 
     real(dp), allocatable :: t_incomplete(:), t_notfound(:)
+    real(dp), allocatable :: Mmax_array(:), Mmin_array(:)
+
+
 
   !holds an evolutionary track for input, use an array of these for multiple tracks
 
@@ -175,7 +178,7 @@ module track_support
         type(column), allocatable :: cols(:)
         logical :: has_RGB =.false., complete=.true.
         logical :: has_mass_loss
-        integer :: ncol, ntrack, neep
+        integer :: ncol, ntrack, neep,min_index
         integer :: star_type = unknown, irecord,ierr
         
         real(dp) :: initial_mass, initial_Z, initial_Y, Fe_div_H,  v_div_vcrit, alpha_div_Fe
@@ -184,7 +187,7 @@ module track_support
         
         real(dp), allocatable :: tr(:,:)
         real(dp), allocatable :: times(:), times_new(:)           !timescales
-        integer, allocatable :: eep(:), phase(:)
+        integer, allocatable :: eep(:), phase(:), bounds(:)
 
         type(star_parameters) :: pars    ! parameters at any instant
         logical :: post_agb = .false.
@@ -206,7 +209,7 @@ module track_support
     !for z_support
     real(dp) :: Mhook, Mhef,Mfgb, Mup, Mec, Mextra,Mup_core,Mec_core
     real(dp) :: Z04, Z_H, Z_He
-
+    
     !for interp_support
     logical :: fix_track
     real(dp) :: lookup_index, mass_accuracy_limit
@@ -217,7 +220,7 @@ module track_support
     character (len=strlen) :: BHNS_mass_scheme, WD_mass_scheme
 !    real(dp) :: mc1, mc2 !mass cutoffs for Belczynski methods
     real(dp) :: pts_1,pts_2,pts_3
-
+    
     contains
 
     !linear search alogorithm
@@ -294,6 +297,7 @@ end subroutine
         deallocate(t% tr)
         deallocate(t% phase)
         deallocate(t% times)
+        deallocate(t% bounds)
     end subroutine deallocate_arrays
     
     elemental function pow10_sg(x) result(y)

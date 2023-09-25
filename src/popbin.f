@@ -96,14 +96,6 @@
 
       if(idum.gt.0) idum = -idum
 *
-* Set parameters which depend on the metallicity
-*
-      SSE_FLAG = .false.
-      
-      !set the front end for METISSE
-      if(SSE_FLAG.eqv..FALSE.) call initialize_front_end('SSE','')
-      CALL zcnsts(z,zpars)
-*
 * Set the collision matrix.
 *
       CALL instar
@@ -121,12 +113,20 @@
 *
       OPEN(10,file='binaries.in',action='read',status='old')
       READ(10,*)nm1, Z
+*
+* Set parameters which depend on the metallicity
+*
+      SSE_FLAG = .false.
+      
+      !set the front end for METISSE
+      if(SSE_FLAG.eqv..FALSE.) call initialize_front_end('SSE','')
+      CALL zcnsts(z,zpars)
       do i = 1,nm1
 *
 * Read in parameters and set coefficients which depend on metallicity. 
 *
          READ(10,*,iostat=ierr)k1,k2,m1,m2,tb,ecc,age1,tmax
-*         print*, 'ip',i,k1,k2,m1,m2,tb,ecc,tmax
+         print*, 'ip',i,k1,k2,m1,m2,tb,ecc,tmax
          ecc0 = ecc
          tb0 = tb/yeardy
          sep0 = aursun*(tb0*tb0*(mass(1) + mass(2)))**(1.d0/3.d0)

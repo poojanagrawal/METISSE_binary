@@ -6,11 +6,12 @@ subroutine METISSE_zcnsts(z,zpars)
     real(dp), intent(in) :: z
     real(dp), intent(out) :: zpars(20)
 
-    integer :: i,ierr
+    integer :: i,ierr,j,nmax
     logical :: debug
     
     ierr = 0
     debug = .false.
+    
     if (initial_Z >0 .and.(relative_diff(initial_Z,z) < Z_accuracy_limit)) then
         if (debug) print*, '*****No change in metallicity, exiting METISSE_zcnsts.*****'
         return
@@ -19,29 +20,61 @@ subroutine METISSE_zcnsts(z,zpars)
         if (allocated(s)) deallocate(s,key_cols,key_eeps)
         if (allocated(core_cols)) deallocate(core_cols)
         if (allocated(m_cutoff)) deallocate(m_cutoff)
+        if (allocated(metallicity_file_list)) deallocate(metallicity_file_list)
+        if (allocated(Mmax_array)) deallocate(Mmax_array, Mmin_array)
 
-        i_mass =-1
+        i_mass = -1
         !TODO: re-initailize all such variables with defaults
     endif
     
 
     !reading defaults option first
     call read_defaults(ierr); if (ierr/=0) STOP
-                
+     verbose =.true.           
     if (front_end /= main) initial_Z = z
 
     !read inputs from evolve_metisse.in
-    call read_metisse_input(ierr); if (ierr/=0) STOP
-    
+    if (front_end == main .or. front_end == bse) then
+        
+        call read_metisse_input(ierr); if (ierr/=0) STOP
+    elseif (front_end == COSMIC) then
+        call get_metisse_input(TRACKS_DIR)
+    else
+        print*, "Error: Unrecongnized front_end_name for METISSE"
+    endif
+        
+        
     !read metallicity related variables
     call get_metallcity_file_from_Z(initial_Z,ierr); if (ierr/=0) STOP
+    
+    
+    if (front_end == COSMIC) then
+        format_file = trim(TRACKS_DIR)//'/'//trim(format_file)
+        INPUT_FILES_DIR = trim(TRACKS_DIR)//'/'//trim(INPUT_FILES_DIR)
+    endif
     
     !read file-format
     call read_format(format_file,ierr); if (ierr/=0) STOP
 
     !get filenames
-    call get_files_from_path(INPUT_FILES_DIR,ierr); if (ierr/=0) STOP
+    if (trim(INPUT_FILES_DIR) == '' )then
+        print*,"Error: INPUT_FILES_DIR is not defined"
+        STOP
+    endif
+        
+    if (verbose) print*,"Reading input files from: ", trim(INPUT_FILES_DIR)
+    
+    call get_files_from_path(INPUT_FILES_DIR,file_extension,track_list,ierr)
+    
+    if (ierr/=0) then
+        print*,'Error: failed to read input files.'
+        print*,'Check if INPUT_FILES_DIR is correct.'
+        STOP
+    endif
 
+    num_tracks = size(track_list)
+    allocate(s(num_tracks))
+    s% filename = track_list
     if (verbose) print*,"Number of input tracks: ", num_tracks
 
     call read_key_eeps()
@@ -82,8 +115,20 @@ subroutine METISSE_zcnsts(z,zpars)
 
 !    if(debug) print*, s(1)% cols% name, s(1)% tr(:,1)
     
+    nmax = maxval(s% ntrack)
+    allocate(Mmax_array(nmax), Mmin_array(nmax))
+    Mmax_array = 0.d0
+    Mmin_array = 1000000000 !(random big number)
+    
     do i = 1,size(s)
         s(i)% has_mass_loss = check_mass_loss(s(i))
+        
+        do j = 1, nmax
+            if (s(i)% ntrack>=j) then
+                Mmax_array(j) = max(Mmax_array(j),s(i)% tr(i_mass,j))
+                Mmin_array(j) = min(Mmin_array(j),s(i)% tr(i_mass,j))
+            endif
+        end do
     end do
 
     !TODO: check for monotonicity of initial masses

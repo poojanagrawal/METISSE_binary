@@ -1,12 +1,13 @@
 module z_support
     use track_support
     implicit none
-    
-    character(LEN=strlen) :: format_file, extra_columns_file, INPUT_FILES_DIR
+
+    character(LEN=strlen) :: INPUT_FILES_DIR
     logical :: read_eep_files, read_all_columns
 
-    character(LEN=strlen) :: metallicity_file
-    character(LEN=strlen) :: metallicity_file_list(50)
+    integer :: max_metallicity_files = 50
+    character(LEN=strlen) :: metallicity_file,format_file, extra_columns_file
+    character(LEN=strlen), allocatable :: metallicity_file_list(:)
     character(LEN=col_width) :: extra_columns(100)
 
     real(dp) :: Z_files, Z_accuracy_limit
@@ -20,9 +21,10 @@ module z_support
 
     character:: extra_char
 
+    real(dp) :: mass, max_age, min_mass, max_mass
+
     character(LEN=strlen), allocatable :: track_list(:)
 
-    real(dp) :: mass, max_age, min_mass, max_mass
     !used to set star_type_from_history
     ! central limits for high- / intermediate-mass stars, set these from input eep_controls nml
     real(dp) :: center_gamma_limit = 1d2
@@ -46,8 +48,8 @@ module z_support
                         input_mass_file, number_of_tracks, max_mass, min_mass, &
                         WD_mass_scheme,use_initial_final_mass_relation, allow_electron_capture, &
                         BHNS_mass_scheme, max_NS_mass,pts_1, pts_2, pts_3, write_track_to_file
-                            
-    namelist /METISSE_input_controls/ metallicity_file_list, Z_accuracy_limit,  &
+
+    namelist /METISSE_input_controls/ metallicity_file_list, Z_accuracy_limit, &
                         mass_accuracy_limit, construct_wd_track, verbose, &
                         write_eep_file
             
@@ -70,67 +72,31 @@ module z_support
     contains
 
     subroutine read_defaults(ierr)
-        integer :: io
         integer, intent(out) :: ierr
-        character(len=strlen) :: default_infile
-
 
         ierr = 0
-        io = alloc_iounit(ierr)
-        
         if (front_end <0) then
-        
-            print*, 'Error: front_end is not initialized'
+            print*, 'Error: front_end is not initialized for METISSE'
             ierr = 1
             return
         endif
-        default_infile = trim(METISSE_DIR)// '/defaults/evolve_metisse_defaults.in'
+        
+        allocate(metallicity_file_list(max_metallicity_files))
 
-        open(io, file = trim(default_infile) ,action='read',iostat=ierr )
-            if(ierr/=0)then
-                print*,'Failed while trying to open evolve_metisse_defaults: ', default_infile
-                print*, 'METISSE_DIR: ',METISSE_DIR
-                print*, 'default_infile: ',default_infile
-
-                return
-            endif
-            read(unit = io, nml = SSE_input_controls)
-            read(unit = io, nml = METISSE_input_controls)
-        close(io)
-        call free_iounit(io)
-    
+        include 'defaults/evolve_metisse_defaults.inc'
+        
         ! Note that unlike other variables, metallicity_file_list = ''
         ! in the namelist only sets the value of the first element and not the whole array
         ! that's why the default for metallicity is specified here
+        ! Todo: this might be removable now
         metallicity_file_list = ''
         extra_columns = ''
         
         !initialize metallicity related variables
-        io = alloc_iounit(ierr)
-        default_infile = trim(METISSE_DIR)// '/defaults/metallicity_defaults.in'
+        include 'defaults/metallicity_defaults.inc'
 
-        open(io, file = default_infile,action='read',iostat=ierr )
-            if (ierr /= 0) then
-               print*, 'Error: Failed while trying to open metallicity_defaults'
-               return
-            end if
-            read(unit=io, nml = metallicity_controls)
-        close(io)
-        call free_iounit(io)
-        
         !initialize file format specs
-        io=alloc_iounit(ierr)
-        default_infile = trim(METISSE_DIR)// '/defaults/format_defaults.in'
-
-        open(unit=io,file=default_infile,action='read',iostat=ierr)
-
-            if(ierr/=0)then
-                print*,'Failed while trying to open format_defaults'
-                return
-            endif
-            read(unit = io, nml = format_controls)
-        close(io)
-        call free_iounit(io)
+        include 'defaults/format_defaults.inc'
     
     end subroutine read_defaults
     
@@ -144,8 +110,8 @@ module z_support
         ierr = 0
         io = alloc_iounit(ierr)
         !reading user input
+        
         infile = trim(METISSE_DIR)// '/evolve_metisse.in'
-
         open(io,FILE=infile,action="read",iostat=ierr)
             if (ierr /= 0) then
                print*, 'Error: Failed to open evolve_metisse.in'
@@ -165,6 +131,33 @@ module z_support
         call free_iounit(io)
         
     end subroutine read_metisse_input
+    
+    
+    subroutine get_metisse_input(path_to_tracks)
+
+    character(LEN=strlen) :: path_to_tracks
+    character(LEN=strlen), allocatable :: temp_list(:)
+
+    integer :: ierr, i
+
+        ierr = 0
+        ! use inputs from COSMIC
+        call get_files_from_path(path_to_tracks,'_metallicity.in',temp_list,ierr)
+        
+        if (.not. allocated(temp_list)) then
+            print*, 'Could not find metallicity file(s) in ',trim(path_to_tracks)
+            ierr = 1
+            return
+        else
+            if (allocated(metallicity_file_list)) deallocate(metallicity_file_list)
+            allocate(metallicity_file_list(size(temp_list)))
+            do i = 1, size(temp_list)
+                metallicity_file_list(i) = temp_list(i)
+            end do
+        endif
+        
+    end subroutine get_metisse_input
+    
     
     subroutine get_metallcity_file_from_Z(Z_req,ierr)
         real(dp), intent(in) :: Z_req
@@ -220,7 +213,6 @@ module z_support
     
     subroutine read_metallicity_file(filename,ierr)
         character(LEN=strlen), intent(in) :: filename
-        character(LEN=strlen) :: default_infile
 
         integer :: io
         integer, intent(out) :: ierr
@@ -228,14 +220,7 @@ module z_support
         ierr = 0
         
         ! reset the defaults (even if already set)
-        io = alloc_iounit(ierr)
-        default_infile = trim(METISSE_DIR)// '/defaults/metallicity_defaults.in'
-
-        open(io, file = default_infile,action='read')
-            read(unit=io, nml = metallicity_controls)
-        close(io)
-        call free_iounit(io)
-        
+        include 'defaults/metallicity_defaults.inc'
         
         io = alloc_iounit(ierr)
         open(io, file=filename, action='read', iostat=ierr)
@@ -271,31 +256,22 @@ module z_support
     end subroutine read_format
 
     
-    subroutine get_files_from_path(path,ierr)
+    subroutine get_files_from_path(path,extension,file_list,ierr)
     character(LEN=strlen), intent(in) :: path
+    character(LEN=*), intent(in) :: extension
+    character(LEN=strlen), allocatable :: file_list(:)
+
     integer, intent (out) ::  ierr
 
-    character(LEN=strlen) :: str,eep_list
+    character(LEN=strlen) :: str,find_cmd
     integer :: n,i, io
     
-
         ierr = 0
         
-        if (trim(path) == '' )then
-            print*,"Error: INPUT_FILES_DIR is not defined"
-            return
-        endif
+        find_cmd = 'find '//trim(path)//'/*'//trim(extension)//' -maxdepth 1 > .file_name.txt'
+        call system(find_cmd,ierr)
         
-        if (verbose) print*,"Reading input files from: ", trim(path)
-        
-        eep_list = 'find '//trim(path)//'/*'//trim(file_extension)//' -maxdepth 1 > .file_name.txt'
-        call system(eep_list,ierr)
-        
-        if (ierr/=0) then
-            print*,'Error: failed to read input files.'
-            print*,'Check if INPUT_FILES_DIR is correct.'
-            return
-        end if
+        if (ierr/=0) return
 
         io = alloc_iounit(ierr)
         open(io,FILE='.file_name.txt',action="read")
@@ -308,15 +284,15 @@ module z_support
             n = n+1
         end do
 
-        allocate(s(n))
+        allocate(file_list(n))
         rewind(io)
         ierr = 0
         do i = 1,n
             read(io,'(a)',iostat=ierr)str
             if (ierr/=0) exit
-            s(i)% filename = trim(str)
+            file_list(i) = trim(str)
         end do
-        num_tracks = n
+        
         close(io)
         call free_iounit(io)
         
@@ -1081,7 +1057,7 @@ module z_support
 
         logical:: debug
 
-        debug = .true.
+        debug = .false.
         
         old_co_frac = 0.d0
         Mup_core = 0.d0

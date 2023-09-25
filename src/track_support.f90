@@ -128,6 +128,9 @@ module track_support
     ! between the primaries
 
     real(dp), allocatable :: t_incomplete(:), t_notfound(:)
+    real(dp), allocatable :: Mmax_array(:), Mmin_array(:)
+
+
 
   !holds an evolutionary track for input, use an array of these for multiple tracks
 
@@ -175,7 +178,7 @@ module track_support
         type(column), allocatable :: cols(:)
         logical :: has_RGB =.false., complete=.true.
         logical :: has_mass_loss
-        integer :: ncol, ntrack, neep
+        integer :: ncol, ntrack, neep,min_index
         integer :: star_type = unknown, irecord,ierr
         
         real(dp) :: initial_mass, initial_Z, initial_Y, Fe_div_H,  v_div_vcrit, alpha_div_Fe
@@ -184,7 +187,7 @@ module track_support
         
         real(dp), allocatable :: tr(:,:)
         real(dp), allocatable :: times(:), times_new(:)           !timescales
-        integer, allocatable :: eep(:), phase(:)
+        integer, allocatable :: eep(:), phase(:), bounds(:)
 
         type(star_parameters) :: pars    ! parameters at any instant
         logical :: post_agb = .false.
@@ -294,6 +297,7 @@ end subroutine
         deallocate(t% tr)
         deallocate(t% phase)
         deallocate(t% times)
+        deallocate(t% bounds)
     end subroutine deallocate_arrays
     
     elemental function pow10_sg(x) result(y)

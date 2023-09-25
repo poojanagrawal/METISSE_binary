@@ -25,10 +25,10 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr=0
     
     debug = .false.
-!    if ((id == 1) .and. (kw>=6))debug = .true.
+!    if ((id == 1) .and. (kw<=6))debug = .true.
 
     if (debug) print*, '-----------STAR---------------'
-    if (debug) print*, "in star", mass,mt,kw,id
+    if (debug)print*, "in star", mass,mt,kw,id
 
     consvR = .false.
     delta = 0.d0
@@ -40,7 +40,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                 ! Initial call- just do normal interpolation
                 if (debug) print*, "normal interpolate mass", t% initial_mass,t% zams_mass,t% pars% mass,mt,kw
                 t% initial_mass = mass
-                call interpolate_mass(t% initial_mass,t)
+                call interpolate_mass(t% initial_mass,t,id)
                 call calculate_phases_and_times(t)
 
                 !Todo: explain what age 2 and Times_new are
@@ -50,8 +50,8 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                 mt = t% tr(i_mass,ZAMS_EEP)
         !            call write_eep_track(t,t% initial_mass)
             else
-                !first check if mass has changed since last time star was called
-                ! for tracks that already have wind mass loss, only check
+                ! First check if mass has changed since last time star was called.
+                ! For tracks that already have wind mass loss, only check
                 ! for binary mass loss
                 if (t% has_mass_loss) then
                     delta = (t% pars% mass-mt)-(t% pars% dms*dtm *1.0d+06)
@@ -59,26 +59,25 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     delta = (t% pars% mass-mt)
                 endif
                 delta = delta -t% pars% delta
-                if (debug) print*,'delta in star',kw, t% pars% mass, mt,delta
+                if (debug) print*,'delta in star',delta,kw, t% pars% mass, mt
 
                 !next check whether star lost its envelope during binary interaction
                 !to avoid unneccesssary call to interpolation routine
                 if (t% pars% core_mass.ge.mt) then
                     if (debug) print*, 'star has lost envelope, exiting star',t% pars% core_mass,mt
                 elseif (abs(delta) .gt. 1.0d-6) then
-!                debug=.true.
                     if (debug) print*, "mass loss in interpolate mass called for", &
                                                     t% initial_mass,delta,t% tr(i_mass,1),id
                     t% times_new = -1.0
                     nt = t% ntrack
-                    call get_initial_mass_for_new_track(t, delta,interpolate_all)
+                    call get_initial_mass_for_new_track(t, delta,interpolate_all,idd)
                     if (debug)print*, 'initial mass for the new track',t% initial_mass
                     t% ms_old = t% times(MS)
 
                     if (interpolate_all) then
                         ! kw=0,1: main-sequence star, rewrite all columns with new track
                         if (debug)print*, 'main-sequence star, rewrite with new track'
-                        call interpolate_mass(t% initial_mass,t)
+                        call interpolate_mass(t% initial_mass,t,id)
                         if (t% ntrack<nt) print*, '***WARNING: track length reduced***',t% initial_mass,nt,t% ntrack
                         
                         ! Calculate timescales and assign SSE phases (Hurley et al.2000)
@@ -99,7 +98,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                         rlist = t% tr(i_logR,:)
                         if ((t% pars% mcenv/t% pars% mass).ge.0.2) consvR= .true.
 !                            .and.(t% pars% env_frac.ge.0.2)
-                        call interpolate_mass(t% initial_mass,t)
+                        call interpolate_mass(t% initial_mass,t,id)
                        !write the mass interpolated track if write_eep_file is true
                         if (kw>=1 .and. kw<=4 .and. .false.) then
                             call write_eep_track(t,mt)
@@ -142,7 +141,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     t% MS_time = tm
     t% nuc_time = tn
 
-    if (debug) print*, "in star end", mt,delta,kw,tm,tscls(1),tn
+    if (debug) print*, "in star end", mt,delta,kw,tm,tscls(1),tn,t%initial_mass
     nullify(t)
     return
 end subroutine METISSE_star

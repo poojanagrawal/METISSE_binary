@@ -6,7 +6,7 @@ subroutine METISSE_zcnsts(z,zpars)
     real(dp), intent(in) :: z
     real(dp), intent(out) :: zpars(20)
 
-    integer :: i,ierr
+    integer :: i,ierr,j,nmax
     logical :: debug
     
     ierr = 0
@@ -21,6 +21,7 @@ subroutine METISSE_zcnsts(z,zpars)
         if (allocated(core_cols)) deallocate(core_cols)
         if (allocated(m_cutoff)) deallocate(m_cutoff)
         if (allocated(metallicity_file_list)) deallocate(metallicity_file_list)
+        if (allocated(Mmax_array)) deallocate(Mmax_array, Mmin_array)
 
         i_mass = -1
         !TODO: re-initailize all such variables with defaults
@@ -114,8 +115,20 @@ subroutine METISSE_zcnsts(z,zpars)
 
 !    if(debug) print*, s(1)% cols% name, s(1)% tr(:,1)
     
+    nmax = maxval(s% ntrack)
+    allocate(Mmax_array(nmax), Mmin_array(nmax))
+    Mmax_array = 0.d0
+    Mmin_array = 1000000000 !(random big number)
+    
     do i = 1,size(s)
         s(i)% has_mass_loss = check_mass_loss(s(i))
+        
+        do j = 1, nmax
+            if (s(i)% ntrack>=j) then
+                Mmax_array(j) = max(Mmax_array(j),s(i)% tr(i_mass,j))
+                Mmin_array(j) = min(Mmin_array(j),s(i)% tr(i_mass,j))
+            endif
+        end do
     end do
 
     !TODO: check for monotonicity of initial masses

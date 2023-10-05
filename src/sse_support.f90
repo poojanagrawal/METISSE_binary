@@ -302,7 +302,7 @@ contains
             real(dp) :: mc1, Tmax, mc_max,tm
             logical :: debug
 
-            debug = .false.
+            debug = .true.
             
     !        Calculate Helium star Main Sequence lifetime.
             t% MS_time = time_He_MS(t% zams_mass)
@@ -341,13 +341,13 @@ contains
 !TODO: Next line requires a check
 !Note that this is done to avoid negative timesteps that result from more massive cores than what sse formulae predict
             mc_max = max(mc_max,t% pars% core_mass+1e-10)
+            if(debug)print*, 'core',mc_max,t% pars% core_mass,t% pars% mass,t% zams_mass
 
             if(mc_max.le.Mx)then
                 Tmax = Tinf1 - (1.d0/((p-1.d0)*AHe*D))*(mc_max**(1.d0-p))
             else
                 Tmax = Tinf2 - (1.d0/((q-1.d0)*AHe*B))*(mc_max**(1.d0-q))
             endif
-!            print*, 'core',mc_max,t% pars% core_mass,t% pars% mass, t% zams_mass
             Tmax = MAX(Tmax,t% MS_time)
             t% nuc_time = Tmax
             
@@ -355,7 +355,7 @@ contains
             t% times(8) = Tinf1     !these 8-10 here do not represent the phase numbers
             t% times(9) = Tinf2
             t% times(10) = Tx
-            if (debug) WRITE(*,*) "He timescales", tinf1, tx, tinf2, tmax,t% MS_time,t% nuc_time
+            if(debug) print*,"He timescales", tinf1, tx, tinf2, tmax,t% MS_time,t% nuc_time
         return
         end subroutine calculate_He_timescales
 

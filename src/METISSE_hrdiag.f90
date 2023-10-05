@@ -28,7 +28,7 @@
     if(present(id)) idd = id
     t => tarr(idd)
     
-!    if ((id == 1) .and. kw>=5)debug = .true.
+!    if ((id == 1) .and. kw<=7)debug = .true.
 
     if (debug) print*, '-----------HRDIAG-------------'
     if (debug) print*,"started hrdiag",mt,mc,aj,kw,tn,id
@@ -36,9 +36,11 @@
     end_of_file = .false. !this is just the end of eep track
     has_become_remnant = .false.
     
-    !save input state
-    post_agb = t% post_agb
-    old_pars = t% pars
+    if (irecord<=0) then
+        !save input state
+        post_agb = t% post_agb
+        old_pars = t% pars
+    endif
   
     t% pars% mass = mt
     t% pars% phase = kw
@@ -219,8 +221,7 @@
     endif
     if (irecord>0 .and. debug) print*,"finished hrdiag",mt,mc,aj,kw,id
 !if (kw>1 .and. mc<=0.0) stop
-!    print*,"finished hrdiag",t% pars% mass, t% pars% core_mass,t% pars% age
-!    if ((id == 1) .and. (kw>1 .and. mc<=0.0)) stop
+!    if(id==1)print*,"finished hrdiag",t% pars% mass, t% pars% core_mass,t% pars% age,t% pars% radius
 
     
     nullify(t)

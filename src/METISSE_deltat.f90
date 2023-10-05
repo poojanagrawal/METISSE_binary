@@ -59,7 +59,7 @@
             case(He_MS)
                 dt = pts1* t% times(7)
                 dtr = t% times(7) - age
-!                print*, dt, dtr,t% times(7),age
+!                print*, 'deltat',dt, dtr,t% times(7),age
                 !this gets modified if star is losing too much mass
             case(He_HG:He_GB)
                 if(age < t% times(10))then
@@ -96,7 +96,7 @@
                 t% ierr = -1
                 t% pars% dt = 1e+10
                 t% pars% phase = 15
-!                stop
+                stop
             endif
             
             nullify(t)

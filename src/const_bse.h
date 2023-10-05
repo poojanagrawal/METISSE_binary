@@ -27,5 +27,4 @@
       COMMON /BINARY/ bcm,bpp
       LOGICAL SSE_FLAG
       COMMON /SE/ SSE_FLAG
-      COMMON /TIME_VARS/tphys,dtm
 *

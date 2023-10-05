@@ -12,7 +12,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     real(dp), allocatable:: hecorelist(:),ccorelist(:),Lum_list(:),age_list(:)
     real(dp), allocatable:: rlist(:)
 
-    real(dp) :: times_old(11), nuc_old, delta,dtm! ,tnext,mnext
+    real(dp) :: times_old(11), nuc_old, delta,dtm, delta1! ,tnext,mnext
 
     integer :: idd, nt ,ierr
     logical :: debug, interpolate_all,consvR
@@ -25,10 +25,10 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr=0
     
     debug = .false.
-!    if ((id == 1) .and. (kw<=6))debug = .true.
+!    if ((id == 1) .and. (kw<=7))debug = .true.
 
     if (debug) print*, '-----------STAR---------------'
-    if (debug)print*, "in star", mass,mt,kw,id
+    if (debug)print*,"in star", mass,mt,kw,id
 
     consvR = .false.
     delta = 0.d0
@@ -52,28 +52,30 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             else
                 ! First check if mass has changed since last time star was called.
                 ! For tracks that already have wind mass loss, only check
-                ! for binary mass loss
+                ! for binary mass changes
                 if (t% has_mass_loss) then
-                    delta = (t% pars% mass-mt)-(t% pars% dms*dtm *1.0d+06)
+                    delta = (t% pars% mass-mt)-(t% pars% dms*abs(dtm)*1.0d+06)
                 else
                     delta = (t% pars% mass-mt)
                 endif
+                !this is to avoid extra mass loss if star subroutine
+                ! is called multiple times in same step
                 delta = delta -t% pars% delta
-                if (debug) print*,'delta in star',delta,kw, t% pars% mass, mt
+                delta1 = 1.0d-04*mt
 
                 !next check whether star lost its envelope during binary interaction
                 !to avoid unneccesssary call to interpolation routine
                 if (t% pars% core_mass.ge.mt) then
                     if (debug) print*, 'star has lost envelope, exiting star',t% pars% core_mass,mt
-                elseif (abs(delta) .gt. 1.0d-6) then
+                elseif (abs(delta) .ge. delta1) then
+                
                     if (debug) print*, "mass loss in interpolate mass called for", &
-                                                    t% initial_mass,delta,t% tr(i_mass,1),id
+                                                    t% initial_mass,mt,delta,id
                     t% times_new = -1.0
                     nt = t% ntrack
-                    call get_initial_mass_for_new_track(t, delta,interpolate_all,idd)
+                    call get_initial_mass_for_new_track(t,delta,interpolate_all,idd)
                     if (debug)print*, 'initial mass for the new track',t% initial_mass
                     t% ms_old = t% times(MS)
-
                     if (interpolate_all) then
                         ! kw=0,1: main-sequence star, rewrite all columns with new track
                         if (debug)print*, 'main-sequence star, rewrite with new track'
@@ -87,7 +89,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     else
                         !store core properties for post-main sequence evolution
                         if (debug)print*, 'post-main-sequence star'
-                        allocate(hecorelist(nt), ccorelist(nt),Lum_list(nt),age_list (nt))
+                        allocate(hecorelist(nt),ccorelist(nt),Lum_list(nt),age_list(nt))
                         hecorelist = t% tr(i_he_core,:)
                         ccorelist =  t% tr(i_co_core,:)
                         Lum_list = t% tr(i_logL,:)
@@ -107,9 +109,9 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                         if (t% ntrack<nt) print*, '**WARNING: track length reduced**',t% initial_mass,nt,t% ntrack
 
                         call calculate_phases_and_times(t)
-
                         t% times_new = t% times
                         t% times = times_old
+                        
                         t% nuc_time = nuc_old
 
                         t% tr(i_age,:) = age_list
@@ -119,7 +121,6 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                         !TEST: R remains unchanged if Mconv is significant
                         if (consvR) then
                             t% tr(i_logR,:) = rlist
-!                        print*, 'conserving r', kw
                         endif
                         deallocate(hecorelist,ccorelist,Lum_list,age_list,rlist)
                         

@@ -82,7 +82,8 @@ module interp_support
         case(Steffen1990)
             x = a(mlo:mhi)% initial_mass
             dx = t% initial_mass - x(2)
-            do i=1,t% ntrack
+            if (ZAMS_EEP>1) t% tr(:,1:ZAMS_EEP-1) =-1
+            do i=ZAMS_EEP,t% ntrack
                 do j=1,t% ncol
                     do k=1,4
                         y(k) = a(k)% tr(j,i)
@@ -94,6 +95,7 @@ module interp_support
             
         end select
         
+
 
         if (fix_track) call fix_incomplete_tracks(iseg,t,min_index)
 
@@ -414,7 +416,7 @@ module interp_support
 
         call mod_PAV(t% tr(i_age2,:))
         
-        do i=2,t% ntrack
+        do i=ZAMS_EEP+1,t% ntrack
             t% tr(i_mass,i) = min(t% tr(i_mass,i), t% tr(i_mass,i-1))
         end do
     end subroutine smooth_track
@@ -509,6 +511,8 @@ module interp_support
         debug = .false.
 
 !        print*,"in  interpolate age"
+        frac = 0.d0
+        them = 0.d0; them_new = 0.d0
         jstart = 1
         jend = t% ncol
         if (present(icolumn)) then
@@ -520,29 +524,28 @@ module interp_support
         dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
 
         kw = t% pars% phase
-        !TODO: this is temporary, to avoid NaN during interpolation
-        ! it happens due to gntage
+        !TODO: this is temporary until gntage is modified
+        ! to avoid NaN during interpolation
         if (kw >1) then
             if(t% times(kw)-t% times(kw-1)<1d-12) kw = kw+1
         endif
         if (kw>1 .and. kw<6) then
             !scale the input age for the new track
-            !TODO: check tscls(kw) and (kw-1) are >0 (defined)
             them = t% times(kw)-t% times(kw-1)
             them_new = t% times_new(kw)-t% times_new(kw-1)
             frac = (input_age-t% times(kw-1))/them
             age2 = t% times_new(kw-1)+(frac*them_new)
+            t% pars% age2 = age2
 !            age2 = new_age(t% times(kw),t% times(kw-1),t% times_new(kw),t% times_new(kw-1),input_age)
             
             n_pass = 2
-            if (t% irecord>0 .and. debug) print*, "in interp2", age2, t% pars% age,kw
-    !print*,t% times(kw),t% times(kw-1),t% times_new(kw),t% times_new(kw-1)
-        !t% pars% mass,t% pars% core_mass,t% times_new(kw)
+!            print*, "in interp2", age2, input_age,frac,kw
+!            if (kw==2)print*,'times',t% times_new(kw-1),them_new,t% pars% mass
+            !t% times(kw)-t% times(kw-1),kw!,t% times_new(kw),t% times_new(kw-1)
         else
             age2 = input_age
             n_pass = 1
 !            if (kw ==1) age2= input_age*(t% MS_time/t% ms_old)
-!            print*, 'age MS', age2
         endif
 
         do pass = 1, n_pass
@@ -580,7 +583,6 @@ module interp_support
                         new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
                         if (new_line(j,1)/= new_line(j,1)) then
                         print*, '**Warning: NaN encountered during interpolation age** ',t% initial_mass,input_age,j,mhi,mlo
-    !                    stop
                         endif
                     endif
                 end do
@@ -588,9 +590,6 @@ module interp_support
 
             else
                 if (debug) print*, "doing cubic interp in age"
-
-    !            mlo = 1!min(max(1,m-1),n-3)  !1
-    !            mhi = 4!max(min(m+2,n),4)     !4
 
                 x = t% tr(age_col,mlo:mhi)
                 dx = new_line(age_col,1) - x(2)
@@ -668,7 +667,7 @@ module interp_support
         real(dp) :: last_age
         logical :: debug
         
-        debug =  .true.
+        debug =  .false.
         !Todo: min_eeps-> nbr_eeps
 
         last_age = 0.d0
@@ -773,27 +772,41 @@ module interp_support
         logical :: debug, interpolate_all
 
         debug = .false.
-!        if (id ==1) debug = .true.
+!        if (id ==2) debug = .true.
         interpolate_all = .false.
 
+        kw = t% pars% phase
+        if (kw<=1)then
+            interpolate_all = .true.
+        !        eep_core = 0.75* TAMS_EEP
+        !        if(identified(IAMS_EEP)) eep_core = IAMS_EEP
+        !        if (eep_n>=eep_core) interpolate_all = .false.
+        !        print*, 'eep_core', eep_core, IAMS_EEP,interpolate_all
+        !TODO: need to scale age as well in the age interpolation
+            endif
+            
+        !using the original age of the star to keep core properties comparable
+        !using other age doesn't matches well with detailed models either
+        
+        age = t% pars% age
+        
+        if (age<1d-6) return
         !nt is the length of the track before new interpolation
         eep_m = -1
         eep_n = -1
         nt = t% ntrack
 
-        kw = t% pars% phase
-        !using the original age of the star to keep core properties comparable
-        !using other age doesn't matches well with detailed models either
-        age = max(0.d0,t% pars% age)
+        
+        
         allocate(age_list(nt))
         age_list => t% tr(i_age,:)
         Mlow = -1
         Mupp = -1
-        Mnew = t% pars% mass-delta
         min_index = t% min_index
+        Mnew = t% pars% mass-delta
 
 
-        if (debug) print*,"getting new initial mass mnew at age and phase: ",mnew,age,kw,t% pars% mass,delta
+        if (debug) print*,"getting new initial mass mnew at age and phase: ",mnew,t% pars% mass-delta,age,kw
         
         call index_search(nt,age_list,age,eep_m)
     !    if (age_list(eep_m)<age) eep_m = eep_m+1
@@ -833,7 +846,7 @@ module interp_support
         ! if no solution is found, we keep using the old tracks for inetrpolation
 
         if (eep_n >0) then
-            if (debug) print*,"ages at eep_n, 1, ntrack",age_list(eep_n),age_list(1), age_list(nt)
+!            if (debug) print*,"ages at eep_n, 1, ntrack",age_list(eep_n),age_list(1), age_list(nt)
             ! get mass bounds for Mnew at eep_n
             num_list = size(s)
             allocate(mlist(size(s)))
@@ -897,10 +910,9 @@ module interp_support
                     Mlow,Mupp,num_list,mnew,eep_n,kw
             if (Mlow<1) Mlow = 1
             if (Mupp> num_list) Mupp = num_list
-            stop
             return
         endif
-        if (debug)  print*,"mnew =",mnew, "masses at Mup =", mlist(Mupp), "mlow = ", mlist(Mlow)
+        if (debug)print*,"mnew =",mnew, "masses at Mup =", mlist(Mupp), "mlow = ", mlist(Mlow)
         
         !intrepolate the bounds and their initial masses to get the initial mass for the new track
         alfa = (Mnew - mlist(Mlow))/(mlist(Mupp) - mlist(Mlow))
@@ -909,15 +921,6 @@ module interp_support
         
         if (debug) print*, "new ini mass",t% initial_mass, s(Mupp)% initial_mass, s(Mlow)% initial_mass
 
-
-        if (kw<=1)then
-            interpolate_all = .true.
-    !        eep_core = 0.75* TAMS_EEP
-    !        if(identified(IAMS_EEP)) eep_core = IAMS_EEP
-    !        if (eep_n>=eep_core) interpolate_all = .false.
-    !        print*, 'eep_core', eep_core, IAMS_EEP,interpolate_all
-    !TODO: need to scale age as well in the age interpolation
-        endif
         deallocate(mlist)
         nullify(age_list)
 

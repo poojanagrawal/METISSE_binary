@@ -155,7 +155,7 @@ module track_support
         real(dp) :: mass,core_mass,core_radius, McHe, McCO
         real(dp) :: luminosity,Teff,radius
         real(dp) :: log_L,log_Teff,log_R                !log values
-        real(dp) :: epoch, age, age_old
+        real(dp) :: epoch, age, age_old,age2
         real(dp) :: delta, dt, dms, mcenv, rcenv,bhspin
     end type star_parameters
     

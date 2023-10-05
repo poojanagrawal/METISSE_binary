@@ -298,15 +298,15 @@
 *
       do 500 , k = kmin,kmax
          age = tphys - epoch(k)
-*         if (dbg) print*, "initial call for" , mass0(k)
+         if(dbg)print*, "initial call for" , mass0(k),mass(k),age
          dtm =0.d0
          CALL star(kstar(k),mass0(k),mass(k),tm,tn,tscls,lums,
      &                      GB,zpars,dtm,k)
+*            print*, 'star', mass0(k),mass(k)
 
          CALL hrdiag(mass0(k),age,mass(k),tm,tn,tscls,lums,GB,
      &               zpars,rm,lum,kstar(k),mc,rc,me,re,k2,mcx,k)
-*            print*, 'ini', tm,tn,kstar(k)
-
+*            print*, 'hrdiag', mass0(k),mass(k)
          aj(k) = age
          epoch(k) = tphys - age
          rad(k) = rm
@@ -396,6 +396,7 @@
 *
       dt = 1.0d+06*dtm
       if (dbg) print*,'dt at 5 = ', dt
+*      print*,'r at 5 = ', rad(1),rad(2)
 
       eqspin = 0.d0
       djtt = 0.d0
@@ -410,7 +411,7 @@
             if(neta.gt.tiny)then
                rlperi = rol(k)*(1.d0-ecc)
                dmr(k) = mlwind(kstar(k),lumin(k),rad(k),mass(k),
-     &                         massc(k),rlperi,z,k)
+     &                         massc(k),rlperi,z,dtm,k)
 *
 * Calculate how much of wind mass loss from companion will be
 * accreted (Boffin & Jorissen, A&A 1988, 205, 155).
@@ -424,7 +425,7 @@
                dmr(k) = 0.d0
                dmt(3-k) = 0.d0
             endif
-            if (dbg) print*,'wind acc', dmt(k), k
+*            if (dbg) print*,'wind acc', dmt(3-k), 3-k
  501     continue
 *
 * Diagnostic for Symbiotic-type stars.
@@ -609,7 +610,7 @@
             if(neta.gt.tiny)then
                rlperi = 0.d0
                dmr(k) = mlwind(kstar(k),lumin(k),rad(k),mass(k),
-     &                         massc(k),rlperi,z,k)
+     &                         massc(k),rlperi,z,dtm,k)
             else
                dmr(k) = 0.d0
             endif
@@ -631,8 +632,8 @@
       do 504 , k = kmin,kmax
 *
          dms(k) = (dmr(k) - dmt(k))*dt
-*         print*, 'dmr=',dmr(k),dmt(k),dt
-        if (dbg)print*, 'dms=', dms*1.0d-06,dtm
+*         print*,'dmr,dmt,dms,dt=',dmr(k),dmt(k),dms(k),dt
+        if (dbg)print*, 'dms=', dms,dtm
          if(kstar(k).lt.10)then
             dml = mass(k) - massc(k)
 *            print*, 'test dml',dml
@@ -642,8 +643,9 @@
                if(k.eq.2) dms(1) = dms(1)*dml/dms(2)
                dms(k) = dml
                dt = 1.0d+06*dtm
+               if(dbg)print*,"env check,dtm5=",dtm,dms
             endif
-            if (dbg) print*, "env check,dtm5=",dtm,dms
+            
 *
 * Limit to 1% mass loss.
 *
@@ -652,9 +654,9 @@
                if(k.eq.2) dms(1) = dms(1)*0.01d0*mass(2)/dms(2)
                dms(k) = 0.01d0*mass(k)
                dt = 1.0d+06*dtm
+               if(dbg)print*,"lim to 1 % ml, dtm6=",dtm
             endif
          endif
-         if (dbg) print*, "lim to 1 % ml, dtm6=",dtm
 *
  504  continue
 *
@@ -761,6 +763,8 @@
 * Acquire stellar parameters (M, R, L, Mc & K*) at apparent evolution age.
 *
          age = tphys - epoch(k)
+*         print*,'aj detached',age,tphys,epoch(k),dtm
+*         if (dtm>0 .and. age<aj(k)) stop
          aj0(k) = age
          kw = kstar(k)
          m0 = mass0(k)
@@ -856,7 +860,7 @@
 * Choose minimum of time-scale and remaining interval.
 *
          dtmi(k) = MIN(dt,dtr)
-*        print*, "after deltat",dt,dtr,dtmi(k)
+         if (dbg) print*, "after deltat",dt,dtr,dtmi(k)
 
 *
 * Save relevent solar quantities.
@@ -909,7 +913,7 @@
             if(ABS(dtm).gt.tiny)then
                rdot(k) = rdot(k) + (rol(k) - rol0(k))/dtm
                
-*         if(dbg.and.k==1)print*,'rdot2',rdot(k),rol(k),rol0(k),dtm
+        if(dbg.and.k==1)print*,'rdot2',rdot(k),rol(k),rol0(k),dtm
                 rol0(k) = rol(k)
             endif
  507     continue
@@ -1016,7 +1020,7 @@
 *
 * Interpolate back until the primary is just filling its Roche lobe.
 *
-*        print*, 'RLOF',dtm,iter,intpol
+*        print*, 'test RLOF',j1,rad(j1),rol(j1),dtm,tphys
 
          if(rad(j1).ge.1.002d0*rol(j1))then
          
@@ -1052,7 +1056,7 @@
 *
 * Enter Roche lobe overflow
 *
-*           if (dbg) print*, "tphysf4=",tphys,tphysf, tsave
+*            if (dbg) print*, "Enter RLOF=",tphys,dtm
             if(tphys.ge.tphysf) goto 140
             goto 7
          endif
@@ -1061,6 +1065,8 @@
 * Check if already interpolating.
 *
          if(intpol.gt.0)then
+            if (dbg) print*, "already intp",tphys,dtm
+
             intpol = intpol + 1
             if(intpol.ge.80)then
                inttry = .true.
@@ -1157,6 +1163,8 @@
       bpp(jp,9) = rad(2)/rol(2)
       bpp(jp,10) = 3.0
       if (dbg) print*, 'BEG RCHE'
+*      print*, 'beg RLOF',j1,rad(j1),rol(j1),dtm,tphys
+
 *
       if(iplot.and.tphys.gt.tiny)then
          ip = ip + 1
@@ -1536,7 +1544,7 @@
             if(neta.gt.tiny)then
                rlperi = rol(k)*(1.d0-ecc)
                dmr(k) = mlwind(kstar(k),lumin(k),radx(k),
-     &                         mass(k),massc(k),rlperi,z,k)
+     &                         mass(k),massc(k),rlperi,z,dtm,k)
                vwind2 = 2.d0*beta*acc1*mass(k)/radx(k)
                omv2 = (1.d0 + vorb2/vwind2)**(3.d0/2.d0)
                dmt(3-k) = ivsqm*acc2*dmr(k)*((acc1*mass(3-k)/vwind2)**2)
@@ -1563,7 +1571,7 @@
 *
          dt = km*tb
          dtm = dt/1.0d+06
-*         if (dbg) print*,"dtm5=",dtm
+         if (dbg) print*,"dtm5=",dtm
 *
 * Take the stellar evolution timestep into account but don't let it 
 * be overly restrictive for long lived phases. 
@@ -1946,10 +1954,14 @@
 *
          kstar(j2) = kst
          mass(j1) = mass(j1) - dm1 - dms(j1)
+         
          if(kstar(j1).le.1.or.kstar(j1).eq.7) mass0(j1) = mass(j1)
          mass(j2) = mass(j2) + dm22 - dms(j2)
          if(kstar(j2).le.1.or.kstar(j2).eq.7) mass0(j2) = mass(j2)
 *
+*         print*,'updating masses',j1,dm1,dms(j1),dm22,dms(j2),dtm*1.0d+6
+*         print*, 'test delta',dmr(k)*tb*km, dmr(k)*dtm*1.0d+6
+         
 * For a HG star check if the initial mass can be reduced. 
 *
          if(kstar(j1).eq.2.and.mass0(j1).le.zpars(3))then
@@ -1960,6 +1972,7 @@
      &                tscls,lums,GB,zpars,dtm,j1)
             if(GB(9).lt.massc(j1))then
                mass0(j1) = m0
+               if (dbg) print*,'adjusting mass'
             endif
          endif
          if(kstar(j2).eq.2.and.mass0(j2).le.zpars(3))then
@@ -2033,9 +2046,13 @@
 * Obtain the stellar parameters for the next step.
 *
       tphys = tphys + dtm
-*      if (dbg) print*, "dtm3=",dtm
+      if (dbg) print*, "dtm3=",dtm,tphys
       do 90 , k = 1,2
+        if (dbg) print*,'obtaining parameters for the next step',k
+
          age = tphys - epoch(k)
+*         if (k==2)print*, 'age, epoch',age,aj(k),epoch(k),dtm
+
          m0 = mass0(k)
          mt = mass(k)
          mc = massc(k)
@@ -2048,8 +2065,7 @@
 *            goto 140
 *         endif
          kw = kstar(k)
-         if (dbg) print*,'obtaining parameters for the next step'
-         if (dbg) print*,' calling star and hrdiag', k
+         if (dbg) print*,' calling star and hrdiag',tphys
 
          CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,k)
          CALL hrdiag(m0,age,mt,tm,tn,tscls,lums,GB,zpars,
@@ -2090,7 +2106,7 @@
 *     Determine stellar evolution timescale for nuclear burning types.
 *
          if(kw.le.9)then
-            if (dbg) print*, "calling deltat-2",tphys,k,kw
+            if (dbg) print*, "calling deltat-2",dtm,tphys,k,kw
             CALL deltat(kw,age,tm,tn,tscls,dt,dtr,k)
 
             dtmi(k) = MIN(dt,dtr)
@@ -2100,6 +2116,7 @@
             dtmi(k) = 1.0d+10
          endif
 *        dtmi(k) = MAX((tn-age),1.0d-07)
+         if (dbg) print*, "after deltat-2",dtmi(k)
 *
 * Save relevent solar quantities.
 *
@@ -2148,6 +2165,7 @@
  110  continue
 *
       if((isave.and.tphys.ge.tsave).or.iplot)then
+*         print*, 'writing to bcm', tphys,rad(1),rad(2)
          ip = ip + 1
          bcm(ip,1) = tphys
          bcm(ip,2) = float(kstar(1))
@@ -2224,6 +2242,8 @@
          iter = iter + 1
          goto 8
       else
+*         print*, 'end RLOF', rad(j1),rol(j1)
+
          jp = MIN(80,jp + 1)
          bpp(jp,1) = tphys
          bpp(jp,2) = mass(1)

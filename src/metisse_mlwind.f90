@@ -30,6 +30,7 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,dtm,id)
 
     dms = 0.d0
 !t% pars% dt =dtm
+!print*, 'testing dtm',t% pars% dt-dtm,id
     if (t% has_mass_loss .and. kw<6) then
         tnext = t% pars% age+ t% pars% dt
         tprev = max(0.d0,t% pars% age-t% pars% dt)

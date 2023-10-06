@@ -289,7 +289,6 @@ contains
       else
             j = min(t% ntrack, cHeIgnition_EEP)
             GB(9) = t% tr(i_he_core, j )
-    !             GB(9) = mcheif            !TODO: Check if this is correct
       endif
     end subroutine
 
@@ -302,7 +301,7 @@ contains
             real(dp) :: mc1, Tmax, mc_max,tm
             logical :: debug
 
-            debug = .true.
+            debug = .false.
             
     !        Calculate Helium star Main Sequence lifetime.
             t% MS_time = time_He_MS(t% zams_mass)

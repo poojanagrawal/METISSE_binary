@@ -413,10 +413,8 @@ module interp_support
     implicit none
     type(track), intent(inout) :: t
     integer :: i
-
-        call mod_PAV(t% tr(i_age2,:))
-        
-        do i=ZAMS_EEP+1,t% ntrack
+        call mod_PAV(t% tr(i_age2,ZAMS_EEP:))
+        do i = ZAMS_EEP+1,t% ntrack
             t% tr(i_mass,i) = min(t% tr(i_mass,i), t% tr(i_mass,i-1))
         end do
     end subroutine smooth_track
@@ -557,7 +555,6 @@ module interp_support
                 age_col = i_age     !i_age = old age, stored at t% ncol+1
             endif
 
-    !        print*, age,age_col
             call find_nearest_eeps(t,min_eeps, age, age_col)
             mlo = minval(min_eeps)
             mhi = maxval(min_eeps)

@@ -474,7 +474,9 @@
         t% pars% age_old = t% pars% age
 
         select case(t% pars% phase)
-            case(HG:RGB)   !HG or RGB
+            case(MS:RGB)   !MS,HG or RGB
+            !ideally MS or Hg shouldn't directly jump to He_MS
+            !There should be something like a He_PreMS
                 if(t% pars% mass< Mhef)then
                     t% pars% phase = HeWD      !Zero-age helium white dwarf
                     t% pars% core_mass = t% pars% mass

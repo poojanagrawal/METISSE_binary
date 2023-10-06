@@ -68,12 +68,6 @@
                 Mcbagb = t% tr(i_he_core, j_bagb)
                 if (check_remnant_phase(t% pars, mcbagb)) has_become_remnant = .true.
             else
-           
-                !interpolation in age and other checks for nuclear burning phases
-                t% pars% core_radius = -1.0
-                call interpolate_age(t,t% pars% age)
-                if (debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
-                t% pars% mass = mt
                 !check if phase/type/kw of the star has changed
                 do i = t% pars% phase,6
                     if (i== 0 .or. (.not. defined(t% times(i+1)))) exit
@@ -82,8 +76,16 @@
                         if (debug) print*,"phase change",t% pars% age,t% times(i),i+1
                     endif
                 end do
+                
+                !interpolate in age and other checks for nuclear burning phases
+                t% pars% core_radius = -1.0
+                call interpolate_age(t,t% pars% age)
+                if (debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
+                t% pars% mass = mt
+                
 
-                !check if envelope has been lost
+                !check if envelope has been lost for post-main sequence star
+                
                 if ((t% pars% core_mass.ge.t% pars% mass) .or. &
                     (t% initial_mass>=10.0 .and. abs(t% pars% core_mass-t% pars% mass)<0.01)) then
                         

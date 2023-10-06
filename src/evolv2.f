@@ -992,15 +992,13 @@
 *
 * If not interpolating set the next timestep.
 *
-
       if(intpol.eq.0)then
          dtm = MAX(1.0d-07*tphys,MIN(dtmi(1),dtmi(2)))
          dtm = MIN(dtm,tsave-tphys)
          if(iter.eq.0) dtm0 = dtm
       endif
-      if (dbg) print*, "dtm b4 RLOF=", dtm
       if(sgl) goto 98
-*   PA: Roche phase begin- probably
+*   PA: checking if Roche phase has begun
 * Set j1 to the donor - the primary
 * and j2 to the accretor - the secondary.
 *
@@ -1013,13 +1011,16 @@
             j2 = 1
          endif
       endif
+!        print*, 'b4 RLOF',j1,rad(j1),rol(j1),dtm,tphys
+
 *
 * Test whether Roche lobe overflow has begun.
 *
       if(rad(j1).gt.rol(j1))then
 *
 * Interpolate back until the primary is just filling its Roche lobe.
-*
+         if (dbg) print*, "dtm b4 RLOF=", dtm
+
 *        print*, 'test RLOF',j1,rad(j1),rol(j1),dtm,tphys
 
          if(rad(j1).ge.1.002d0*rol(j1))then
@@ -1066,7 +1067,6 @@
 *
          if(intpol.gt.0)then
             if (dbg) print*, "already intp",tphys,dtm
-
             intpol = intpol + 1
             if(intpol.ge.80)then
                inttry = .true.
@@ -1077,7 +1077,7 @@
             else
                dr = rad(j1) - 1.001d0*rol(j1)
                dtm = -dr/ABS(rdot(j1))
-*               print*, 'test3 dtm',dtm
+*               print*,'test3 dtm',dtm,rad(j1),rol(j1),rdot(j1)
             endif
             if((tphys+dtm).ge.tphys00)then
 *
@@ -1089,6 +1089,7 @@
                dtm = 0.5d0*(tphys00 - tphys0)
                dtm = MAX(dtm,1.0d-10)
                prec = .true.
+               
             endif
             tphys0 = tphys
          endif
@@ -2371,6 +2372,7 @@
             if(coel)then
                bpp(jp,10) = 6.0
                 if (dbg) print*, 'COELESCE'
+*                print*,'merged 135',sgl
             elseif(ecc.gt.1.d0)then
 *
 * Binary dissolved by a supernova or tides.
@@ -2429,6 +2431,7 @@
             bpp(jp,9) = ngtv
             bpp(jp,10) = 6.0
             if (dbg) print*, 'COELSCE'
+*            print*,'merged here 140',sgl
          elseif(kstar(1).eq.15.and.kstar(2).eq.15)then
 *
 * Cases of accretion induced supernova or single star supernova.

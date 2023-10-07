@@ -28,7 +28,7 @@
     if(present(id)) idd = id
     t => tarr(idd)
     
-!    if ((id == 1) .and. kw<=7)debug = .true.
+!    if ((id == 1) .and. kw==6)debug = .true.
 
     if (debug) print*, '-----------HRDIAG-------------'
     if (debug) print*,"started hrdiag",mt,mc,aj,kw,tn,id

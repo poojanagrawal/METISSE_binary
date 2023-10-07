@@ -130,9 +130,12 @@ subroutine METISSE_zcnsts(z,zpars)
                 Mmin_array(j) = min(Mmin_array(j),s(i)% tr(i_mass,j))
             endif
         end do
+        
     end do
 
-    !TODO: check for monotonicity of initial masses
+    !TODO: 1. check for monotonicity of initial masses
+    ! 2. incompleteness of the tracks
+    ! 3. BGB phase
     if (debug) print*,s% initial_mass
 
     !first calculate it the SSE way for use as backup 

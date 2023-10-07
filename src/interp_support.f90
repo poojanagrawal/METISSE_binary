@@ -96,7 +96,7 @@ module interp_support
         
 
 
-        if (fix_track) call fix_incomplete_tracks(iseg,t,min_index)
+        if (fix_track) call check_length(iseg,t,min_index)
 
         ! get eeps
         
@@ -232,7 +232,7 @@ module interp_support
 
     end subroutine
 
-    subroutine fix_incomplete_tracks(iseg,t,min_index)
+    subroutine check_length(iseg,t,min_index)
         type(track) :: t
         integer :: min_index,iseg
 
@@ -240,10 +240,9 @@ module interp_support
         real(dp), pointer :: mass_list(:)
         integer :: m_low,m_high,num_list
         integer :: i, m1, up_count,low_count,temp(4)
-        integer :: min_ntrack,temp_ntrack, low_lim, upp_lim
+        integer :: min_ntrack, low_lim, upp_lim
         real(dp) :: upper_tol, lower_tol
         type(eep_track) :: a(2)
-        real(dp), allocatable :: c(:,:)
         
         min_ntrack = get_min_ntrack(t% initial_mass, t% star_type)
         !check length
@@ -330,35 +329,15 @@ module interp_support
                 endif
             end select
             
-            if (t% complete) then
-                if (debug_mass) print*, "new masses for interpolate", a% initial_mass
+            call fix_incomplete_tracks(a,t,min_ntrack)
                 
-                ! store orginal track tr in c
-!                print*, t% ntrack, size(t% tr, dim=2),t% initial_mass
-                allocate(c(t% ncol, t% ntrack))
-                c(:,:) = t% tr(1: t% ncol,:)
-
-                !reallocate tr for rewriting with new length
-                deallocate(t% tr)
-                temp_ntrack = t% ntrack
-                t% ntrack = min_ntrack
-
-                allocate(t% tr(t% ncol+1, t% ntrack))
-
-                t% tr = 0d0
-                t% tr(1: t% ncol,1: temp_ntrack) = c(:,1:temp_ntrack)
-                
-                !complete the track between temp_ntrack and t% ntrack
-                call linear_interp(a,t,temp_ntrack)
-                
-                
-                deallocate(c,mass_list)
-                nullify(mass_list,sa)
+                deallocate(mass_list)
+                nullify(sa)
 
                 if (debug_mass) print*, "new length", t% ntrack
-            end if
+            
         endif
-    end subroutine fix_incomplete_tracks
+    end subroutine check_length
     
     
     integer function get_min_ntrack(initial_mass, star_type)
@@ -366,43 +345,72 @@ module interp_support
     integer:: star_type
         get_min_ntrack = 0
         !calculating min required length to the new track
-        if (initial_mass >= Mcrit(2)% mass) then
-            if (star_type == star_low_mass) then     !use Mec here?
-                get_min_ntrack = min(low_mass_final_eep,final_eep)
-            else if (star_type == star_high_mass)then
-                get_min_ntrack = min(high_mass_final_eep,final_eep)
-            endif
-        else
-            get_min_ntrack = TAMS_EEP    !a(m)% ntrack
+        if (initial_mass <= Mcrit(2)% mass .or. star_type == star_low_mass) then     !use Mec here?
+            get_min_ntrack = min(low_mass_final_eep,final_eep)
+        else if (star_type == star_high_mass)then
+            get_min_ntrack = min(high_mass_final_eep,final_eep)
         endif
+        
     end function
     
     
-    subroutine linear_interp(a,t,n)
+    subroutine fix_incomplete_tracks(a,t,min_ntrack)
     !this has been modified for use with fix_icomplete_tracks only
         implicit none
         type(eep_track), intent(in) :: a(:)
         type(track), intent(inout) :: t
-        integer, intent(in) :: n
+        integer, intent(in) :: min_ntrack
         real(dp) :: alfa,beta,bprime(t% ncol)
-        integer :: i,j
+        integer :: i,j,n,temp_ntrack
+        real(dp), allocatable :: c(:,:)
 
-        alfa=0d0; beta=0d0
-        bprime = 0.d0
-        alfa = (t% initial_mass - a(1)% initial_mass)/(a(2)% initial_mass - a(1)% initial_mass)
-        beta = 1d0 - alfa
 
-        !determining the offest from previously calculated value
-        do j=1,t% ncol
-            bprime(j) = t% tr(j,n)-(alfa*a(2)% tr(j,n) + beta*a(1)% tr(j,n))
-        enddo
+        
+        if (debug_mass) print*, "new masses for interpolate", a% initial_mass
+            
+        ! store orginal track tr in c
+!                print*, t% ntrack, size(t% tr, dim=2),t% initial_mass
+        allocate(c(t% ncol, t% ntrack))
+        c(:,:) = t% tr(1: t% ncol,:)
 
-        do i= n, t% ntrack
+        !reallocate tr for rewriting with new length
+        deallocate(t% tr)
+        temp_ntrack = t% ntrack
+        t% ntrack = min_ntrack
+n = temp_ntrack
+        allocate(t% tr(t% ncol+1, t% ntrack))
+
+        t% tr = 0d0
+        t% tr(1: t% ncol,1: temp_ntrack) = c(:,1:temp_ntrack)
+        
+        if (t% complete) then
+            !complete the track between temp_ntrack and t% ntrack
+!                    call linear_interp(a,t,temp_ntrack)
+            alfa=0d0; beta=0d0
+            bprime = 0.d0
+            alfa = (t% initial_mass - a(1)% initial_mass)/(a(2)% initial_mass - a(1)% initial_mass)
+            beta = 1d0 - alfa
+
+            !determining the offest from previously calculated value
             do j=1,t% ncol
-                t% tr(j,i) = alfa*a(2)% tr(j,i) + beta*a(1)% tr(j,i) +bprime(j)
+                bprime(j) = t% tr(j,n)-(alfa*a(2)% tr(j,n) + beta*a(1)% tr(j,n))
             enddo
-        enddo
-    end subroutine linear_interp
+
+            do i= n, t% ntrack
+                do j=1,t% ncol
+                    t% tr(j,i) = alfa*a(2)% tr(j,i) + beta*a(1)% tr(j,i) +bprime(j)
+                enddo
+            enddo
+        
+        else
+        do i= temp_ntrack+1, t% ntrack
+
+            t% tr(1: t% ncol,i) = c(:,temp_ntrack)
+        end do
+        end if
+        deallocate(c)
+                
+    end subroutine fix_incomplete_tracks
 
     subroutine smooth_track(t)
     implicit none

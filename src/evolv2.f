@@ -1321,7 +1321,7 @@
                mass(j2) = 0.d0
             else
                mass(j2) = mass(j2) + dm2
-            if (dbg) print*, "calling gntage on 1278"
+            if (dbg) print*, "calling gntage for low-mass WDs "
                CALL gntage(massc(j2),mass(j2),kst,zpars,
      &                     mass0(j2),aj(j2),j2)
                epoch(j2) = tphys - aj(j2)
@@ -2066,7 +2066,7 @@
 *            goto 140
 *         endif
          kw = kstar(k)
-         if (dbg) print*,' calling star and hrdiag',tphys
+         if (dbg) print*,' calling star and hrdiag',tphys,age
 
          CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,k)
          CALL hrdiag(m0,age,mt,tm,tn,tscls,lums,GB,zpars,

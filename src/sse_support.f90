@@ -113,17 +113,18 @@ contains
     type(track), pointer, intent(in) :: t
     real(dp) , intent(out):: tscls(20),tm,tn
 
-    tscls = 0.d0
+    tscls = -1.d0
 
     tm = t% times(MS)
     tscls(1) = t% times(HG)
     tscls(2) = t% times(RGB)        !for stars that don't have RGB phase, this corresponds to t% times(HG)
     tscls(3) = t% times(HeBurn)-t% times(HG)
 
-    !tscls(4) = tscls(5) = tscls(6)
+   
     tscls(13) = t% times(TPAGB)
     tscls(14) = t% times(11)
     tn = tscls(14)
+
 
     end subroutine
 

@@ -124,7 +124,20 @@ contains
     tscls(13) = t% times(TPAGB)
     tscls(14) = t% times(11)
     tn = tscls(14)
-
+    
+    !filling in the gaps
+    if (tscls(13)<0) tscls(13) = tn
+    tscls(4) = t% times(3)
+    tscls(5) = tscls(4)
+    tscls(6) = tscls(4)
+    
+    tscls(7) = t% times(5)
+    tscls(8) = tscls(7)
+    tscls(9) = tscls(7)
+    
+    tscls(10) = min(tn,tscls(13))
+    tscls(11) = tscls(10)
+    tscls(12) = tscls(10)
 
     end subroutine
 

@@ -12,8 +12,8 @@ subroutine dealloc_track()
         deallocate(tarr(i)% eep)
         deallocate(tarr(i)% cols)
         deallocate(tarr(i)% tr)
-        deallocate(tarr(i)% phase)
         deallocate(tarr(i)% times)
+        deallocate(tarr(i)% bounds)
     end do
     deallocate(tarr)
 end subroutine dealloc_track

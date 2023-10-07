@@ -1,7 +1,7 @@
 module sse_support
 !module to help interface metisse with sse
     use track_support
-    use z_support, only: Mcrit,T_bgb_limit
+    use z_support, only: Mcrit
     implicit none
     
  !SSE parameters required if envelope is lost
@@ -19,7 +19,7 @@ module sse_support
 
 contains
 
-    subroutine calculate_phases_and_times(t)
+    subroutine calculate_timescales(t)
         !subroutine to assign sse phases to the interpolated track
         !also calculate timescales associated with different phases
         implicit none
@@ -31,137 +31,64 @@ contains
         logical :: debug
         debug = .false.
 
-!        print*,"pt",t% tr(i_age,cHeIgnition_EEP), t% pars% phase
-
         age => t% tr(i_age2,:)
         mass = t% initial_mass
 
         t% MS_time = age(TAMS_EEP) - age(ZAMS_EEP)
         do i = 1, t% neep
 
-        if (t% eep(i) == PreMS_EEP) then   !pre_MS
-            t% phase(PreMS_EEP:ZAMS_EEP-1) = -100
-
-        elseif (t% eep(i) == TAMS_EEP) then    !MS
-            if (mass< Mcrit(3)% mass-0.3) then  !Mhook-0.3
-                t% phase(ZAMS_EEP:TAMS_EEP) = low_mass_MS
-            else
-                t% phase(ZAMS_EEP:TAMS_EEP) = MS
-            endif
+        if (t% eep(i) == TAMS_EEP) then    !MS
             t% times(MS) = age(TAMS_EEP)
 
         elseif (t% eep(i) == cHeIgnition_EEP) then
-            t% phase(TAMS_EEP+1: cHeIgnition_EEP) = HG          !Herztsrung gap
+            !Herztsprung gap
             t% times(HG) = age(cHeIgnition_EEP)
             !t% times(HG) gets modified to t(BGB) if RGB phase is present
             t% times(RGB) = t% times(HG)
 
         elseif (t% eep(i) == TA_cHeB_EEP) then
-            t% phase(cHeIgnition_EEP+1:TA_cHeB_EEP) = HeBurn                !red_HB_clump /core He Burning
+            !red_HB_clump /core He Burning
             t% times(HeBurn) = age(TA_cHeB_EEP)
 
         elseif (t% eep(i) == TPAGB_EEP) then
-            t% phase(TA_cHeB_EEP+1:TPAGB_EEP) = EAGB                !AGB :massive stars' evolution ends here
+            !AGB
             t% times(EAGB) = age(TPAGB_EEP)
 
-        elseif (t% eep(i) == post_AGB_EEP) then
-            t% phase(TPAGB_EEP+1:post_AGB_EEP) = TPAGB              !TP-AGB :only for low_inter mass stars
-            t% times(TPAGB) = age(post_AGB_EEP)
-!            t% nuc_time = t% tr(i_age,post_AGB_EEP) - t% tr(i_age,ZAMS_EEP)
-
         elseif (t% eep(i) == cCBurn_EEP) then
-            t% phase(TA_cHeB_EEP+1: cCBurn_EEP) = EAGB
+            !EAGB/ core C burning
             t% times(EAGB) = age(cCBurn_EEP)
-!            t% nuc_time = t% tr(i_age,cCBurn_EEP) - t% tr(i_age,ZAMS_EEP)
+
+        elseif (t% eep(i) == post_AGB_EEP) then
+            !TP-AGB :only for low_inter mass stars
+            t% times(TPAGB) = age(post_AGB_EEP)
         endif
         enddo
         !print*,"bgb",BGB_EEP,identified(BGB_EEP)
-!        if (.not. defined(t% nuc_time))t% nuc_time = t% tr(i_age,t% ntrack) - t% tr(i_age,ZAMS_EEP)
 
         t% times(11) = age(min(Final_EEP,t% ntrack))
+        !Todo: nuc_time should be for WR phase
         t% nuc_time = t% times(11)
         !determine the base of the giant branch times, if present
         if (mass > Mcrit(2)% mass .and. mass< Mcrit(5)% mass) then
             if (identified(BGB_EEP)) then
-                t% phase(BGB_EEP: cHeIgnition_EEP) = RGB           !Red giant Branch
+                !Red giant Branch
                 t% times(HG) = age(BGB_EEP)
             elseif (t% ntrack >TAMS_EEP) then
                 j_bgb =  base_GB(t)
                 if (j_bgb>0) then
                     j_bgb = j_bgb+TAMS_EEP-1
-                    t% phase(j_bgb: cHeIgnition_EEP) = RGB           !Red giant Branch
+                    !Red giant Branch
                     t% times(HG) = age(j_bgb)
                 elseif (debug) then
                     print*, "Unable to locate BGB ", j_bgb
-                    STOP
+!                    STOP
                 end if
             endif
         endif
 
-        !TODO: add WR phase, will be useful for mass gain sitiuations
-        !if (.not.t% has_RGB .and. mass>0.7) t% times(RGB) = age(605)!*1E-6
         nullify(age)
-    end subroutine
+    end subroutine calculate_timescales
 
-    integer function base_GB(t) result(j_bgb)
-        type(track), pointer,intent(in) :: t
-        integer :: peak, jfinal, jini, j_diff,k
-
-        real(dp) :: mass,l_calc,diff
-        real(dp), allocatable ::Lum(:),Teff(:),core_mass(:)
-        real(dp), allocatable ::diff_L(:),diff_Te(:),dLdTe(:)
-
-        jini = TAMS_EEP
-        jfinal = min(cHeIgnition_EEP,cHeBurn_EEP)  !TODO: check this
-        j_diff = jfinal - jini
-        allocate(Lum(j_diff),Teff(j_diff),core_mass(j_diff))
-        allocate (diff_L(j_diff -1),diff_Te(j_diff -1),dLdTe(j_diff -1))
-
-        j_bgb = -1
-
-        mass = t% initial_mass
-        Lum =  t% tr(i_logL,jini:jfinal)
-        Teff = t% tr(i_logTe,jini:jfinal)            !TODO: make this wrt radius
-        core_mass = t% tr(i_he_core,jini:jfinal)
-        if (Teff(j_diff)> T_bgb_limit) then
-        !j_bgb = -1000
-        return
-        endif
-
-        diff_L = Lum(2:j_diff)-Lum(1:j_diff-1)
-        diff_Te = Teff(2:j_diff)-Teff(1:j_diff-1)
-        dLdTe = diff_L/diff_Te
-
-        peak = maxloc(dLdTe,dim = 1)
-!        print*,"peak = ",mass,peak, Teff(peak),j_diff
-
-        if(peak>=j_diff) return
-        if (dLdTe(peak)>0.0 .and. dLdTe(peak+1)<0.0) then         !checking for oscillations
-            peak = maxloc(dLdTe(:peak-1),dim = 1)     !!whatif ends are very close??
-        endif
-        if (dLdTe(peak)>0.0) then          !convective core
-            do k = peak,j_diff-1
-                if (dLdTe(k)<1E-32 .and. Teff(k)<3.8) then
-                    j_bgb = k
-                    t% has_RGB=.true.
-                    return
-                endif
-            end do
-        elseif (mass<2.0) then            !radiative core  !TODO: -- mhook?
-            do k = 1,j_diff-1
-                l_calc = log10(2.3E+5*(core_mass(k)**6))
-                diff =  l_calc-Lum(k)
-                if (abs(diff)<0.12) then
-                    j_bgb = k
-                    t% has_RGB=.true.
-                    return
-                endif
-            end do
-        end if
-        
-        deallocate(Lum,Teff,core_mass)
-        deallocate(diff_L,diff_Te,dLdTe)
-    end function
 
     subroutine calculate_SSE_parameters(t,zpars,tscls,lums,GB,tm,tn)
         type(track), pointer, intent(in) :: t

@@ -123,6 +123,7 @@ subroutine METISSE_zcnsts(z,zpars)
     do i = 1,size(s)
         s(i)% has_mass_loss = check_mass_loss(s(i))
         
+        !Find maximum and minimum mass at each eep
         do j = 1, nmax
             if (s(i)% ntrack>=j) then
                 Mmax_array(j) = max(Mmax_array(j),s(i)% tr(i_mass,j))

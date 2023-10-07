@@ -2,7 +2,6 @@ module interp_support
 
     use track_support
     use z_support, only: Mcrit, m_cutoff
-    use sse_support, only: calculate_phases_and_times
     implicit none
 
     integer, parameter :: no_interpolation = 0
@@ -119,12 +118,8 @@ module interp_support
         ! check if mass and age are monotonic
         call smooth_track(t)
 
-        ! allocate timescales and SSE phases (Hurley et al.2000)
-!        call calculate_phases_and_times(t)
-        allocate(t% phase(t% ntrack))
+        ! allocate timescales
         allocate(t% times(11))
-        
-        t% phase = undefined
         t% times = undefined
         
         ! recalibrate age from ZAMS
@@ -524,10 +519,10 @@ module interp_support
         kw = t% pars% phase
         !TODO: this is temporary until gntage is modified
         ! to avoid NaN during interpolation
-        if (kw >1) then
+        if (kw >1 .and.kw<5) then
             if(t% times(kw)-t% times(kw-1)<1d-12) kw = kw+1
         endif
-        if (kw>1 .and. kw<6) then
+        if (kw>1 .and. kw<=6) then
             !scale the input age for the new track
             them = t% times(kw)-t% times(kw-1)
             them_new = t% times_new(kw)-t% times_new(kw-1)

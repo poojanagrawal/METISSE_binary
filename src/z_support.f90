@@ -31,9 +31,8 @@ module z_support
     real(dp) :: center_carbon_limit = 1d-4
     real(dp) :: log_center_T_limit = 9d0
     real(dp) :: high_mass_limit = 1d1 !Msun
-    real(dp) :: very_low_mass_limit = 0.75d0 !Msun
     real(dp) :: he_core_mass_limit = 2.2
-    real(dp) :: T_bgb_limit = 3.8
+
 !    real(dp) ::  Mup_core,Mec_core
     integer, allocatable :: m_cutoff(:)
 
@@ -1254,6 +1253,14 @@ module z_support
         if (defined (Mcrit(i)% mass)) zpars (i-2) = Mcrit(i)% mass
         end do
 
+        !Redefine these for use later in the code
+        Mhook = zpars(1)
+        Mhef = zpars(2)
+        Mfgb = zpars(3)
+        Mup = zpars(4)
+        Mec = zpars(5)
+    
+    
         if (defined(Z_H)) zpars(11) = Z_H
         if (defined(Z_He)) zpars(12) = Z_He
         Z04 = zpars(14)

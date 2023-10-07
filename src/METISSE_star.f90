@@ -28,7 +28,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
 !    if ((id == 1) .and. (kw<=7))debug = .true.
 
     if (debug) print*, '-----------STAR---------------'
-    if (debug)print*,"in star", mass,mt,kw,id
+    if (debug) print*,"in star", mass,mt,kw,id
 
     consvR = .false.
     delta = 0.d0
@@ -41,7 +41,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                 if (debug) print*, "normal interpolate mass", t% initial_mass,t% zams_mass,t% pars% mass,mt,kw
                 t% initial_mass = mass
                 call interpolate_mass(t% initial_mass,t,id)
-                call calculate_phases_and_times(t)
+                call calculate_timescales(t)
 
                 !Todo: explain what age 2 and Times_new are
                 t% times_new = t% times
@@ -83,7 +83,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                         if (t% ntrack<nt) print*, '***WARNING: track length reduced***',t% initial_mass,nt,t% ntrack
                         
                         ! Calculate timescales and assign SSE phases (Hurley et al.2000)
-                        call calculate_phases_and_times(t)
+                        call calculate_timescales(t)
                         t% times_new = t% times
                         t% tr(i_age,:) = t% tr(i_age2,:)
                     else
@@ -108,19 +108,19 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                         
                         if (t% ntrack<nt) print*, '**WARNING: track length reduced**',t% initial_mass,nt,t% ntrack
 
-                        call calculate_phases_and_times(t)
+                        call calculate_timescales(t)
                         t% times_new = t% times
                         t% times = times_old
                         
                         t% nuc_time = nuc_old
 
-                        t% tr(i_age,:) = age_list
-                        t% tr(i_he_core,:) = hecorelist
-                        t% tr(i_co_core,:) = ccorelist
-                        t% tr(i_logL,:) = Lum_list
+                        t% tr(i_age,:) = age_list(1:t% ntrack)
+                        t% tr(i_he_core,:) = hecorelist(1:t% ntrack)
+                        t% tr(i_co_core,:) = ccorelist(1:t% ntrack)
+                        t% tr(i_logL,:) = Lum_list(1:t% ntrack)
                         !TEST: R remains unchanged if Mconv is significant
                         if (consvR) then
-                            t% tr(i_logR,:) = rlist
+                            t% tr(i_logR,:) = rlist(1:t% ntrack)
                         endif
                         deallocate(hecorelist,ccorelist,Lum_list,age_list,rlist)
                         

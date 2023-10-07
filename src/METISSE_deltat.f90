@@ -95,7 +95,7 @@
                 !
                 t% ierr = -1
                 t% pars% dt = 1e+10
-                t% pars% phase = 15
+!                t% pars% phase = 15
 !                stop
             endif
             

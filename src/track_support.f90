@@ -50,6 +50,9 @@ module track_support
     character(len=10) :: star_label(4) = ['   unknown', 'substellar', '  low-mass', ' high-mass']
     character(len=5) :: phase_label(16) = ['lm_MS','   MS','   HG','  FGB',' CHeB',' EAGB',&
     'TPAGB','He_MS', 'He_HG','He_GB','He_WD','CO_WD','ONeWD','   NS','   BH','   MR']
+    
+    real(dp) :: T_bgb_limit = 3.8
+    real(dp) :: very_low_mass_limit = 0.75d0 !Msun
 
     !sse phases
 
@@ -187,7 +190,7 @@ module track_support
         
         real(dp), allocatable :: tr(:,:)
         real(dp), allocatable :: times(:), times_new(:)           !timescales
-        integer, allocatable :: eep(:), phase(:), bounds(:)
+        integer, allocatable :: eep(:), bounds(:)
 
         type(star_parameters) :: pars    ! parameters at any instant
         logical :: post_agb = .false.
@@ -253,6 +256,87 @@ module track_support
         min_index = minloc(difference, dim=1)
     end subroutine index_search
 
+
+    ! from ISO (Dotter et al. 2016), adapted from MESA
+
+    ! if vec contains decreasing values,
+    ! returns 1 if val > vec(1); returns n if val <= vec(n)
+    ! else returns k between 1 and n-1 such that
+    !     vec(k) >= val > vec(k+1)
+
+    ! if vec contains increasing values,
+    ! returns 0 if val < vec(1); returns n if val >= vec(n)
+    ! else returns k between 1 and n-1 such that
+    !     vec(k) <= val < vec(k+1)
+
+    integer function binary_search(n, vec, val) result(loc)
+     integer, intent(in) :: n
+     real(dp), intent(in) :: val
+     real(dp), intent(in) :: vec(:) ! (n)
+    !     real(dp), parameter :: tiny = 1.0d-13
+     integer :: first, last, mid
+
+     if (n <= 1) then
+        loc = n; return
+     end if
+
+     if (vec(n) < vec(1)) then ! decreasing values
+
+        if (val > vec(1)) then
+           loc = 0; return
+        else if (abs(val - vec(1)) < tiny ) then
+           loc = 1; return
+        else if (val <= vec(n)) then
+           loc = n; return
+        end if
+
+
+        first = 1
+        last = n-1
+        loc = -1
+        do while (first <= last)
+           mid = (first + last)/2
+           if (vec(mid) >= val) then
+              if (val > vec(mid+1)) then
+                 loc = mid
+                 exit
+              end if
+              first = mid + 1
+           else
+              last = mid - 1
+           end if
+        end do
+
+     else ! increasing values
+
+        if (val < vec(1)) then
+           loc = 0; return
+        else if (abs(val - vec(1)) < tiny) then
+           loc = 1; return
+        else if (val >= vec(n)) then
+           loc = n; return
+        end if
+
+        first = 1
+        last = n-1
+        loc = -1
+        do while (first <= last)
+           mid = (first + last)/2
+           if (vec(mid) <= val) then
+              if (val < vec(mid+1)) then
+                 loc = mid
+                 exit
+              end if
+              first = mid + 1
+           else
+              last = mid - 1
+           end if
+        end do
+
+     end if
+
+    end function binary_search
+
     subroutine save_values(new_line,pars)
         type(star_parameters) :: pars
         real(dp),intent (in) :: new_line(:,:)
@@ -287,18 +371,243 @@ module track_support
 
             
     !        if (pars% phase>=5) print*, "mass",pars% McHe,pars% McCO,pars% phase
-end subroutine
+    end subroutine
+    subroutine write_eep_track(x,mt,filename)
+    !modified from ISO subroutine of same name
+
+    type(track), pointer, intent(in) :: x
+    character(len=strlen), intent(in), optional :: filename
+    real(dp), intent(in), optional :: mt
+    character(len=strlen) :: eep_filename
+    integer :: str, io, ierr, j! ncol
+    real(dp) :: real_phase
+    character(len=8) :: have_phase
+    real(dp), allocatable :: phase(:)
+    io = alloc_iounit(ierr)
+
+    if (present(filename)) then
+        eep_filename = trim(filename)
+    elseif (present(mt)) then
+        str = int(mt*100)
+        write(eep_filename,"(a,a,i5.5,a)") trim(METISSE_DIR),"/output_eep/",str,"M.track.eep"
+    else
+        print*, 'ERROR: NO EEP FILE WRITTEN, either provide FILENAME or mass of the star'
+        return
+    ENDIF
+    
+    print*,'writing',str,'M.track.eep'
+    
+    call calculate_sse_phases(x,phase)
+    
+    open(io,file=trim(eep_filename),action='write',status='unknown')
+    have_phase = 'YES'
+
+    !write(io,'(a25,a8)') '# MIST version number  = ', x% version_string
+    !write(io,'(a25,i8)') '# MESA revision number = ', x% MESA_revision_number
+    !                     123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
+    ! write(io,'(a88)') '# --------------------------------------------------------------------------------------'
+    write(io,'(a88)') '#  Yinit        Zinit   [Fe/H]   [a/Fe]  v/vcrit                                        '
+    write(io,'(a2,f6.4,1p1e13.5,0p3f9.2)') '# ', x% initial_Y, x% initial_Z, x% Fe_div_H, x% alpha_div_Fe, x% v_div_vcrit
+    write(io,'(a88)') '# --------------------------------------------------------------------------------------'
+    write(io,'(a1,1x,a16,4a8,2x,a10)') '#','initial_mass', 'N_pts', 'N_EEP', 'N_col', 'phase', 'type'
+    write(io,'(a1,1x,1p1e16.10,3i8,a8,2x,a10)') '#', x% initial_mass, x% ntrack, x% neep, x% ncol+2, have_phase, &
+         star_label(x% star_type)
+    write(io,'(a8,20i8)') '# EEPs: ', x% eep
+    write(io,'(a88)') '# --------------------------------------------------------------------------------------'
+    write(io,'(a1,299(27x,i5))') '#', (j,j=1,x% ncol+2)
+    write(io,'(a1,299a32)') '#', adjustr(x% cols(:)% name), 'phase'
+    
+    do j=x% eep(1),x% ntrack
+      real_phase = real(phase(j))
+      write(io,'(1x,299(1pes32.16e3))') x% tr(:,j), real_phase
+    enddo
+       
+       
+    deallocate(phase)
+    close(io)
+    call free_iounit(io)
+    end subroutine write_eep_track
+
+    subroutine calculate_sse_phases(t,phase)
+        !subroutine to assign sse phases to the interpolated track
+        implicit none
+        
+        real(dp), allocatable :: phase(:)
+
+        type(track), pointer,intent(in) :: t
+        integer :: i,j_bgb
+        real(dp) :: mass
+        
+        logical :: debug
+        debug = .false.
 
 
-    subroutine deallocate_arrays(t)
-    type(track), pointer :: t
-        deallocate(t% eep)
-        deallocate(t% cols)
-        deallocate(t% tr)
-        deallocate(t% phase)
-        deallocate(t% times)
-        deallocate(t% bounds)
-    end subroutine deallocate_arrays
+        mass = t% initial_mass
+        allocate(phase(t% ntrack))
+
+        do i = 1, t% neep
+
+        if (t% eep(i) == PreMS_EEP) then   !pre_MS
+            phase(PreMS_EEP:ZAMS_EEP-1) = -1
+
+        elseif (t% eep(i) == TAMS_EEP) then    !MS
+            if (mass< Mhook-0.3) then
+                phase(ZAMS_EEP:TAMS_EEP) = low_mass_MS
+            else
+                phase(ZAMS_EEP:TAMS_EEP) = MS
+            endif
+
+        elseif (t% eep(i) == cHeIgnition_EEP) then
+            phase(TAMS_EEP+1: cHeIgnition_EEP) = HG          !Herztsrung gap
+
+        elseif (t% eep(i) == TA_cHeB_EEP) then
+            phase(cHeIgnition_EEP+1:TA_cHeB_EEP) = HeBurn                !red_HB_clump /core He Burning
+
+        elseif (t% eep(i) == TPAGB_EEP) then
+            phase(TA_cHeB_EEP+1:TPAGB_EEP) = EAGB                !AGB :massive stars' evolution ends here
+
+        elseif (t% eep(i) == post_AGB_EEP) then
+            phase(TPAGB_EEP+1:post_AGB_EEP) = TPAGB              !TP-AGB :only for low_inter mass stars
+
+        elseif (t% eep(i) == cCBurn_EEP) then
+            phase(TA_cHeB_EEP+1: cCBurn_EEP) = EAGB
+        endif
+        enddo
+
+        !determine the base of the giant branch times, if present
+        if (mass > very_low_mass_limit .and. mass< Mfgb) then
+            if (identified(BGB_EEP)) then
+                phase(BGB_EEP: cHeIgnition_EEP) = RGB           !Red giant Branch
+            elseif (t% ntrack >TAMS_EEP) then
+                j_bgb =  base_GB(t)
+                if (j_bgb>0) then
+                    j_bgb = j_bgb+TAMS_EEP-1
+                    phase(j_bgb: cHeIgnition_EEP) = RGB           !Red giant Branch
+                elseif (debug) then
+                    print*, "Unable to locate BGB ", j_bgb
+                    STOP
+                    !don't stop the code, have an error message instead
+                end if
+            endif
+        endif
+    end subroutine
+    
+    integer function base_GB(t) result(j_bgb)
+        type(track), pointer,intent(in) :: t
+        integer :: peak, jfinal, jini, j_diff,k
+
+        real(dp) :: mass,l_calc,diff
+        real(dp), allocatable ::Lum(:),Teff(:),core_mass(:)
+        real(dp), allocatable ::diff_L(:),diff_Te(:),dLdTe(:)
+
+        jini = TAMS_EEP
+        jfinal = min(cHeIgnition_EEP,cHeBurn_EEP)  !TODO: check this
+        j_diff = jfinal - jini
+        allocate(Lum(j_diff),Teff(j_diff),core_mass(j_diff))
+        allocate (diff_L(j_diff -1),diff_Te(j_diff -1),dLdTe(j_diff -1))
+
+        j_bgb = -1
+
+        mass = t% initial_mass
+        Lum =  t% tr(i_logL,jini:jfinal)
+        Teff = t% tr(i_logTe,jini:jfinal)            !TODO: make this wrt radius
+        core_mass = t% tr(i_he_core,jini:jfinal)
+        if (Teff(j_diff)> T_bgb_limit) then
+        !j_bgb = -1000
+        return
+        endif
+
+        diff_L = Lum(2:j_diff)-Lum(1:j_diff-1)
+        diff_Te = Teff(2:j_diff)-Teff(1:j_diff-1)
+        dLdTe = diff_L/diff_Te
+
+        peak = maxloc(dLdTe,dim = 1)
+!        print*,"peak = ",mass,peak, Teff(peak),j_diff
+
+        if(peak>=j_diff) return
+        if (dLdTe(peak)>0.0 .and. dLdTe(peak+1)<0.0) then         !checking for oscillations
+            peak = maxloc(dLdTe(:peak-1),dim = 1)     !!whatif ends are very close??
+        endif
+        if (dLdTe(peak)>0.0) then          !convective core
+            do k = peak,j_diff-1
+                if (dLdTe(k)<1E-32 .and. Teff(k)<3.8) then
+                    j_bgb = k
+                    t% has_RGB=.true.
+                    return
+                endif
+            end do
+        elseif (mass<2.0) then            !radiative core  !TODO: -- mhook?
+            do k = 1,j_diff-1
+                l_calc = log10(2.3E+5*(core_mass(k)**6))
+                diff =  l_calc-Lum(k)
+                if (abs(diff)<0.12) then
+                    j_bgb = k
+                    t% has_RGB=.true.
+                    return
+                endif
+            end do
+        end if
+        
+        deallocate(Lum,Teff,core_mass)
+        deallocate(diff_L,diff_Te,dLdTe)
+    end function
+    
+    subroutine write_dat_track(tphys, pars)
+        real(dp), intent(in) :: tphys
+        type(star_parameters), intent(in) :: pars
+        character(LEN=*), PARAMETER  :: FMT= '(1p9e15.6,2i10)'
+        write(120,FMT) tphys,pars% age,pars% mass,pars% core_mass,pars% McHe, pars% McCO &
+                    ,pars% log_L,pars% log_Teff,pars% log_R,pars% phase ,pars% extra
+    end subroutine write_dat_track
+
+!    subroutine alloc_track(filename,x)
+!        character(len=strlen), intent(in) :: filename
+!        type(eep_track), pointer :: x
+!        allocate(x)
+!        x% neep = primary
+!        x% filename = trim(filename)
+!        allocate(x% eep(x% neep))
+!      end subroutine alloc_track
+
+    subroutine distance_along_track(t)
+      type(track), intent(inout) :: t
+      real(dp) :: tmp_dist, weight, max_center_h1
+      integer :: j
+
+      if(weight_center_rho_T_by_Xc)then
+         max_center_h1 = maxval(t% tr(i_Xc,:))
+         if(max_center_h1 <= 0d0) max_center_h1 = 1d0
+      else
+         max_center_h1 = 1d0
+         weight = 1d0
+      endif
+
+!      t% dist(1) = 0d0
+      if(t% ntrack > 3)then
+         do j = 2, t% ntrack
+            
+            if(weight_center_rho_T_by_Xc)then
+               weight = max(0d0, t% tr(i_Xc,j)/max_center_h1)
+            endif
+            
+            !build up the distance between EEPs piece by piece
+            tmp_dist =            Teff_scale*sqdiff(t% tr(i_logTe,j) , t% tr(i_logTe,j-1))
+            tmp_dist = tmp_dist + logL_scale*sqdiff(t% tr(i_logL, j) , t% tr(i_logL, j-1))
+            tmp_dist = tmp_dist + weight * Rhoc_scale * sqdiff(t% tr(i_Rhoc, j) , t% tr(i_Rhoc, j-1))
+            tmp_dist = tmp_dist + weight * Tc_scale*  sqdiff(t% tr(i_Tc,   j) , t% tr(i_Tc,   j-1))
+            tmp_dist = tmp_dist + age_scale* sqdiff(log10(t% tr(i_age,j)) , log10(t% tr(i_age,j-1)))
+
+!            t% dist(j) = t% dist(j-1) + sqrt(tmp_dist)
+         enddo
+      endif
+    end subroutine distance_along_track
+
+    elemental function sqdiff(x0,x1) result(y) !square of x, y=x*x
+      real(dp), intent(in) :: x0, x1
+      real(dp) :: y, dx
+      dx=x0-x1
+      y = dx*dx
+    end function sqdiff
     
     elemental function pow10_sg(x) result(y)
         real(sp), intent(in) :: x
@@ -311,6 +620,43 @@ end subroutine
         real(dp) :: y
         y = exp(ln10*x)
     end function pow10
+    
+    !from mesa/utils_lib.f
+    integer function alloc_iounit(ierr)
+        !use utils_def
+        integer, intent(out) :: ierr
+        integer :: i
+        ierr = 0
+        alloc_iounit = -1
+        do i = min_io_unit, max_io_unit
+            if (.not. assigned(i)) then
+                assigned(i) = .true.
+                alloc_iounit = i
+                exit
+            end if
+        end do
+        if (alloc_iounit == -1) then
+            ierr = -1
+        end if
+    end function alloc_iounit
+
+    subroutine free_iounit(iounit)
+        !use utils_def
+        integer, intent(in) :: iounit
+        logical :: bad_iounit
+        bad_iounit = .false.
+        !$omp critical (utils_alloc_io_unit)
+        if (iounit >= min_io_unit .and. iounit <= max_io_unit) then
+            assigned(iounit) = .false.
+        else
+            bad_iounit = .true.
+        end if
+        !$omp end critical (utils_alloc_io_unit)
+        if (bad_iounit) then
+            write(*,*) 'called free_iounit with invalid arg', iounit
+            stop 'free_iounit'
+        end if
+    end subroutine free_iounit
     
     
     logical function check_ge(x,y) result(z)
@@ -414,229 +760,13 @@ end subroutine
             x = -B/(2*A)
         endif
     end function quadratic
-
-    !from mesa/utils_lib.f
-    integer function alloc_iounit(ierr)
-        !use utils_def
-        integer, intent(out) :: ierr
-        integer :: i
-        ierr = 0
-        alloc_iounit = -1
-        do i = min_io_unit, max_io_unit
-            if (.not. assigned(i)) then
-                assigned(i) = .true.
-                alloc_iounit = i
-                exit
-            end if
-        end do
-        if (alloc_iounit == -1) then
-            ierr = -1
-        end if
-    end function alloc_iounit
-
-    subroutine free_iounit(iounit)
-        !use utils_def
-        integer, intent(in) :: iounit
-        logical :: bad_iounit
-        bad_iounit = .false.
-        !$omp critical (utils_alloc_io_unit)
-        if (iounit >= min_io_unit .and. iounit <= max_io_unit) then
-            assigned(iounit) = .false.
-        else
-            bad_iounit = .true.
-        end if
-        !$omp end critical (utils_alloc_io_unit)
-        if (bad_iounit) then
-            write(*,*) 'called free_iounit with invalid arg', iounit
-            stop 'free_iounit'
-        end if
-    end subroutine free_iounit
-
-    ! from ISO (Dotter et al. 2016), adapted from MESA
-
-    ! if vec contains decreasing values,
-    ! returns 1 if val > vec(1); returns n if val <= vec(n)
-    ! else returns k between 1 and n-1 such that
-    !     vec(k) >= val > vec(k+1)
-
-    ! if vec contains increasing values,
-    ! returns 0 if val < vec(1); returns n if val >= vec(n)
-    ! else returns k between 1 and n-1 such that
-    !     vec(k) <= val < vec(k+1)
-
-    integer function binary_search(n, vec, val) result(loc)
-     integer, intent(in) :: n
-     real(dp), intent(in) :: val
-     real(dp), intent(in) :: vec(:) ! (n)
-    !     real(dp), parameter :: tiny = 1.0d-13
-     integer :: first, last, mid
-
-     if (n <= 1) then
-        loc = n; return
-     end if
-
-     if (vec(n) < vec(1)) then ! decreasing values
-
-        if (val > vec(1)) then
-           loc = 0; return
-        else if (abs(val - vec(1)) < tiny ) then
-           loc = 1; return
-        else if (val <= vec(n)) then
-           loc = n; return
-        end if
-
-
-        first = 1
-        last = n-1
-        loc = -1
-        do while (first <= last)
-           mid = (first + last)/2
-           if (vec(mid) >= val) then
-              if (val > vec(mid+1)) then
-                 loc = mid
-                 exit
-              end if
-              first = mid + 1
-           else
-              last = mid - 1
-           end if
-        end do
-
-     else ! increasing values
-
-        if (val < vec(1)) then
-           loc = 0; return
-        else if (abs(val - vec(1)) < tiny) then
-           loc = 1; return
-        else if (val >= vec(n)) then
-           loc = n; return
-        end if
-
-        first = 1
-        last = n-1
-        loc = -1
-        do while (first <= last)
-           mid = (first + last)/2
-           if (vec(mid) <= val) then
-              if (val < vec(mid+1)) then
-                 loc = mid
-                 exit
-              end if
-              first = mid + 1
-           else
-              last = mid - 1
-           end if
-        end do
-
-     end if
-
-    end function binary_search
-
-    subroutine write_eep_track(x,mt,filename)
-    !modified from ISO subroutine of same name
-
-    type(track), intent(in) :: x
-    character(len=strlen), intent(in), optional :: filename
-    real(dp), intent(in), optional :: mt
-    character(len=strlen) :: eep_filename
-    integer :: str, io, ierr, j! ncol
-    real(dp) :: real_phase
-    character(len=8) :: have_phase
-    io=alloc_iounit(ierr)
-
-
-    if (present(filename)) then
-        eep_filename = trim(filename)
-    elseif (present(mt)) then
-        str = int(mt*100)
-        write(eep_filename,"(a,a,i5.5,a)") trim(METISSE_DIR),"/output_eep/",str,"M.track.eep"
-    else
-        print*, 'ERROR: NO EEP FILE WRITTEN, either provide FILENAME or mass of the star'
-        return
-    ENDIF
-    print*,'writing',str,'M.track.eep'
-    open(io,file=trim(eep_filename),action='write',status='unknown')
-    have_phase = 'YES'
-
-    !write(io,'(a25,a8)') '# MIST version number  = ', x% version_string
-    !write(io,'(a25,i8)') '# MESA revision number = ', x% MESA_revision_number
-    !                     123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
-    ! write(io,'(a88)') '# --------------------------------------------------------------------------------------'
-    write(io,'(a88)') '#  Yinit        Zinit   [Fe/H]   [a/Fe]  v/vcrit                                        '
-    write(io,'(a2,f6.4,1p1e13.5,0p3f9.2)') '# ', x% initial_Y, x% initial_Z, x% Fe_div_H, x% alpha_div_Fe, x% v_div_vcrit
-    write(io,'(a88)') '# --------------------------------------------------------------------------------------'
-    write(io,'(a1,1x,a16,4a8,2x,a10)') '#','initial_mass', 'N_pts', 'N_EEP', 'N_col', 'phase', 'type'
-    write(io,'(a1,1x,1p1e16.10,3i8,a8,2x,a10)') '#', x% initial_mass, x% ntrack, x% neep, x% ncol+2, have_phase, &
-         star_label(x% star_type)
-    write(io,'(a8,20i8)') '# EEPs: ', x% eep
-    write(io,'(a88)') '# --------------------------------------------------------------------------------------'
-
-       write(io,'(a1,299(27x,i5))') '#', (j,j=1,x% ncol+2)
-       write(io,'(a1,299a32)') '#', adjustr(x% cols(:)% name), 'phase'
-       do j=x% eep(1),x% ntrack
-          real_phase=real(x% phase(j))
-          write(io,'(1x,299(1pes32.16e3))') x% tr(:,j), real_phase
-       enddo
-    close(io)
-    call free_iounit(io)
-    end subroutine write_eep_track
-
-    subroutine write_dat_track(tphys, pars)
-        real(dp), intent(in) :: tphys
-        type(star_parameters), intent(in) :: pars
-        character(LEN=*), PARAMETER  :: FMT= '(1p9e15.6,2i10)'
-        write(120,FMT) tphys,pars% age,pars% mass,pars% core_mass,pars% McHe, pars% McCO &
-                    ,pars% log_L,pars% log_Teff,pars% log_R,pars% phase ,pars% extra
-    end subroutine write_dat_track
-
-!    subroutine alloc_track(filename,x)
-!        character(len=strlen), intent(in) :: filename
-!        type(eep_track), pointer :: x
-!        allocate(x)
-!        x% neep = primary
-!        x% filename = trim(filename)
-!        allocate(x% eep(x% neep))
-!      end subroutine alloc_track
-
-    subroutine distance_along_track(t)
-      type(track), intent(inout) :: t
-      real(dp) :: tmp_dist, weight, max_center_h1
-      integer :: j
-
-      if(weight_center_rho_T_by_Xc)then
-         max_center_h1 = maxval(t% tr(i_Xc,:))
-         if(max_center_h1 <= 0d0) max_center_h1 = 1d0
-      else
-         max_center_h1 = 1d0
-         weight = 1d0
-      endif
-
-!      t% dist(1) = 0d0
-      if(t% ntrack > 3)then
-         do j = 2, t% ntrack
-            
-            if(weight_center_rho_T_by_Xc)then
-               weight = max(0d0, t% tr(i_Xc,j)/max_center_h1)
-            endif
-            
-            !build up the distance between EEPs piece by piece
-            tmp_dist =            Teff_scale*sqdiff(t% tr(i_logTe,j) , t% tr(i_logTe,j-1))
-            tmp_dist = tmp_dist + logL_scale*sqdiff(t% tr(i_logL, j) , t% tr(i_logL, j-1))
-            tmp_dist = tmp_dist + weight * Rhoc_scale * sqdiff(t% tr(i_Rhoc, j) , t% tr(i_Rhoc, j-1))
-            tmp_dist = tmp_dist + weight * Tc_scale*  sqdiff(t% tr(i_Tc,   j) , t% tr(i_Tc,   j-1))
-            tmp_dist = tmp_dist + age_scale* sqdiff(log10(t% tr(i_age,j)) , log10(t% tr(i_age,j-1)))
-
-!            t% dist(j) = t% dist(j-1) + sqrt(tmp_dist)
-         enddo
-      endif
-    end subroutine distance_along_track
-
-    elemental function sqdiff(x0,x1) result(y) !square of x, y=x*x
-      real(dp), intent(in) :: x0, x1
-      real(dp) :: y, dx
-      dx=x0-x1
-      y = dx*dx
-    end function sqdiff
-
-
+    
+    subroutine deallocate_arrays(t)
+    type(track), pointer :: t
+        deallocate(t% eep)
+        deallocate(t% cols)
+        deallocate(t% tr)
+        deallocate(t% times)
+        deallocate(t% bounds)
+    end subroutine deallocate_arrays
 end module track_support

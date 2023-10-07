@@ -69,7 +69,7 @@
                 if (check_remnant_phase(t% pars, mcbagb)) has_become_remnant = .true.
             else
                 !check if phase/type/kw of the star has changed
-                do i = t% pars% phase,6
+                do i = t% pars% phase,5
                     if (i== 0 .or. (.not. defined(t% times(i+1)))) exit
                     if (check_ge(t% pars% age,t% times(i))) then
                         t% pars% phase = i+1

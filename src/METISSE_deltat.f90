@@ -71,7 +71,7 @@
                 !TODO: Next line requires a check
                 !Note that this is done to avoid negative timesteps that result from more massive cores than what sse formulae predict
                 dtr = max(dtr,1d-10)
-
+                
             case(HeWD:NS)
                 dt = MAX(0.1d0,age*10.0)
                 dt = MAX(0.1d0,dt*10.0)
@@ -86,7 +86,7 @@
 
             t% pars% dt = min(dt,dtr)
             
-            if (t% pars% dt<=0.0) then
+            if (t% pars% dt<=0.0 .and. t% ierr==0) then
                 !open a file and write the error, continue the code
                 print*,"fatal error: invalid timestep", t% pars% dt ,"for phase and id", t% pars% phase,id
                 print*,"t% zams_mass, t% nuc_time, age, t% pars% mass"
@@ -96,7 +96,7 @@
                 t% ierr = -1
                 t% pars% dt = 1e+10
 !                t% pars% phase = 15
-!                stop
+                stop
             endif
             
             nullify(t)

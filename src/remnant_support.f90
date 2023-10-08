@@ -480,7 +480,8 @@
                 if(t% pars% mass< Mhef)then
                     t% pars% phase = HeWD      !Zero-age helium white dwarf
                     t% pars% core_mass = t% pars% mass
-                    call initialize_white_dwarf(t% pars)
+                    t% zams_mass = t% pars% mass
+!                    call initialize_white_dwarf(t% pars)
                 else
                     t% pars% phase = He_MS       !Zero-age helium star
                     t% pars% age = 0.d0
@@ -517,11 +518,15 @@
         end select
     end subroutine
 
-    subroutine evolve_after_envelope_loss(t)
+    subroutine evolve_after_envelope_loss(t,McHeI)
     type(track),pointer, intent(inout) :: t
 
-    real(dp) :: rg,tau  !,McHeI
+    real(dp) :: rg,tau,McHeI
     logical :: debug
+
+    ! This is to prevent re-assigning of HeWD to HeMS phase
+    ! if this function is called immediately after assign_stripped_star_phase
+    if(t% pars% phase == HeWD) return
 
     debug = .false.
     if (debug) print*,"In evolve_after_envelope_loss: phase age",t% pars% phase, t% pars% age,t% ms_time,t% zams_mass
@@ -529,9 +534,9 @@
     t% He_pars% Rzams = radius_He_ZAMS(t% pars% mass)
     !if (check_le(t% pars% age ,t% MS_time)) then
     if(t% pars% age <t% MS_time .and. abs(t% pars% age-t% MS_time)>tiny)then
-        !Helium Main Sequence
-        !From SSE: "Star has no core mass and hence no memory of its past
-        !which is why we subject mass and mt to mass loss for this phase."
+        ! Helium Main Sequence
+        ! From SSE: "Star has no core mass and hence no memory of its past
+        ! which is why we subject mass and mt to mass loss for this phase."
 
         t% pars% phase = He_MS
         tau = t% pars% age/t% MS_time
@@ -542,13 +547,8 @@
         t% pars% core_mass = 0.0
         t% pars% age_old = t% pars% age
         !McHeI= He_McDu = core_mass_He_GB(lums(4), D,lx)   !core mass at He Ignition
-        !print*, t% pars% mass, t% McHeI
-
-        !TODO: -- this step needs to checked specially for binaries
-        ! TODO: -- also evolve this HeWD
-!                 j_HeI = min(t% ntrack, cHeIgnition_EEP)
-!                McHeI = t% tr(i_he_core, j_HeI)
-!                if(t% pars% mass < McHeI ) t% pars% phase = HeWD
+!        print*, 'MCHEI',t% pars% mass,McHeI
+        if(t% pars% mass < McHeI) t% pars% phase = HeWD
      else
         !Helium Shell Burning
         t% pars% phase = He_HG

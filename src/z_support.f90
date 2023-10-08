@@ -1346,8 +1346,6 @@ module z_support
         lz = log10(z)
         lzd = lzs + 1.d0
 
-        zpars = 0.d0
-
         zpars(1) = 1.0185d0 + lzs*(0.16015d0 + lzs*0.0892d0)
         zpars(2) = 1.995d0 + lzs*(0.25d0 + lzs*0.087d0)
         zpars(3) = 16.5d0*z**0.06d0/(1.d0 + (1.0d-04/z)**1.27d0)

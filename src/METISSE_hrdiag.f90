@@ -10,7 +10,7 @@
     real(dp) :: mass,aj,mt,tm,tn,tscls(20),lums(10),GB(10),zpars(20)
     real(dp) :: r,lum,mc,rc,menv,renv,k2,mcx
     
-    integer :: kw,i,idd,j_bagb
+    integer :: kw,i,idd,j_bagb,k
     real(dp) :: rg,rzams,rtms
     real(dp) :: Mcbagb
     real(dp) :: bhspin ! only for cosmic
@@ -28,7 +28,7 @@
     if(present(id)) idd = id
     t => tarr(idd)
     
-!    if ((id == 1) .and. kw==6)debug = .true.
+!    if ((id == 1) .and. kw>=3)debug = .true.
 
     if (debug) print*, '-----------HRDIAG-------------'
     if (debug) print*,"started hrdiag",mt,mc,aj,kw,tn,id
@@ -69,11 +69,15 @@
                 if (check_remnant_phase(t% pars, mcbagb)) has_become_remnant = .true.
             else
                 !check if phase/type/kw of the star has changed
+                if (t% initial_mass<very_low_mass_limit .and. kw<2) t% pars% phase =0
                 do i = t% pars% phase,5
-                    if (i== 0 .or. (.not. defined(t% times(i+1)))) exit
-                    if (check_ge(t% pars% age,t% times(i))) then
-                        t% pars% phase = i+1
-                        if (debug) print*,"phase change",t% pars% age,t% times(i),i+1
+                    k = i
+                    if (i==0) k=1 !treat low_mass MS stars as regular MS stars
+                    if (.not. defined(t% times(k+1))) exit
+                    
+                    if (check_ge(t% pars% age,t% times(k))) then
+                        t% pars% phase = k+1
+                        if (debug) print*,"phase change",t% pars% age,t% times(k),k+1
                     endif
                 end do
                 
@@ -90,6 +94,7 @@
                     (t% initial_mass>=10.0 .and. abs(t% pars% core_mass-t% pars% mass)<0.01)) then
                         
                     if (debug) print*, "envelope lost at", t% pars% mass, t% pars% age,t% pars% phase
+                    
                     if (t% pars% phase == TPAGB) then
                         ! TPAGB star becomes a WD upon losing envelope
                         ! calling assign_remnant_phase to determine CO-WD/ONe WD
@@ -99,16 +104,17 @@
                         !TODO: add a check if it's not a white dwarf
                     else
                         call assign_stripped_star_phase(t)
-                        call evolve_after_envelope_loss(t)
+                        call evolve_after_envelope_loss(t,zpars(10))
                         call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
+                        if(t% pars% phase == HeWD) has_become_remnant = .true.
                     endif
                 endif
             endif
         case(He_MS)
-            call evolve_after_envelope_loss(t)
+            call evolve_after_envelope_loss(t,zpars(10))
             rzams = t% He_pars% Rzams
         case(He_HG:He_GB)
-            call evolve_after_envelope_loss(t)
+            call evolve_after_envelope_loss(t,zpars(10))
             rzams = t% He_pars% Rzams
             Mcbagb = t% zams_mass
             if(check_remnant_phase(t% pars, mcbagb)) has_become_remnant = .true.
@@ -125,17 +131,22 @@
     if(has_become_remnant) then
 !        print*, 'star',id,'is remnant',t% pars% mass,mcbagb,t% pars% core_mass
         if (front_end == main .or. front_end == BSE) then
-            call assign_remnant_METISSE(t% pars, mcbagb)
-            call post_agb_parameters(t,kw)
+            if(t% pars% phase /= HeWD) then
+                call assign_remnant_METISSE(t% pars, mcbagb)
+                call post_agb_parameters(t,kw)
+            endif
+            call evolve_remnants_METISSE(t% pars)
         elseif (front_end == COSMIC) then
             ! storing mass that remnant would be in mt
             mt = t% pars% mass
-            call assign_remnant(zpars,t% pars% core_mass,mcbagb,t% zams_mass,&
-                                mt,t% pars% phase,bhspin,id)
-            t% pars% bhspin = bhspin
-            !kw at this point contains old phase of the star
-            call post_agb_parameters(t,kw)
-            ! if t% post_agb is not true, assign correct remnant mass
+            if(t% pars% phase /= HeWD) then
+                call assign_remnant(zpars,t% pars% core_mass,&
+                                mcbagb,t% zams_mass,mt,t% pars% phase,bhspin,id)
+                t% pars% bhspin = bhspin
+                !kw at this point contains old phase of the star
+                call post_agb_parameters(t,kw)
+                ! if t% post_agb is .false., assign correct remnant mass
+            endif
             if(t% pars% phase >=10) t% pars% mass = mt
             call hrdiag_remnant(zpars,t% pars% mass,t% pars% core_mass,t% pars% luminosity,&
                                 t% pars% radius,t% pars% age,t% pars% phase)

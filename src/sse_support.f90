@@ -96,8 +96,10 @@ contains
     
         ! Other SSE parameters
         call calculate_SSE_tscls(t, tscls,tm,tn)
-        call calculate_SSE_lums(t, zpars, lums)
         call calculate_SSE_GB(t, zpars, GB)
+        call calculate_SSE_lums(t, zpars, lums)
+        lums(6) = GB(4)*GB(7)**GB(5)
+        
     end subroutine calculate_SSE_parameters
     
     !TSCLS (all timescales are in Myr units)
@@ -145,7 +147,7 @@ contains
     !1; ZAMS             2; End MS        3; BGB
     !4; He ignition      5; He burning    6; L(Mx)
     !7; BAGB             8; TP
-    subroutine calculate_SSE_lums(t, zpars, lums)
+    subroutine calculate_SSE_lums(t, zpars,lums)
     !only for phase upto 6 (TPAGB)
     implicit none
      type(track), pointer, intent(in) :: t
@@ -280,7 +282,7 @@ contains
             mc_max = max_core_mass_he(t% pars% mass, t% zams_mass)
 !TODO: Next line requires a check
 !Note that this is done to avoid negative timesteps that result from more massive cores than what sse formulae predict
-            mc_max = max(mc_max,t% pars% core_mass+1e-10)
+            mc_max = max(mc_max,t% pars% core_mass+1.d-10)
             if(debug)print*, 'core',mc_max,t% pars% core_mass,t% pars% mass,t% zams_mass
 
             if(mc_max.le.Mx)then
@@ -288,6 +290,7 @@ contains
             else
                 Tmax = Tinf2 - (1.d0/((q-1.d0)*AHe*B))*(mc_max**(1.d0-q))
             endif
+            if (debug) print*, 'tmax', tmax, mc_max,mx,mc1
             Tmax = MAX(Tmax,t% MS_time)
             t% nuc_time = Tmax
             
@@ -309,7 +312,7 @@ contains
                 GB(6) = 3.d0
                 GB(7) = t% He_pars% Mx
                 GB(8) = 8.0d-05
-
+                
                 lums(1) = t% He_pars% Lzams
                 lums(2) = t% He_pars% LtMS
                 lums(6) = t% He_pars% lx
@@ -471,6 +474,20 @@ contains
       return
     end
 
+!    subroutine calculate_mchei(zpars)
+!        real(dp) :: zpars(20),GB(10)
+!
+!      lums(6) = GB(4)*GB(7)**GB(5)
+!
+!              zpars(10) = mcgbf(lums(4),GB,lums(6))
+!
+!
+!          lums(4) = lHeIf(mass,zpars(2))
+!
+!
+!    end
+
+
     subroutine calculate_rg(t,rg)
     !  rg = giant branch or Hayashi track radius, appropiate for the type.
     !       For kw=1 or 2 this is radius at BGB, and for kw=4 either GB or
@@ -517,7 +534,7 @@ contains
                 if (debug .and. (rg .lt. t% pars% radius)) then
                     print*, 'Error in calculate_rg: Rg, R',rg,t% pars% radius,Rbgb, Rbagb
                     print*, t% pars% age, alfa, L, Lbgb, Lbagb
-                    STOP
+!                    STOP
                 endif
                     
             case(EAGB:TPAGB)

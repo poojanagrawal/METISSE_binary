@@ -12,7 +12,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     real(dp), allocatable:: hecorelist(:),ccorelist(:),Lum_list(:),age_list(:)
     real(dp), allocatable:: rlist(:)
 
-    real(dp) :: times_old(11), nuc_old, delta,dtm, delta1! ,tnext,mnext
+    real(dp) :: times_old(11), nuc_old, delta,dtm, delta1,delta_wind
 
     integer :: idd, nt ,ierr
     logical :: debug, interpolate_all,consvR
@@ -35,7 +35,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     t% zams_mass = mass
 
     select case(kw)
-        case(low_mass_MS:EAGB)
+        case(low_mass_MS:TPAGB)
             if (t% pars% mass < 0) then
                 ! Initial call- just do normal interpolation
                 if (debug) print*, "normal interpolate mass", t% initial_mass,t% zams_mass,t% pars% mass,mt,kw
@@ -50,24 +50,26 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                 mt = t% tr(i_mass,ZAMS_EEP)
         !            call write_eep_track(t,t% initial_mass)
             else
-                ! First check if mass has changed since last time star was called.
-                ! For tracks that already have wind mass loss, only check
-                ! for binary mass changes
-                if (t% has_mass_loss) then
-                    delta = (t% pars% mass-mt)-(t% pars% dms*abs(dtm)*1.0d+06)
-                else
-                    delta = (t% pars% mass-mt)
-                endif
-                !this is to avoid extra mass loss if star subroutine
-                ! is called multiple times in same step
-                delta = delta -t% pars% delta
-                delta1 = 1.0d-04*mt
-
-                !next check whether star lost its envelope during binary interaction
+                !first check whether star lost its envelope during binary interaction
                 !to avoid unneccesssary call to interpolation routine
                 if (t% pars% core_mass.ge.mt) then
                     if (debug) print*, 'star has lost envelope, exiting star',t% pars% core_mass,mt
-                elseif (abs(delta) .ge. delta1) then
+                else
+                    ! Next check if mass has changed since last time star was called.
+                    ! For tracks that already have wind mass loss,
+                    ! exclude mass loss due to winds
+                    if (t% has_mass_loss) then
+                        delta_wind = (t% pars% dms*abs(dtm)*1.0d+06)
+                    else
+                        delta_wind = 0.d0
+                    endif
+                    
+                    !this is to avoid extra mass loss if star subroutine
+                    ! is called multiple times in same step
+                    delta = (t% pars% mass-mt) - delta_wind
+                    delta = delta -t% pars% delta
+                    delta1 = 1.0d-04*mt
+                    if (abs(delta) .ge. delta1) then
                 
                     if (debug) print*, "mass loss in interpolate mass called for", &
                                                     t% initial_mass,mt,delta,id
@@ -128,8 +130,6 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     t% pars% delta = delta
                 endif
             endif
-            call calculate_SSE_parameters(t,zpars,tscls,lums,GB,tm,tn)
-        case(TPAGB)
             call calculate_SSE_parameters(t,zpars,tscls,lums,GB,tm,tn)
         case(He_MS:He_GB)
             call calculate_He_timescales(t)

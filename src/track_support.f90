@@ -166,7 +166,7 @@ module track_support
     !holds values of agb parameters for constructing AGB to WD track
     type agb_parameters
         real(dp) :: age,radius,lum
-        real(dp) :: t1,t2,t_post_agb
+        real(dp) :: tfinal
         integer :: phase_wd
     end type agb_parameters
 

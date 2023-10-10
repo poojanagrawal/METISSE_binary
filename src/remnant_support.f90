@@ -137,9 +137,8 @@
         ! So we use kw/old_phase as a check.
         ! kw at this point contains old phase of the star,
         ! the phase upon entering hrdiag, before the star became a remnant or lost its envelope
-    
         !first check if the remnant is a WD
-        if (t% pars% phase>=HeWD .and. t% pars% phase<=ONeWD) then
+        if (t% pars% phase>HeWD .and. t% pars% phase<=ONeWD) then
             if (old_phase <=TPAGB .and. construct_wd_track) then
                 ! contruct the track
                 t% agb% phase_wd = t% pars% phase
@@ -166,21 +165,22 @@
     subroutine evolve_after_agb(t)
         type(track),pointer, intent(inout) :: t
 
-        real(dp) :: alfa, beta,dt,r3
+        real(dp) :: alfa, beta,dt,r3,m0
         real(dp) :: radius_wd,lum_wd,mass_wd
         real(dp) :: t1,t2,t_post_agb
-        !this phase doesn't account for accretion, HeWD -TODO check
+        
 
         t1 = fit_Z_t1(initial_Z)*t% MS_time
         t2 = 10*t1
         t_post_agb = t1+t2
-        t% times(TPAGB) = t% nuc_time + t_post_agb
+        t% agb% tfinal = t% nuc_time + t_post_agb
         mass_wd = t% pars% core_mass
         radius_wd = calculate_wd_radius(mass_wd)
         lum_wd = calculate_wd_lum(mass_wd, 0.d0, A_CO)  !xx = a_co
         dt= t% pars% age- t% agb% age
+        m0 = t% pars% mass
 !        print*,"aj",t% pars% age,t% agb% age, dt,t1
-!            print*, t% nuc_time,t% times(TPAGB),dt
+!            print*, t% nuc_time,t% agb% tfinal,dt
         alfa = 0d0; beta = 0d0
         r3 = 0.3*(t% agb% radius+radius_wd)
 
@@ -190,19 +190,21 @@
             t% pars% mass = alfa* mass_wd + beta*t% initial_mass
             t% pars% radius = alfa* r3 + beta* t% agb% radius
             t% pars% luminosity = alfa* 0.9*t% agb% lum + beta*t% agb% lum
-            t% pars% extra =1
+            t% pars% extra = 1
+            t% pars% dms = (t% pars% mass-m0)/(dt*1.0d+06)
         else
             alfa = (dt-t1)/t2
             beta = 1d0-alfa
             t% pars% radius = (radius_wd*r3)/(alfa*(r3-radius_wd)+radius_wd)
             t% pars% luminosity = alfa* lum_wd + beta* 0.9*t% agb% lum
             t% pars% extra = 2
+            t% pars% dms = 0.d0
         endif
-        if (check_ge(t% pars% age,t% times(TPAGB))) then
+        if (check_ge(t% pars% age,t% agb% tfinal)) then
             t% post_agb = .false.
             t% pars% extra = 0
             t% pars% age_old = t% pars% age
-            t% pars% phase = t% agb% phase_wd   !TODO: Should phase_wd be recalculated?
+            t% pars% phase = t% agb% phase_wd
             t% zams_mass = t% pars% mass
             call initialize_white_dwarf(t% pars)
         endif

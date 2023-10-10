@@ -1668,7 +1668,7 @@
                else
                   kst = MIN(6,3*kstar(j2)-27)
                   mt2 = mass(j2) + km*(dm2 - dms(j2))
-                  if (dbg) print*, 'WD to He star: calling gntage',kst
+                  if(dbg)print*,'WD to He star: calling gntage',kst
                   CALL gntage(massc(j2),mt2,kst,zpars,mass0(j2),
      &                          aj(j2),j2)
                   epoch(j2) = tphys + dtm - aj(j2)
@@ -2066,12 +2066,14 @@
 *            goto 140
 *         endif
          kw = kstar(k)
-         if (dbg) print*,' calling star and hrdiag',tphys,age
+         if (dbg) print*,' calling star and hrdiag',tphys,age,mt,kw
 
          CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,k)
          CALL hrdiag(m0,age,mt,tm,tn,tscls,lums,GB,zpars,
      &               rm,lum,kw,mc,rc,me,re,k2,mcx,k)
 *
+          if (dbg) print*,' after star and hrdiag',tphys,age,mt,kw
+
 * Check for a supernova and correct the semi-major axis if so.
 *
          if(kw.ne.kstar(k).and.kstar(k).le.12.and.
@@ -2117,7 +2119,7 @@
             dtmi(k) = 1.0d+10
          endif
 *        dtmi(k) = MAX((tn-age),1.0d-07)
-         if (dbg) print*, "after deltat-2",dtmi(k)
+         if (dbg) print*, "after deltat-2",dtmi(k),dt,dtr
 *
 * Save relevent solar quantities.
 *

@@ -38,7 +38,7 @@
 * with too small a core mass.
         dbg = .false.
 
-        if (dbg) print*, 'in gntage',kw
+        if (dbg) print*, 'in gntage',kw,mt,mc
       if(kw.eq.4)then
 * Set the minimum CHeB core mass using M = Mflash
          mcy = mcheif(zpars(2),zpars(2),zpars(10))

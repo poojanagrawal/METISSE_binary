@@ -47,9 +47,9 @@
 !                print*, t% nuc_time, t% times(5), age
             case(TPAGB)
                 if (t% post_agb) then
-                    dt = pts3*(t% times(6) - t% agb% age)
-                    dtr = t% times(6) - age
-!                    print*,"aj,tn",age,t% nuc_time,t% times(TPAGB),t% agb% age
+                    dt = pts3*(t% agb% tfinal - t% agb% age)
+                    dtr = t% agb% tfinal - age
+!                    print*,"aj,tn",age,t% nuc_time,t% agb% tfinal,t% agb% age
                 !t% times(6) gets recalculated for t% post_agb- see remnant_support.f
                 else
                     dt = pts3*(t% times(6)-t% times(5))

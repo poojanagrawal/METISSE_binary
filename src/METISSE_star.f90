@@ -71,63 +71,63 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     delta1 = 1.0d-04*mt
                     if (abs(delta) .ge. delta1) then
                 
-                    if (debug) print*, "mass loss in interpolate mass called for", &
-                                                    t% initial_mass,mt,delta,id
-                    t% times_new = -1.0
-                    nt = t% ntrack
-                    call get_initial_mass_for_new_track(t,delta,interpolate_all,idd)
-                    if (debug)print*, 'initial mass for the new track',t% initial_mass
-                    t% ms_old = t% times(MS)
-                    if (interpolate_all) then
-                        ! kw=0,1: main-sequence star, rewrite all columns with new track
-                        if (debug)print*, 'main-sequence star, rewrite with new track'
-                        call interpolate_mass(t% initial_mass,t,id)
-                        if (t% ntrack<nt) print*, '***WARNING: track length reduced***',t% initial_mass,nt,t% ntrack
-                        
-                        ! Calculate timescales and assign SSE phases (Hurley et al.2000)
-                        call calculate_timescales(t)
-                        t% times_new = t% times
-                        t% tr(i_age,:) = t% tr(i_age2,:)
-                    else
-                        !store core properties for post-main sequence evolution
-                        if (debug)print*, 'post-main-sequence star'
-                        allocate(hecorelist(nt),ccorelist(nt),Lum_list(nt),age_list(nt))
-                        hecorelist = t% tr(i_he_core,:)
-                        ccorelist =  t% tr(i_co_core,:)
-                        Lum_list = t% tr(i_logL,:)
+                        if (debug) print*, "mass loss in interpolate mass called for", &
+                                                        t% initial_mass,mt,delta,id
+                        t% times_new = -1.0
+                        nt = t% ntrack
+                        call get_initial_mass_for_new_track(t,delta,interpolate_all,idd)
+                        if (debug)print*, 'initial mass for the new track',t% initial_mass
+                        t% ms_old = t% times(MS)
+                        if (interpolate_all) then
+                            ! kw=0,1: main-sequence star, rewrite all columns with new track
+                            if (debug)print*, 'main-sequence star, rewrite with new track'
+                            call interpolate_mass(t% initial_mass,t,id)
+                            if (t% ntrack<nt) print*, '***WARNING: track length reduced***',t% initial_mass,nt,t% ntrack
+                            
+                            ! Calculate timescales and assign SSE phases (Hurley et al.2000)
+                            call calculate_timescales(t)
+                            t% times_new = t% times
+                            t% tr(i_age,:) = t% tr(i_age2,:)
+                        else
+                            !store core properties for post-main sequence evolution
+                            if (debug)print*, 'post-main-sequence star'
+                            allocate(hecorelist(nt),ccorelist(nt),Lum_list(nt),age_list(nt))
+                            hecorelist = t% tr(i_he_core,:)
+                            ccorelist =  t% tr(i_co_core,:)
+                            Lum_list = t% tr(i_logL,:)
 
-                        times_old = t% times
-                        nuc_old = t% nuc_time
-                        age_list = t% tr(i_age,:)
-                        rlist = t% tr(i_logR,:)
-                        if ((t% pars% mcenv/t% pars% mass).ge.0.2) consvR= .true.
-!                            .and.(t% pars% env_frac.ge.0.2)
-                        call interpolate_mass(t% initial_mass,t,id)
-                       !write the mass interpolated track if write_eep_file is true
-                        if (kw>=1 .and. kw<=4 .and. .false.) then
-                            call write_eep_track(t,mt)
-                        end if
-                        
-                        if (t% ntrack<nt) print*, '**WARNING: track length reduced**',t% initial_mass,nt,t% ntrack
+                            times_old = t% times
+                            nuc_old = t% nuc_time
+                            age_list = t% tr(i_age,:)
+                            rlist = t% tr(i_logR,:)
+                            if ((t% pars% mcenv/t% pars% mass).ge.0.2) consvR= .true.
+    !                            .and.(t% pars% env_frac.ge.0.2)
+                            call interpolate_mass(t% initial_mass,t,id)
+                           !write the mass interpolated track if write_eep_file is true
+                            if (kw>=1 .and. kw<=4 .and. .false.) then
+                                call write_eep_track(t,mt)
+                            end if
+                            
+                            if (t% ntrack<nt) print*, '**WARNING: track length reduced**',t% initial_mass,nt,t% ntrack
 
-                        call calculate_timescales(t)
-                        t% times_new = t% times
-                        t% times = times_old
-                        
-                        t% nuc_time = nuc_old
+                            call calculate_timescales(t)
+                            t% times_new = t% times
+                            t% times = times_old
+                            
+                            t% nuc_time = nuc_old
 
-                        t% tr(i_age,:) = age_list(1:t% ntrack)
-                        t% tr(i_he_core,:) = hecorelist(1:t% ntrack)
-                        t% tr(i_co_core,:) = ccorelist(1:t% ntrack)
-                        t% tr(i_logL,:) = Lum_list(1:t% ntrack)
-                        !TEST: R remains unchanged if Mconv is significant
-                        if (consvR) then
-                            t% tr(i_logR,:) = rlist(1:t% ntrack)
+                            t% tr(i_age,:) = age_list(1:t% ntrack)
+                            t% tr(i_he_core,:) = hecorelist(1:t% ntrack)
+                            t% tr(i_co_core,:) = ccorelist(1:t% ntrack)
+                            t% tr(i_logL,:) = Lum_list(1:t% ntrack)
+                            !TEST: R remains unchanged if Mconv is significant
+                            if (consvR) then
+                                t% tr(i_logR,:) = rlist(1:t% ntrack)
+                            endif
+                            deallocate(hecorelist,ccorelist,Lum_list,age_list,rlist)
                         endif
-                        deallocate(hecorelist,ccorelist,Lum_list,age_list,rlist)
-                        
+                        t% pars% delta = delta
                     endif
-                    t% pars% delta = delta
                 endif
             endif
             call calculate_SSE_parameters(t,zpars,tscls,lums,GB,tm,tn)

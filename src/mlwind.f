@@ -1,4 +1,4 @@
-      real*8 FUNCTION mlwind(kw,lum,r,mt,mc,rl,z,dtm,id)
+      real*8 FUNCTION mlwind(kw,lum,r,mt,mc,rl,z,id)
       IMPLICIT NONE
       INCLUDE 'const_bse.h'
       
@@ -13,6 +13,6 @@
           mlwind = SSE_mlwind(kw,lum,r,mt,mc,rl,z)
       else!if (METISSE_FLAG.eqv..TRUE.) then
           !WRITE(*,*) 'Calling METISSE_mlwind'
-          mlwind = METISSE_mlwind(kw,lum,r,mt,mc,rl,z,dtm,id)
+          mlwind = METISSE_mlwind(kw,lum,r,mt,mc,rl,z,id)
       endif
       END

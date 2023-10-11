@@ -1,4 +1,4 @@
-real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,dtm,id)
+real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
     use track_support
     use interp_support, only: interpolate_age
     implicit none
@@ -7,7 +7,7 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,dtm,id)
     integer:: kw,idd
 
     real(dp) :: lum,r,mt,mc,rl,z
-    real(dp) :: dms,dtm
+    real(dp) :: dms
     real(dp) :: tnext,tprev, mnext,mprev
 
     logical :: add_mass_loss
@@ -29,8 +29,6 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,dtm,id)
     add_mass_loss = .true.
 
     dms = 0.d0
-!t% pars% dt =dtm
-!print*, 'testing dtm',t% pars% dt-dtm,id
     if (t% has_mass_loss .and. kw<6) then
         tnext = t% pars% age+ t% pars% dt
         tprev = max(0.d0,t% pars% age-t% pars% dt)

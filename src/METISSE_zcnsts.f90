@@ -8,7 +8,7 @@ subroutine METISSE_zcnsts(z,zpars)
 
     integer :: i,ierr,j,nmax
     logical :: debug, res
-    
+    character(LEN=strlen) :: filename
     ierr = 0
     debug = .false.
     
@@ -16,7 +16,7 @@ subroutine METISSE_zcnsts(z,zpars)
         if (debug) print*, '*****No change in metallicity, exiting METISSE_zcnsts.*****'
         return
     else
-        if (debug) print*, '*****New metallicity is******',z,'initializing METISSE_zcnsts'
+        if (debug) print*, '*****Metallicity is******',z,'initializing METISSE_zcnsts'
         if (allocated(s)) deallocate(s,key_cols,key_eeps)
         if (allocated(core_cols)) deallocate(core_cols)
         if (allocated(m_cutoff)) deallocate(m_cutoff)
@@ -24,50 +24,55 @@ subroutine METISSE_zcnsts(z,zpars)
         if (allocated(Mmax_array)) deallocate(Mmax_array, Mmin_array)
 
         i_mass = -1
-        !TODO: re-initailize all such variables with defaults
+        !TODO: re-initialize all such variables with defaults
     endif
     
 
     !reading defaults option first
     call read_defaults(ierr); if (ierr/=0) STOP
-     verbose =.true.           
     if (front_end /= main) initial_Z = z
 
     !read inputs from evolve_metisse.in
     if (front_end == main .or. front_end == bse) then
         
         call read_metisse_input(ierr); if (ierr/=0) STOP
+        !read metallicity related variables
+        call get_metallcity_file_from_Z(initial_Z,ierr); if (ierr/=0) STOP
+    
     elseif (front_end == COSMIC) then
         call get_metisse_input(TRACKS_DIR)
+        !read metallicity related variables
+        call get_metallcity_file_from_Z(initial_Z,ierr); if (ierr/=0) STOP
+        inquire(file=trim(format_file), exist=res)
+        if (res .eqv. .False.) then
+            if (debug) print*, trim(format_file), 'not found; appending ',trim(TRACKS_DIR)
+            format_file = trim(TRACKS_DIR)//'/'//trim(format_file)
+        endif
     else
         print*, "Error: reading inputs; unrecognized front_end_name for METISSE"
     endif
-        
-        
-    !read metallicity related variables
-    call get_metallcity_file_from_Z(initial_Z,ierr); if (ierr/=0) STOP
-    
-    
-    if (front_end == COSMIC) then
-    
-        INPUT_FILES_DIR = trim(TRACKS_DIR)//'/'//trim(INPUT_FILES_DIR)
-        
-        inquire( file=trim(format_file), exist=res)
-        if (res .eqv. .False.) format_file = trim(TRACKS_DIR)//'/'//trim(format_file)
-    endif
-    
+
     !read file-format
     call read_format(format_file,ierr); if (ierr/=0) STOP
 
-    !get filenames
     if (trim(INPUT_FILES_DIR) == '' )then
         print*,"Error: INPUT_FILES_DIR is not defined"
         STOP
     endif
-        
+    
+    
+    !get filenames
+    
     if (verbose) print*,"Reading input files from: ", trim(INPUT_FILES_DIR)
     
     call get_files_from_path(INPUT_FILES_DIR,file_extension,track_list,ierr)
+    
+    if (ierr/=0 .and. front_end == COSMIC) then
+        if (debug) print*, trim(INPUT_FILES_DIR), 'not found; appending ',trim(TRACKS_DIR)
+        INPUT_FILES_DIR = trim(TRACKS_DIR)//'/'//trim(INPUT_FILES_DIR)
+        call get_files_from_path(INPUT_FILES_DIR,file_extension,track_list,ierr)
+    endif
+    
     
     if (ierr/=0) then
         print*,'Error: failed to read input files.'

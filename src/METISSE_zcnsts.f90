@@ -7,7 +7,7 @@ subroutine METISSE_zcnsts(z,zpars)
     real(dp), intent(out) :: zpars(20)
 
     integer :: i,ierr,j,nmax
-    logical :: debug
+    logical :: debug, res
     
     ierr = 0
     debug = .false.
@@ -40,7 +40,7 @@ subroutine METISSE_zcnsts(z,zpars)
     elseif (front_end == COSMIC) then
         call get_metisse_input(TRACKS_DIR)
     else
-        print*, "Error: Unrecongnized front_end_name for METISSE"
+        print*, "Error: reading inputs; unrecognized front_end_name for METISSE"
     endif
         
         
@@ -49,8 +49,11 @@ subroutine METISSE_zcnsts(z,zpars)
     
     
     if (front_end == COSMIC) then
-        format_file = trim(TRACKS_DIR)//'/'//trim(format_file)
+    
         INPUT_FILES_DIR = trim(TRACKS_DIR)//'/'//trim(INPUT_FILES_DIR)
+        
+        inquire( file=trim(format_file), exist=res)
+        if (res .eqv. .False.) format_file = trim(TRACKS_DIR)//'/'//trim(format_file)
     endif
     
     !read file-format

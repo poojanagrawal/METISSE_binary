@@ -9,10 +9,11 @@ subroutine dealloc_track()
 !    n = 1
 
     do i =1,n
+!        deallocate(tarr(i)% times_new)
+!        deallocate(tarr(i)% times)
         deallocate(tarr(i)% eep)
-        deallocate(tarr(i)% cols)
         deallocate(tarr(i)% tr)
-        deallocate(tarr(i)% times)
+        deallocate(tarr(i)% cols)
         deallocate(tarr(i)% bounds)
     end do
     deallocate(tarr)

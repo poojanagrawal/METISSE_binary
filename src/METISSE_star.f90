@@ -40,7 +40,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                 ! Initial call- just do normal interpolation
                 if (debug) print*, "normal interpolate mass", t% initial_mass,t% zams_mass,t% pars% mass,mt,kw
                 t% initial_mass = mass
-                call interpolate_mass(t% initial_mass,t,id)
+                call interpolate_mass(t% initial_mass,id)
                 call calculate_timescales(t)
 
                 !Todo: explain what age 2 and Times_new are
@@ -81,7 +81,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                         if (interpolate_all) then
                             ! kw=0,1: main-sequence star, rewrite all columns with new track
                             if (debug)print*, 'main-sequence star, rewrite with new track'
-                            call interpolate_mass(t% initial_mass,t,id)
+                            call interpolate_mass(t% initial_mass,id)
                             if (t% ntrack<nt) print*, '***WARNING: track length reduced***',t% initial_mass,nt,t% ntrack
                             
                             ! Calculate timescales and assign SSE phases (Hurley et al.2000)
@@ -102,7 +102,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                             rlist = t% tr(i_logR,:)
                             if ((t% pars% mcenv/t% pars% mass).ge.0.2) consvR= .true.
     !                            .and.(t% pars% env_frac.ge.0.2)
-                            call interpolate_mass(t% initial_mass,t,id)
+                            call interpolate_mass(t% initial_mass,id)
                            !write the mass interpolated track if write_eep_file is true
                             if (kw>=1 .and. kw<=4 .and. .false.) then
                                 call write_eep_track(t,mt)

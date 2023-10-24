@@ -13,7 +13,7 @@ module interp_support
     contains
 
     !   interpolates a new track given initial mass
-    subroutine interpolate_mass(mass,t,id)
+    subroutine interpolate_mass(mass,id)
         implicit none
         real(dp), intent(in) :: mass
         type(track), pointer :: t
@@ -119,14 +119,14 @@ module interp_support
         call smooth_track(t)
 
         ! allocate timescales
-        allocate(t% times(11))
+!        allocate(t% times(11), t% times_new(11))
         t% times = undefined
         
         ! recalibrate age from ZAMS
         t% tr(i_age2,:) = t% tr(i_age2,:)- t% tr(i_age2,ZAMS_EEP)
         t% tr(i_age2,:) = t% tr(i_age2,:)*1E-6          !Myrs
         if(ierr/=0) write(0,*) 'interpolate_track: interpolation failed for ', mass
- 	nullify(a)
+ 	nullify(a,t)
     end subroutine interpolate_mass
 
     subroutine findtracks_for_interpolation(mass,bounds,min_index,keyword,iseg)
@@ -377,7 +377,7 @@ module interp_support
         deallocate(t% tr)
         temp_ntrack = t% ntrack
         t% ntrack = min_ntrack
-n = temp_ntrack
+        n = temp_ntrack
         allocate(t% tr(t% ncol+1, t% ntrack))
 
         t% tr = 0d0

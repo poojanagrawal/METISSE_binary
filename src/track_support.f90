@@ -189,7 +189,7 @@ module track_support
         real(dp) :: MS_time, nuc_time, ms_old
         
         real(dp), allocatable :: tr(:,:)
-        real(dp), allocatable :: times(:), times_new(:)           !timescales
+        real(dp) :: times(11), times_new(11)           !timescales
         integer, allocatable :: eep(:), bounds(:)
 
         type(star_parameters) :: pars    ! parameters at any instant
@@ -233,7 +233,6 @@ module track_support
         real(dp), intent(in) :: value
         integer, intent(out) :: min_index
         logical, optional :: debug
-        real(dp) :: difference(size_list)
 
         if (present(debug)) then
             if (debug)  then
@@ -251,9 +250,7 @@ module track_support
             min_index = size_list+1; return
         end if
 
-        difference = 0.d0
-        difference = abs(list-value)
-        min_index = minloc(difference, dim=1)
+        min_index = minloc(abs(list-value), dim=1)
     end subroutine index_search
 
 
@@ -548,8 +545,9 @@ module track_support
             end do
         end if
         
-        deallocate(Lum,Teff,core_mass)
         deallocate(diff_L,diff_Te,dLdTe)
+
+        deallocate(Lum,Teff,core_mass)
     end function
     
     subroutine write_dat_track(tphys, pars)
@@ -764,9 +762,10 @@ module track_support
     subroutine deallocate_arrays(t)
     type(track), pointer :: t
         deallocate(t% eep)
-        deallocate(t% cols)
         deallocate(t% tr)
-        deallocate(t% times)
+!        deallocate(t% times)
+        deallocate(t% cols)
+
         deallocate(t% bounds)
     end subroutine deallocate_arrays
 end module track_support

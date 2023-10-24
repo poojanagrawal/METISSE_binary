@@ -94,8 +94,6 @@ module interp_support
             
         end select
         
-
-
         if (fix_track) call check_length(iseg,t,min_index)
 
         ! get eeps
@@ -126,7 +124,8 @@ module interp_support
         t% tr(i_age2,:) = t% tr(i_age2,:)- t% tr(i_age2,ZAMS_EEP)
         t% tr(i_age2,:) = t% tr(i_age2,:)*1E-6          !Myrs
         if(ierr/=0) write(0,*) 'interpolate_track: interpolation failed for ', mass
- 	nullify(a,t)
+        deallocate(min_eeps)
+        nullify(a,t)
     end subroutine interpolate_mass
 
     subroutine findtracks_for_interpolation(mass,bounds,min_index,keyword,iseg)
@@ -134,7 +133,7 @@ module interp_support
         real(dp), intent(in) :: mass
         integer, intent(out) :: iseg,min_index,keyword
         integer :: m_low,m_high,num_list,min_index1,j
-        real(dp), pointer :: mass_list(:)
+        real(dp), allocatable :: mass_list(:)
         integer, allocatable :: bounds(:)
 
         m_low = 0
@@ -237,7 +236,7 @@ module interp_support
         integer :: min_index,iseg
 
         type(eep_track), pointer :: sa(:)
-        real(dp), pointer :: mass_list(:)
+        real(dp), allocatable :: mass_list(:)
         integer :: m_low,m_high,num_list
         integer :: i, m1, up_count,low_count,temp(4)
         integer :: min_ntrack, low_lim, upp_lim
@@ -622,7 +621,8 @@ module interp_support
             print*,"fatal error: mass <0 "
             stop
         endif
-        deallocate(new_line,min_eeps)
+        deallocate(min_eeps)
+        deallocate(new_line)
          
         if (debug) print*, 'exiting interpolate_age'
     end subroutine interpolate_age

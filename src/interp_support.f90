@@ -765,7 +765,9 @@ module interp_support
         type(track), pointer :: t
 
         integer :: min_index,num_list,Mupp,Mlow,i,j,k,nt,kw,id
-        real(dp), pointer :: mlist(:),age_list(:)
+        real(dp), pointer :: age_list(:)
+        real(dp), allocatable:: mlist(:)
+
         real(dp) :: Mnew,alfa,beta,age
         integer :: eep_m, eep_n, eep_core
 
@@ -796,10 +798,7 @@ module interp_support
         eep_n = -1
         nt = t% ntrack
 
-        
-        
-        allocate(age_list(nt))
-        age_list => t% tr(i_age,:)
+        age_list => t% tr(i_age,1:nt)
         Mlow = -1
         Mupp = -1
         min_index = t% min_index
@@ -844,9 +843,8 @@ module interp_support
         if (debug) print*,"modified eep_n : ",eep_n
 
         ! if no solution is found, we keep using the old tracks for inetrpolation
-
+        nullify(age_list)
         if (eep_n >0) then
-!            if (debug) print*,"ages at eep_n, 1, ntrack",age_list(eep_n),age_list(1), age_list(nt)
             ! get mass bounds for Mnew at eep_n
             num_list = size(s)
             allocate(mlist(size(s)))
@@ -910,6 +908,8 @@ module interp_support
                     Mlow,Mupp,num_list,mnew,eep_n,kw
             if (Mlow<1) Mlow = 1
             if (Mupp> num_list) Mupp = num_list
+            if (allocated(mlist)) deallocate(mlist)
+            
             return
         endif
         if (debug)print*,"mnew =",mnew, "masses at Mup =", mlist(Mupp), "mlow = ", mlist(Mlow)
@@ -922,7 +922,6 @@ module interp_support
         if (debug) print*, "new ini mass",t% initial_mass, s(Mupp)% initial_mass, s(Mlow)% initial_mass
 
         deallocate(mlist)
-        nullify(age_list)
 
     end subroutine get_initial_mass_for_new_track
     

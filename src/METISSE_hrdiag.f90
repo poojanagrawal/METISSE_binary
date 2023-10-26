@@ -191,6 +191,7 @@
 
             if (i_rcenv>0) then
                 renv = t% pars% rcenv
+                renv = min (renv,r-rc)! limit it to the total envelope radius
             else
                 if((mt-mc)>0) then
                     renv = (r - rc)*menv/(mt - mc)
@@ -199,7 +200,6 @@
                 endif
             endif
             renv = MAX(renv,1.0d-10)
-           
             k2 = 0.21
             !TODO: add similar lines K2(M.I.) if column is present)
         else

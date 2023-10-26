@@ -582,6 +582,7 @@ module interp_support
                         new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
                         if (new_line(j,1)/= new_line(j,1)) then
                         print*, '**Warning: NaN encountered during interpolation age** ',t% initial_mass,input_age,j,mhi,mlo
+                        stop
                         endif
                     endif
                 end do

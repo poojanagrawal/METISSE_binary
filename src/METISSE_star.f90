@@ -59,7 +59,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     ! For tracks that already have wind mass loss,
                     ! exclude mass loss due to winds
                     if (t% has_mass_loss) then
-                        delta_wind = (t% pars% dms*abs(dtm)*1.0d+06)
+                        delta_wind = (t% pars% dms*dtm*1.0d+06)
                     else
                         delta_wind = 0.d0
                     endif

@@ -47,10 +47,9 @@
 !                print*, t% nuc_time, t% times(5), age
             case(TPAGB)
                 if (t% post_agb) then
-                    dt = pts3*(t% agb% tfinal - t% agb% age)
+                    dt = pts3*(t% agb% tfinal - t% agb% tini)
                     dtr = t% agb% tfinal - age
 !                    print*,"aj,tn",age,t% nuc_time,t% agb% tfinal,t% agb% age
-                !t% times(6) gets recalculated for t% post_agb- see remnant_support.f
                 else
                     dt = pts3*(t% times(6)-t% times(5))
                     dt = MIN(dt,0.001d0)
@@ -96,7 +95,7 @@
                 t% ierr = -1
                 t% pars% dt = 1e+10
 !                t% pars% phase = 15
-                stop
+!                stop
             endif
             
             nullify(t)

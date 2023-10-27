@@ -29,7 +29,11 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
     add_mass_loss = .true.
 
     dms = 0.d0
-    if (t% has_mass_loss .and. kw<6) then
+    
+    if (t% post_agb) then
+        ! Multiplying 1.0d-06 as tfinal and T ini are in Myrs
+        dms = 1.0d-06*(t% agb% mass-t% pars% core_mass)/((t% agb% tfinal- t% agb% tini))
+    elseif (t% has_mass_loss .and. kw<=6) then
         tnext = t% pars% age+ t% pars% dt
         tprev = max(0.d0,t% pars% age-t% pars% dt)
 !        print*,'in mlwind',t% pars% age,t% pars% dt,tprev,tnext
@@ -61,7 +65,7 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
         if (add_mass_loss) dms = SSE_mlwind(kw,lum,r,mt,mc,rl,z)
 !        if (kw<=9) print*,"mlwind function",dms,mt,mc,kw,id
     endif
-    if (kw ==6 .and. t% post_agb) dms = 0.d0
+    
     if (debug) print*,"in metisse_mlwind, dms",dms, t% pars% mass, t% pars% phase
     metisse_mlwind = dms
     

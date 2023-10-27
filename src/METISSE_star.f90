@@ -25,7 +25,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr=0
     
     debug = .false.
-!    if ((id == 1) .and. (kw<=7))debug = .true.
+!    if ((id == 1) .and. (kw==7))debug = .true.
 
     if (debug) print*, '-----------STAR---------------'
     if (debug) print*,"in star", mass,mt,kw,id
@@ -68,10 +68,11 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     ! is called multiple times in same step
                     delta = (t% pars% mass-mt) - delta_wind
                     delta = delta -t% pars% delta
+                    
                     delta1 = 1.0d-04*mt
-                    if (abs(delta) .ge. delta1) then
+                    if ((abs(delta).ge.delta1).and.(t% post_agb.eqv..false.)) then
                 
-                        if (debug) print*, "mass loss in interpolate mass called for", &
+                        if(debug)print*,"mass loss in interpolate mass called for", &
                                                         t% initial_mass,mt,delta,id
                         t% times_new = -1.0
                         nt = t% ntrack
@@ -91,7 +92,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                         else
                             !store core properties for post-main sequence evolution
                             if (debug)print*, 'post-main-sequence star'
-                            allocate(hecorelist(nt),ccorelist(nt),Lum_list(nt),age_list(nt))
+                            allocate(hecorelist(nt),ccorelist(nt),Lum_list(nt),age_list(nt),rlist(nt))
                             hecorelist = t% tr(i_he_core,:)
                             ccorelist =  t% tr(i_co_core,:)
                             Lum_list = t% tr(i_logL,:)

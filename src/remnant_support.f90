@@ -146,10 +146,10 @@
                 t% post_agb = .true.
                 t% pars% age_old = 0.0
 
-                t% agb% age = t% pars% age
+                t% agb% tini = t% pars% age
                 t% agb% lum = t% pars% luminosity
                 t% agb% radius = t% pars% radius
-                t% initial_mass = t% pars% mass
+                t% agb% mass = t% pars% mass
                 call evolve_after_agb(t)
                 if (debug_rem) print*, "In post-agb phase, mass = ", t% pars% mass
     !            print*,t% pars% luminosity, t% pars% radius
@@ -169,7 +169,6 @@
         real(dp) :: radius_wd,lum_wd,mass_wd
         real(dp) :: t1,t2,t_post_agb
         
-
         t1 = fit_Z_t1(initial_Z)*t% MS_time
         t2 = 10*t1
         t_post_agb = t1+t2
@@ -177,7 +176,7 @@
         mass_wd = t% pars% core_mass
         radius_wd = calculate_wd_radius(mass_wd)
         lum_wd = calculate_wd_lum(mass_wd, 0.d0, A_CO)  !xx = a_co
-        dt= t% pars% age- t% agb% age
+        dt= t% pars% age- t% agb% tini
         m0 = t% pars% mass
 !        print*,"aj",t% pars% age,t% agb% age, dt,t1
 !            print*, t% nuc_time,t% agb% tfinal,dt
@@ -187,11 +186,11 @@
         if (dt<t1) then
             alfa = dt/t1
             beta = 1d0-alfa
-            t% pars% mass = alfa* mass_wd + beta*t% initial_mass
             t% pars% radius = alfa* r3 + beta* t% agb% radius
             t% pars% luminosity = alfa* 0.9*t% agb% lum + beta*t% agb% lum
             t% pars% extra = 1
-            t% pars% dms = (t% pars% mass-m0)/(dt*1.0d+06)
+!            t% pars% mass = alfa* mass_wd + beta*t% agb% mass
+!            t% pars% dms = (t% pars% mass-m0)/(dt*1.0d+06)
         else
             alfa = (dt-t1)/t2
             beta = 1d0-alfa

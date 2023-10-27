@@ -173,7 +173,8 @@
 
 
     ! Calculate mass and radius of convective envelope, and envelope gyration radius.
-    !this should be separate to above loop as phases may change during the evolution step
+    ! this needs to be separate from the above loop
+    ! as phases may change during the evolution step
 
     select case(t% pars% phase)
     case(low_mass_MS:TPAGB)
@@ -183,7 +184,7 @@
         if (t% pars% core_radius<0) CALL calculate_rc(t,tscls,zpars,t% pars% core_radius)
         rc = t% pars% core_radius
 
-        if (i_mcenv>0 ) then
+        if (i_mcenv>0) then
             !mass of convective envelope
             menv = t% pars% mcenv
             menv = min(menv,mt-mc)  ! limit it to the total envelope mass
@@ -191,7 +192,7 @@
 
             if (i_rcenv>0) then
                 renv = t% pars% rcenv
-                renv = min (renv,r-rc)! limit it to the total envelope radius
+                renv = min(renv,r-rc)! limit it to the total envelope radius
             else
                 if((mt-mc)>0) then
                     renv = (r - rc)*menv/(mt - mc)

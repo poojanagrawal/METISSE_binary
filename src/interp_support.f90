@@ -558,6 +558,8 @@ module interp_support
             endif
 
             call find_nearest_eeps(t,min_eeps, age, age_col)
+            if(.not.allocated(min_eeps))print*,'error finding nearest eeps for age:',age,input_age
+            
             mlo = minval(min_eeps)
             mhi = maxval(min_eeps)
 
@@ -671,6 +673,13 @@ module interp_support
         debug =  .false.
         !Todo: min_eeps-> nbr_eeps
 
+        ! sometimes mergers can age issues, so we reassign negative timesteps in deltat to something large and make code exit, i.e., stop evolving the system.
+        ! temporary
+        if (age .gt. t% tr(age_col,t% eep(t% neep))) then
+        
+        min_eeps = [t% eep(t% neep)-1,t% eep(t% neep)]
+        return
+        endif
         last_age = 0.d0
         do i = 1,t% neep-1
             if (debug) print*,"loc_low", t% eep(i), t% eep(i+1),t%neep
@@ -726,7 +735,6 @@ module interp_support
             deallocate(age_list)
             exit
         end do
-        if (.not. allocated(min_eeps)) print*, 'error finding nearest eeps'
     end subroutine find_nearest_eeps
 
 

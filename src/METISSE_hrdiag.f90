@@ -229,16 +229,14 @@
 
 
     if (irecord>0) then
-!        if (kw<10 .and. debug) print*, "delta in hrdiag",t% pars% delta
-        t% pars% delta = 0.d0
-        if (kw<10 .and. debug) print*,"saving pars",mt,mc,aj,kw,r
+!        if (id==1)print*,"saving pars",mt,mc,aj,kw,r,t%pars% age
     else
         t% pars = old_pars
         t% post_agb = post_agb
         !tm and tn get calculated in star.f90
     endif
     if (irecord>0 .and. debug) print*,"finished hrdiag",mt,mc,aj,kw,id
-!if (kw>1 .and. mc<=0.0) stop
+
 !    if(id==1)print*,"finished hrdiag",t% pars% mass, t% pars% core_mass,t% pars% age,t% pars% radius
 
     

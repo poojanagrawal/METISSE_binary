@@ -524,6 +524,7 @@ module interp_support
         dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
 
         kw = t% pars% phase
+        
         !TODO: this is temporary until gntage is modified
         ! to avoid NaN during interpolation
         if (kw >1 .and.kw<5) then
@@ -783,7 +784,7 @@ module interp_support
         logical :: debug, interpolate_all
 
         debug = .false.
-!        if (id ==2) debug = .true.
+!        if (id ==1) debug = .true.
         interpolate_all = .false.
 
         kw = t% pars% phase

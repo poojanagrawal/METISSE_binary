@@ -769,9 +769,9 @@ module interp_support
     end subroutine interp_4pt_pm
     
 
-    subroutine get_initial_mass_for_new_track(t,delta,interpolate_all,id)
+    subroutine get_initial_mass_for_new_track(t,interpolate_all,id)
 
-        real(dp), intent(in) :: delta
+!        real(dp), intent(in) :: delta
         type(track), pointer :: t
 
         integer :: min_index,num_list,Mupp,Mlow,i,j,k,nt,kw,id
@@ -812,10 +812,10 @@ module interp_support
         Mlow = -1
         Mupp = -1
         min_index = t% min_index
-        Mnew = t% pars% mass-delta
+        Mnew = t% pars% mass-t% pars% delta
 
 
-        if (debug) print*,"getting new initial mass mnew at age and phase: ",mnew,t% pars% mass-delta,age,kw
+        if (debug) print*,"getting new initial mass mnew at age and phase: ",mnew,age,kw,id
         
         call index_search(nt,age_list,age,eep_m)
     !    if (age_list(eep_m)<age) eep_m = eep_m+1
@@ -828,7 +828,7 @@ module interp_support
         ! if not check higher eeps (older age) in case of mass loss, and lower eeps for mass gain
         
         
-        if (delta>0.d0) then
+        if (t% pars% delta>0.d0) then
         ! mass loss
             do j = 0,nt
                 if (eep_m+j<= nt) then
@@ -911,7 +911,7 @@ module interp_support
             end do
          endif
         
-        if (debug)  print*, "Mup", Mupp, "mlow",Mlow,min_index
+        if (debug)  print*, "Mup", Mupp, "mlow",Mlow,"min_index",min_index
         if(Mlow < 0 .or. Mupp <0) then
             if (debug) print*,"Error: beyond the bounds for interpolation"
             if (debug) print*, "Mlow,Mupp,num_list,mnew,eep_n,kw", &

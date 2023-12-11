@@ -12,7 +12,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     real(dp), allocatable:: hecorelist(:),ccorelist(:),Lum_list(:),age_list(:)
     real(dp), allocatable:: rlist(:)
 
-    real(dp) :: times_old(11), nuc_old, delta,dtm, delta1,delta_wind
+    real(dp) :: times_old(11), nuc_old, delta,dtm, delta1,delta_wind, quant
 
     integer :: idd, nt ,ierr
     logical :: debug, interpolate_all,consvR
@@ -25,7 +25,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr=0
     
     debug = .false.
-!    if ((id == 1) .and. (kw==1))debug = .true.
+!    if ((id == 1) .and. (kw<=6))debug = .true.
 
     if (debug) print*, '-----------STAR---------------'
     if (debug) print*,"in star", mass,mt,kw,id
@@ -59,40 +59,45 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     ! Next check if mass has changed since last time star was called.
                     ! For tracks that already have wind mass loss,
                     ! exclude mass loss due to winds
-                    if (t% has_mass_loss) then
+                    if (t% has_mass_loss .and. (abs(mt-t% pars% mass))>1.0d-06) then
                         delta_wind = (t% pars% dms*dtm*1.0d+06)
                     else
                         delta_wind = 0.d0
                     endif
-                    
-                    !this is to avoid extra mass loss if star subroutine
-                    ! is called multiple times in same step
+
                     delta = (t% pars% mass-mt) - delta_wind
-!                    if (id==1)print*, 'delta org', delta,t% pars% mass
-                    delta = delta +t% pars% delta
-                    t% pars% delta = delta
-                    t% pars% mass = mt + delta_wind
-                    ! for certain phases star is called twice to calculate epoch
-                    ! above is to prevent multiple mass calculations in the same step
-                    ! until hrdiag is called and t% pars% mass gets reassigned there
+!                    if (id==1)print*, 'delta org', delta,t% pars% mass,mt,delta_wind
+                    t% pars% delta = t% pars% delta+ delta
+                    
                     delta1 = 1.0d-04*mt
                     if (debug) print*, 'delta is', delta, delta1,t% pars% delta,t% pars% mass
-                    if ((abs(delta).ge.delta1).and.(t% post_agb.eqv..false.)) then
+                    if ((abs(t% pars% delta).ge.delta1).and.(t% post_agb.eqv..false.)) then
                 
                         if(debug)print*,"mass loss in interpolate mass called for", &
                                                         t% initial_mass,mt,t% pars% mass,id
                                                         
-                        t% pars% delta = 0.d0
+                        
                         t% times_new = -1.d0
                         nt = t% ntrack
-!                        if (id==1) then
-!                        print*, 'age check',t% pars% age
-!                        if (dtm<0) print*,(t% pars% age*t% MS_old/t% ms_time)+dtm
-!                        if (dtm>0) print*,(t% pars% age*t% MS_time/t% ms_old)+dtm
+                        
+!                        quant = (t% pars% age*t% MS_old/t% ms_time)+dtm
+!
+!!                        if (dtm<0.d0) print*,'dtm<0',t% pars% age,dtm
+!
+!                        if (dtm<0.d0 .and. (quant .le.t% pars% age_old)) then
+!!                            print*, 'age check',quant,t% pars% age_old, quant .le.t% pars% age_old
+!                            t% initial_mass = t% initial_mass_old
+!                        else
+!                            t% ms_old = t% times(MS)
+!                            t% pars% age_old = t% pars% age
+!                            t% initial_mass_old = t% initial_mass
+!                            call get_initial_mass_for_new_track(t,interpolate_all,idd)
 !                        endif
-                        call get_initial_mass_for_new_track(t,delta,interpolate_all,idd)
+                        
+                        call get_initial_mass_for_new_track(t,interpolate_all,idd)
+
                         if (debug)print*, 'initial mass for the new track',t% initial_mass
-                        t% ms_old = t% times(MS)
+                        t% pars% delta = 0.d0
                         if (interpolate_all) then
                             ! kw=0,1: main-sequence star, rewrite all columns with new track
                             if (debug)print*, 'main-sequence star, rewrite with new track'
@@ -142,6 +147,10 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                             deallocate(hecorelist,ccorelist,Lum_list,age_list,rlist)
                         endif
                     endif
+                    t% pars% mass = mt !+ delta_wind
+                    ! for certain phases star is called twice to calculate epoch
+                    ! above is to prevent multiple mass calculations in the same step
+                    ! until hrdiag is called and t% pars% mass gets reassigned there
                 endif
             endif
             call calculate_SSE_parameters(t,zpars,tscls,lums,GB,tm,tn)

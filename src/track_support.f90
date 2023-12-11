@@ -185,7 +185,7 @@ module track_support
         integer :: star_type = unknown, irecord,ierr
         
         real(dp) :: initial_mass, initial_Z, initial_Y, Fe_div_H,  v_div_vcrit, alpha_div_Fe
-        real(dp) :: zams_mass      !effective initial mass (M0 of SSE)
+        real(dp) :: initial_mass_old,zams_mass      !effective initial mass (M0 of SSE)
         real(dp) :: MS_time, nuc_time, ms_old
         
         real(dp), allocatable :: tr(:,:)

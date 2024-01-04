@@ -62,10 +62,11 @@
                 call evolve_after_agb(t)
             elseif (check_ge(t% pars% age,t% tr(i_age,t% ntrack))) then
                 !have reached the end of the eep track; self explanatory
-                
-                if (kw<5 .and.verbose) &
-                        print*,'WARNING: possible early end of file due to incomplete track beyond phase',kw,t% initial_mass
                 if (debug) print*,"end of file:aj,tn ",t% pars% age,t% tr(i_age,t% ntrack),t% tr(i_age2,t% ntrack)
+                if (kw<5 .and. t% ierr==0) then
+                    if(verbose) write(99,*)'WARNING: Early end of file due to incomplete track beyond phase',kw,t% initial_mass,id
+                    t% ierr = -1
+                endif
 
                 end_of_file = .true.
                 j_bagb = min(t% ntrack, TA_cHeB_EEP)

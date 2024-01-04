@@ -158,6 +158,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             call calculate_He_timescales(t)
             call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
         case(HeWD:Massless_Rem)
+!            t% tr = 0.d0
             tm = 1.0d+10
             tscls(1) = t% MS_time
             tn = 1.0d+10

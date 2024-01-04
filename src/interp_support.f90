@@ -503,34 +503,41 @@ module interp_support
         integer :: j, k, mlo, mhi, pass, n_pass
         
         real(dp), allocatable :: new_line(:,:)
-        integer, allocatable :: min_eeps(:)
+        integer, allocatable :: min_eeps(:), min_eeps1(:), min_eeps2(:)
 
         logical :: debug, interpolate
         type(track), pointer :: t
 
         debug = .false.
 
-!        print*,"in  interpolate age"
+        if (debug) print*,"in interpolate age"
         frac = 0.d0
         them = 0.d0; them_new = 0.d0
+        dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
         jstart = 1
         jend = t% ncol
         if (present(icolumn)) then
             jstart = icolumn
             jend = icolumn
+            if (debug) print*,"only interpolating in column number",icolumn
         endif
+        
         allocate (new_line(t% ncol,1))
         new_line = -1.d0
-        dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
 
         kw = t% pars% phase
         
-        !TODO: this is temporary until gntage is modified
-        ! to avoid NaN during interpolation
-        if (kw >1 .and.kw<5) then
-            if(t% times(kw)-t% times(kw-1)<1d-12) kw = kw+1
-        endif
-        if (kw>1 .and. kw<=6) then
+        if (kw<=1) then
+            age2 = input_age
+            n_pass = 1
+            call find_nearest_eeps(t,min_eeps2, age2, i_age2)
+!            if (kw <=1) age2= input_age*(t% MS_time/t% ms_old)
+        elseif (kw>1 .and. kw<=6) then
+        
+            !TODO: this is temporary until gntage is modified
+            ! to avoid NaN during interpolation
+            if ((kw<5) .and.(t% times(kw)-t% times(kw-1)<1d-12)) kw = kw+1
+        
             !scale the input age for the new track
             them = t% times(kw)-t% times(kw-1)
             them_new = t% times_new(kw)-t% times_new(kw-1)
@@ -543,23 +550,23 @@ module interp_support
 !            print*, "in interp2", age2, input_age,frac,kw
 !            if (kw==2)print*,'times',t% times_new(kw-1),them_new,t% pars% mass
             !t% times(kw)-t% times(kw-1),kw!,t% times_new(kw),t% times_new(kw-1)
-        else
-            age2 = input_age
-            n_pass = 1
-!            if (kw ==1) age2= input_age*(t% MS_time/t% ms_old)
+            
+            call find_nearest_eeps(t,min_eeps1, input_age, i_age)
+            call find_nearest_eeps(t,min_eeps2, age2, i_age2)
         endif
 
         do pass = 1, n_pass
             if (pass == 1) then
+                !non core values except during main-sequence
                 age = age2
                 age_col = i_age2     !i_age2 = new age, age col in the main array
+                min_eeps = min_eeps2
             else
+                !core values post main-sequence
                 age = input_age
                 age_col = i_age     !i_age = old age, stored at t% ncol+1
+                min_eeps = min_eeps1
             endif
-
-            call find_nearest_eeps(t,min_eeps, age, age_col)
-            if(.not.allocated(min_eeps))print*,'error finding nearest eeps for age:',age,input_age
             
             mlo = minval(min_eeps)
             mhi = maxval(min_eeps)
@@ -579,12 +586,13 @@ module interp_support
                 if (debug) print*, "doing linear interp in age"
                 alfa = (age - t% tr(age_col,mlo))/(t% tr(age_col,mhi) - t% tr(age_col,mlo))
                 beta = 1d0 - alfa
-                do j=jstart,jend
+                do j = jstart,jend
                     interpolate = check_core_quant(j,n_pass, pass)
                     if (interpolate) then
                         new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
                         if (new_line(j,1)/= new_line(j,1)) then
                         print*, '**Warning: NaN encountered during interpolation age** ',t% initial_mass,input_age,j,mhi,mlo
+                        print*, 'Stopping'
                         stop
                         endif
                     endif
@@ -592,6 +600,7 @@ module interp_support
                 if (debug) print*, "ending linear interp in age"
 
             else
+                ! currently only linear interpolation is used
                 if (debug) print*, "doing cubic interp in age"
 
                 x = t% tr(age_col,mlo:mhi)
@@ -622,11 +631,17 @@ module interp_support
         endif
 
         if (t% pars% mass <0.0) then
-            print*,"fatal error: mass <0 "
+            print*,"Fatal Error: mass <0 in interpolate age; stopping"
             stop
         endif
-        deallocate(min_eeps)
+        
+        
+        if (allocated(min_eeps2)) deallocate(min_eeps2)
+        if (allocated(min_eeps1)) deallocate(min_eeps1)
+        if (allocated(min_eeps)) deallocate(min_eeps)
+
         deallocate(new_line)
+        
          
         if (debug) print*, 'exiting interpolate_age'
     end subroutine interpolate_age
@@ -736,6 +751,8 @@ module interp_support
             deallocate(age_list)
             exit
         end do
+        if(.not.allocated(min_eeps))print*,'error finding nearest eeps for age:',age,age_col
+
     end subroutine find_nearest_eeps
 
 

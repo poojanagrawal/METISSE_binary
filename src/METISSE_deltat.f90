@@ -87,9 +87,9 @@
             
             if (t% pars% dt<=0.0 .and. t% ierr==0) then
                 !open a file and write the error, continue the code
-                print*,"fatal error: invalid timestep", t% pars% dt ,"for phase and id", t% pars% phase,id
-                print*,"t% zams_mass, t% nuc_time, age, t% pars% mass"
-                print*,t% zams_mass, t% nuc_time, age, t% pars% mass
+                write(99,*)"fatal error: invalid timestep", t% pars% dt ,"for phase and id", t% pars% phase,id
+                write(99,*)"t% zams_mass, t% nuc_time, age, t% pars% mass"
+                write(99,*)t% zams_mass, t% nuc_time, age, t% pars% mass
                 t% ierr = -1
                 t% pars% dt = 1e+10
                 ! forcing stellar type to 15 to avoid crashing of code outside this function

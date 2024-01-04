@@ -1135,7 +1135,6 @@
 * Set the nuclear timescale in years and slow-down factor. PA: what's this???
 *
  7    km0 = dtm0*1.0d+03/tb
-      print*, 'km0',km0,dtm0, tb
       if(km0.lt.tiny) km0 = 0.5d0
 *
 * Force co-rotation of primary and orbit to ensure that the tides do not
@@ -1497,9 +1496,6 @@
             dm1 = dm1*1.0d+03*mass(j1)/MAX(rad(j1),1.0d-04)
          endif
          kst = kstar(j2)
-        print*, 'test km1',rad(j1),rol(j1),mew,j1,dm1
-
-
 *
 * Possibly mass transfer needs to be reduced if primary is rotating 
 * faster than the orbit (not currently implemented). 
@@ -1540,8 +1536,6 @@
          else
             dm1 = MIN(dm1,mass(j1)*tb/tdyn)
          endif
-         
-         print*, 'test km2',tdyn,tkh(j1),kstar(j1),dm1
 *
 * Calculate wind mass loss from the stars during one orbit.
 *
@@ -1573,14 +1567,12 @@
          km = MIN(2.d0*km0,5.0d-03/
      &            MAX(ABS(dm1+dms(j1))/mass(j1),dms(j2)/mass(j2)))
          km0 = km
-         print*,'test km',dm1,dms(j1),mass(j1),dms(j2),mass(j2)
 *
 *       Modify time-step & mass loss terms by speed-up factor.
 *
          dt = km*tb
          dtm = dt/1.0d+06
-*         if (dbg)
-         print*,"dtm5=",dtm,km,tb,iter
+         if (dbg) print*,"dtm5=",dtm
 *
 * Take the stellar evolution timestep into account but don't let it 
 * be overly restrictive for long lived phases. 
@@ -1589,7 +1581,6 @@
          dtm = MIN(dtm,tsave-tphys)
          dt = dtm*1.0d+06
          km = dt/tb
-         if (dbg) print*, "dtm6=",dtm,tsave-tphys
 *
 * Decide between accreted mass by secondary and/or system mass loss.
 *

@@ -64,7 +64,8 @@
                 !have reached the end of the eep track; self explanatory
                 if (debug) print*,"end of file:aj,tn ",t% pars% age,t% tr(i_age,t% ntrack),t% tr(i_age2,t% ntrack)
                 if (kw<5 .and. t% ierr==0) then
-                    if(verbose) write(99,*)'WARNING: Early end of file due to incomplete track beyond phase',kw,t% initial_mass,id
+                    write(UNIT=err_unit,fmt=*) 'WARNING: Early end of file due to incomplete track beyond phase, mass and id',&
+                    kw,t% initial_mass,id
                     t% ierr = -1
                 endif
 

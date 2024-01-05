@@ -531,10 +531,9 @@ contains
                 rg = (alfa*Rbagb)+((1d0 - alfa)*Rbgb)
                 rg = 10**rg
                 
-                if (debug .and. (rg .lt. t% pars% radius)) then
-                    print*, 'Error in calculate_rg: Rg, R',rg,t% pars% radius,Rbgb, Rbagb
-                    print*, t% pars% age, alfa, L, Lbgb, Lbagb
-!                    STOP
+                if (rg .lt. t% pars% radius) then
+                    write(UNIT=err_unit,fmt=*)'Error in calculate_rg: Rg, R',rg,t% pars% radius,Rbgb, Rbagb
+                    write(UNIT=err_unit,fmt=*) t% pars% age, alfa, L, Lbgb, Lbagb
                 endif
                     
             case(EAGB:TPAGB)

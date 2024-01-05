@@ -3,7 +3,7 @@ subroutine allocate_track(n,mass)
     implicit none
 
     integer, intent(in):: n
-    real(dp), intent(in) :: mass(n)
+    real(dp), intent(in), optional :: mass(n)
     integer :: i
         
 !    n= 1

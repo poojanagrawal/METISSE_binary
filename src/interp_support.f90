@@ -445,14 +445,14 @@ module interp_support
             if (start == old_start) start=old_start-1 !if start is the greatest value not in the end, take one step up and redo
             do while(.true.)
             if (y(n)- y(start)>0) exit
-            start=start-1
+            start = start-1
             if (start <1)  then
-                print*,"error in mod_PAV"
-                stop
+                write(UNIT=err_unit,fmt=*)"Error in mod_PAV, start<1"
+                call stop_code
             endif
             end do
             if (debug) print*,'start, old_start', start, old_start
-            do j= start+1,n
+            do j = start+1,n
                 diff= y(j)-y(start)
                 if (debug) print*,"i and diff",i,diff
                 if (diff>0) then
@@ -591,9 +591,9 @@ module interp_support
                     if (interpolate) then
                         new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
                         if (new_line(j,1)/= new_line(j,1)) then
-                        print*, '**Warning: NaN encountered during interpolation age** ',t% initial_mass,input_age,j,mhi,mlo
-                        print*, 'Stopping'
-                        stop
+                        write(UNIT=err_unit,fmt=*) 'Warning: NaN encountered during interpolation age',&
+                                        t% initial_mass,input_age,j,mhi,mlo
+                        call stop_code()
                         endif
                     endif
                 end do
@@ -607,11 +607,11 @@ module interp_support
                 dx = new_line(age_col,1) - x(2)
 
                 if (age< x(2) .or. age> x(3)) then
-                   print*,"Error in age interpolation in interp_support"
-                   stop
+                   write(UNIT=err_unit,fmt=*)"Error in cubic interpolation in interp_support"
+                   call stop_code
                 endif
 
-                do j=jstart,jend
+                do j = jstart,jend
                     interpolate = check_core_quant(j,n_pass, pass)
                     if (interpolate) then
                         do k=1,4
@@ -631,8 +631,8 @@ module interp_support
         endif
 
         if (t% pars% mass <0.0) then
-            print*,"Fatal Error: mass <0 in interpolate age; stopping"
-            stop
+            write(UNIT=err_unit,fmt=*)"Fatal Error: mass <0 in interpolate age"
+            call stop_code
         endif
         
         
@@ -751,7 +751,8 @@ module interp_support
             deallocate(age_list)
             exit
         end do
-        if(.not.allocated(min_eeps))print*,'error finding nearest eeps for age:',age,age_col
+        if(.not.allocated(min_eeps)) &
+            write(UNIT=err_unit,fmt=*)'Error finding nearest eeps for age:',age,age_col
 
     end subroutine find_nearest_eeps
 
@@ -939,7 +940,7 @@ module interp_support
             
             return
         endif
-        if (debug)print*,"mnew =",mnew, "masses at Mup =", mlist(Mupp), "mlow = ", mlist(Mlow)
+        if (debug) print*,"mnew =",mnew,"masses at Mup =",mlist(Mupp),"mlow = ",mlist(Mlow)
         
         !intrepolate the bounds and their initial masses to get the initial mass for the new track
         alfa = (Mnew - mlist(Mlow))/(mlist(Mupp) - mlist(Mlow))

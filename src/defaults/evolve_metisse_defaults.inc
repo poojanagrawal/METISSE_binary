@@ -120,7 +120,10 @@
 
     write_eep_file = .false.		
 
-  
+    ! If true error messages are written to a file (usually fort.99)
+    ! otherwise they are printed on screen
+    ! does NOT apply to errors during reading input files
+    write_error_to_file = .true.
 
 
 

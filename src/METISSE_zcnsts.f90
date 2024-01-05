@@ -8,7 +8,6 @@ subroutine METISSE_zcnsts(z,zpars)
 
     integer :: i,ierr,j,nmax
     logical :: debug, res
-    character(LEN=strlen) :: filename
     ierr = 0
     debug = .false.
     
@@ -59,7 +58,6 @@ subroutine METISSE_zcnsts(z,zpars)
         print*,"Error: INPUT_FILES_DIR is not defined"
         STOP
     endif
-    
     
     !get filenames
     
@@ -126,7 +124,7 @@ subroutine METISSE_zcnsts(z,zpars)
     nmax = maxval(s% ntrack)
     allocate(Mmax_array(nmax), Mmin_array(nmax))
     Mmax_array = 0.d0
-    Mmin_array = 1000000000 !(random big number)
+    Mmin_array = huge(0.0d0)    !largest float
     
     do i = 1,size(s)
         s(i)% has_mass_loss = check_mass_loss(s(i))
@@ -161,5 +159,12 @@ subroutine METISSE_zcnsts(z,zpars)
         call assign_commons()
     endif
 
+    !Some unit numbers are reserved: 5 is standard input, 6 is standard output.
+
+    if (write_error_to_file) then
+        err_unit = 99   !will write to fort.99
+    else
+        err_unit = 5      !will write to screen
+    endif
 end subroutine METISSE_zcnsts
 

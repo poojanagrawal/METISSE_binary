@@ -14,7 +14,7 @@ subroutine dealloc_track()
         deallocate(tarr(i)% tr)
         deallocate(tarr(i)% cols)
         deallocate(tarr(i)% bounds)
-        if((tarr(i)% ierr/=0).and.verbose)print*,'Error in evolving the system; check error file',i
+        if((tarr(i)% ierr/=0).and.verbose) write(UNIT=err_unit,fmt=*)'Error in evolving the system',i
 
     end do
     deallocate(tarr)

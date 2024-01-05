@@ -102,7 +102,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                             ! kw=0,1: main-sequence star, rewrite all columns with new track
                             if (debug)print*, 'main-sequence star, rewrite with new track'
                             call interpolate_mass(t% initial_mass,id)
-                            if (t% ntrack<nt) print*, '***WARNING: track length reduced***',t% initial_mass,nt,t% ntrack
+                            if (t% ntrack<nt) write(UNIT=err_unit,fmt=*)'WARNING: track length reduced',t% initial_mass,nt,t% ntrack
                             
                             ! Calculate timescales and assign SSE phases (Hurley et al.2000)
                             call calculate_timescales(t)
@@ -110,7 +110,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                             t% tr(i_age,:) = t% tr(i_age2,:)
                         else
                             !store core properties for post-main sequence evolution
-                            if (debug)print*, 'post-main-sequence star'
+                            if (debug) print*,'post-main-sequence star'
                             allocate(hecorelist(nt),ccorelist(nt),Lum_list(nt),age_list(nt),rlist(nt))
                             hecorelist = t% tr(i_he_core,:)
                             ccorelist =  t% tr(i_co_core,:)
@@ -128,7 +128,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                                 call write_eep_track(t,mt)
                             end if
                             
-                            if (t% ntrack<nt) print*, '**WARNING: track length reduced**',t% initial_mass,nt,t% ntrack
+                            if (t% ntrack<nt) write(UNIT=err_unit,fmt=*)'WARNING: track length reduced',t% initial_mass,nt,t% ntrack
 
                             call calculate_timescales(t)
                             t% times_new = t% times

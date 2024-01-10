@@ -25,7 +25,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr=0
     
     debug = .false.
-!    if ((id == 1) .and. (kw<=6))debug = .true.
+!    if ((id == 2) .and. (kw<=6))debug = .true.
 
     if (debug) print*, '-----------STAR---------------'
     if (debug) print*,"in star", mass,mt,kw,id
@@ -70,7 +70,11 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     t% pars% delta = t% pars% delta+ delta
                     
                     delta1 = 1.0d-04*mt
-                    if (debug) print*, 'delta is', delta, delta1,t% pars% delta,t% pars% mass
+                    if (debug) print*, 'delta is', delta,t% pars% delta,delta1,t% pars% mass
+                    if (delta.ge.10) then
+                    write(UNIT=err_unit,fmt=*)'large delta',delta,t% pars% mass,id
+!                    call stop_code
+                    endif
                     if ((abs(t% pars% delta).ge.delta1).and.(t% post_agb.eqv..false.)) then
                 
                         if(debug)print*,"mass loss in interpolate mass called for", &
@@ -80,21 +84,21 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                         t% times_new = -1.d0
                         nt = t% ntrack
                         
-!                        quant = (t% pars% age*t% MS_old/t% ms_time)+dtm
-!
-!!                        if (dtm<0.d0) print*,'dtm<0',t% pars% age,dtm
-!
-!                        if (dtm<0.d0 .and. (quant .le.t% pars% age_old)) then
-!!                            print*, 'age check',quant,t% pars% age_old, quant .le.t% pars% age_old
-!                            t% initial_mass = t% initial_mass_old
-!                        else
-!                            t% ms_old = t% times(MS)
-!                            t% pars% age_old = t% pars% age
-!                            t% initial_mass_old = t% initial_mass
-!                            call get_initial_mass_for_new_track(t,interpolate_all,idd)
-!                        endif
+                        quant = (t% pars% age*t% MS_old/t% ms_time)+dtm
+
+!                        if (dtm<0.d0) print*,'dtm<0',t% pars% age,dtm
+
+                        if (dtm<0.d0 .and. (quant .le.t% pars% age_old).and. kw==1) then
+                            if (debug)print*, 'reverse intp',quant,t% pars% age_old, quant .le.t% pars% age_old
+                            t% initial_mass = t% initial_mass_old
+                        else
+                            t% ms_old = t% times(MS)
+                            t% pars% age_old = t% pars% age
+                            t% initial_mass_old = t% initial_mass
+                            call get_initial_mass_for_new_track(t,interpolate_all,idd)
+                        endif
                         
-                        call get_initial_mass_for_new_track(t,interpolate_all,idd)
+!                        call get_initial_mass_for_new_track(t,interpolate_all,idd)
 
                         if (debug)print*, 'initial mass for the new track',t% initial_mass
                         t% pars% delta = 0.d0
@@ -102,7 +106,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                             ! kw=0,1: main-sequence star, rewrite all columns with new track
                             if (debug)print*, 'main-sequence star, rewrite with new track'
                             call interpolate_mass(t% initial_mass,id)
-                            if (t% ntrack<nt) print*, '***WARNING: track length reduced***',t% initial_mass,nt,t% ntrack
+                            if (t% ntrack<nt) write(UNIT=err_unit,fmt=*)'WARNING: track length reduced',t% initial_mass,nt,t% ntrack
                             
                             ! Calculate timescales and assign SSE phases (Hurley et al.2000)
                             call calculate_timescales(t)
@@ -110,7 +114,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                             t% tr(i_age,:) = t% tr(i_age2,:)
                         else
                             !store core properties for post-main sequence evolution
-                            if (debug)print*, 'post-main-sequence star'
+                            if (debug) print*,'post-main-sequence star'
                             allocate(hecorelist(nt),ccorelist(nt),Lum_list(nt),age_list(nt),rlist(nt))
                             hecorelist = t% tr(i_he_core,:)
                             ccorelist =  t% tr(i_co_core,:)
@@ -128,7 +132,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                                 call write_eep_track(t,mt)
                             end if
                             
-                            if (t% ntrack<nt) print*, '**WARNING: track length reduced**',t% initial_mass,nt,t% ntrack
+                            if (t% ntrack<nt) write(UNIT=err_unit,fmt=*)'WARNING: track length reduced',t% initial_mass,nt,t% ntrack
 
                             call calculate_timescales(t)
                             t% times_new = t% times
@@ -158,6 +162,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             call calculate_He_timescales(t)
             call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
         case(HeWD:Massless_Rem)
+!            t% tr = 0.d0
             tm = 1.0d+10
             tscls(1) = t% MS_time
             tn = 1.0d+10

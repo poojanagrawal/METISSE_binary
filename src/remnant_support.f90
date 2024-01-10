@@ -61,8 +61,8 @@
         endif
 
         if (mc_max<=0.0) then
-            print*,"fatal error: negative mc_max ", mc_max
-            STOP
+            write(UNIT=err_unit,fmt=*)"Fatal error: negative mc_max ", mc_max
+            call stop_code
         endif
 
         if(mc_threshold>=mc_max .or. abs(mc_max-mc_threshold)<tiny .or. end_of_file)then
@@ -592,7 +592,6 @@
      real(dp) :: tbagb,mass,lums1,lums2,tn
      real(dp) :: D, mx
 
-     
         mass = t% zams_mass
         mt = t% pars% mass
         mc = t% pars% core_mass

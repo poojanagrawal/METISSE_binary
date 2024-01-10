@@ -1,12 +1,12 @@
 module track_support
 
-    !some subroutines of module have been adpated from iso_eep_support module of ISO package (Dotter 2016).
+    !some subroutines of this module have been adpated from iso_eep_support module of ISO package (Dotter 2016).
 
     implicit none
     integer, parameter :: min_io_unit = 29
     integer, parameter :: max_io_unit = 99
     logical :: assigned(max_io_unit) = .false.
-
+    
     !----from mesa const_def.f90
     ! real number precision options: single, double
     integer, parameter :: sp = selected_real_kind(p=5)
@@ -22,7 +22,8 @@ module track_support
     integer, parameter :: undefined_i = -1
     
     logical :: verbose
-    logical :: write_track_to_file, write_eep_file
+    logical :: write_track_to_file, write_eep_file, write_error_to_file
+    integer :: err_unit
 
     integer :: front_end = -1
     integer, parameter :: main = 0
@@ -132,8 +133,6 @@ module track_support
 
     real(dp), allocatable :: t_incomplete(:), t_notfound(:)
     real(dp), allocatable :: Mmax_array(:), Mmin_array(:)
-
-
 
   !holds an evolutionary track for input, use an array of these for multiple tracks
 
@@ -365,10 +364,16 @@ module track_support
         
         if (i_mcenv>0) pars% mcenv = new_line(i_mcenv,1)
         if (i_rcenv>0) pars% rcenv = new_line(i_rcenv,1)
-
             
     !        if (pars% phase>=5) print*, "mass",pars% McHe,pars% McCO,pars% phase
     end subroutine
+    
+    subroutine stop_code()
+        print*, 'Error encountered; stopping METISSE'
+        print*, 'See error file (fort.99) or terminal for details'
+        STOP
+    end subroutine stop_code
+    
     subroutine write_eep_track(x,mt,filename)
     !modified from ISO subroutine of same name
 
@@ -392,7 +397,7 @@ module track_support
         return
     ENDIF
     
-    print*,'writing',str,'M.track.eep'
+    if (verbose) print*,'writing',str,'M.track.eep'
     
     call calculate_sse_phases(x,phase)
     
@@ -481,9 +486,7 @@ module track_support
                     j_bgb = j_bgb+TAMS_EEP-1
                     phase(j_bgb: cHeIgnition_EEP) = RGB           !Red giant Branch
                 elseif (debug) then
-                    print*, "Unable to locate BGB ", j_bgb
-                    STOP
-                    !don't stop the code, have an error message instead
+                    write(UNIT=err_unit,fmt=*) "Unable to locate BGB ", j_bgb
                 end if
             endif
         endif
@@ -747,8 +750,8 @@ module track_support
         x = 0.0
 
         if (D< 0.0) then
-            print*,"fatal error: Non-real roots"
-            STOP
+            write(UNIT=err_unit,fmt=*)"fatal error: Non-real roots"
+            call stop_code
         else if (D > 0.0) then
             sqrtD = sqrt(D)
             x1 = (-B + sqrtD)/(2*A)

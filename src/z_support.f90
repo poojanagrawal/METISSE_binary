@@ -50,7 +50,7 @@ module z_support
 
     namelist /METISSE_input_controls/ metallicity_file_list, Z_accuracy_limit, &
                         mass_accuracy_limit, construct_wd_track, verbose, &
-                        write_eep_file
+                        write_eep_file,write_error_to_file
             
     namelist /metallicity_controls/ INPUT_FILES_DIR, Z_files,format_file, extra_columns_file, &
                         read_all_columns, extra_columns,Mhook, Mhef, Mfgb, Mup, Mec, Mextra, Z_H, Z_He
@@ -508,12 +508,8 @@ module z_support
         type(column), intent(in) :: cols(:)
         integer, intent(in) :: ncol
         logical :: essential
-
         essential = .true.
         
-!        if (debug) print*, 'locating essential columns'
-
-
         ! i_age is the extra age column for recording age values of new tracks
         ! it is used for interpolating in surface quantities after any explicit mass gain/loss
         ! It is the same as i_age2 if the input tracks already include mass loss due to winds/no mass loss
@@ -538,7 +534,6 @@ module z_support
             i_logR = locate_column(cols, Radius_colname, essential)
             call make_logcolumn(s, i_logR)
         endif
-        
 
         i_he_core = locate_column(cols, he_core_mass, essential)
         i_co_core = locate_column(cols, c_core_mass, essential)

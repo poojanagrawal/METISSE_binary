@@ -25,7 +25,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr=0
     
     debug = .false.
-!    if ((id == 1) .and. (kw<=6))debug = .true.
+!    if ((id == 2) .and. (kw<=6))debug = .true.
 
     if (debug) print*, '-----------STAR---------------'
     if (debug) print*,"in star", mass,mt,kw,id
@@ -70,7 +70,11 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     t% pars% delta = t% pars% delta+ delta
                     
                     delta1 = 1.0d-04*mt
-                    if (debug) print*, 'delta is', delta, delta1,t% pars% delta,t% pars% mass
+                    if (debug) print*, 'delta is', delta,t% pars% delta,delta1,t% pars% mass
+                    if (delta.ge.10) then
+                    write(UNIT=err_unit,fmt=*)'large delta',delta,t% pars% mass,id
+!                    call stop_code
+                    endif
                     if ((abs(t% pars% delta).ge.delta1).and.(t% post_agb.eqv..false.)) then
                 
                         if(debug)print*,"mass loss in interpolate mass called for", &
@@ -80,21 +84,21 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                         t% times_new = -1.d0
                         nt = t% ntrack
                         
-!                        quant = (t% pars% age*t% MS_old/t% ms_time)+dtm
-!
-!!                        if (dtm<0.d0) print*,'dtm<0',t% pars% age,dtm
-!
-!                        if (dtm<0.d0 .and. (quant .le.t% pars% age_old)) then
-!!                            print*, 'age check',quant,t% pars% age_old, quant .le.t% pars% age_old
-!                            t% initial_mass = t% initial_mass_old
-!                        else
-!                            t% ms_old = t% times(MS)
-!                            t% pars% age_old = t% pars% age
-!                            t% initial_mass_old = t% initial_mass
-!                            call get_initial_mass_for_new_track(t,interpolate_all,idd)
-!                        endif
+                        quant = (t% pars% age*t% MS_old/t% ms_time)+dtm
+
+!                        if (dtm<0.d0) print*,'dtm<0',t% pars% age,dtm
+
+                        if (dtm<0.d0 .and. (quant .le.t% pars% age_old).and. kw==1) then
+                            if (debug)print*, 'reverse intp',quant,t% pars% age_old, quant .le.t% pars% age_old
+                            t% initial_mass = t% initial_mass_old
+                        else
+                            t% ms_old = t% times(MS)
+                            t% pars% age_old = t% pars% age
+                            t% initial_mass_old = t% initial_mass
+                            call get_initial_mass_for_new_track(t,interpolate_all,idd)
+                        endif
                         
-                        call get_initial_mass_for_new_track(t,interpolate_all,idd)
+!                        call get_initial_mass_for_new_track(t,interpolate_all,idd)
 
                         if (debug)print*, 'initial mass for the new track',t% initial_mass
                         t% pars% delta = 0.d0

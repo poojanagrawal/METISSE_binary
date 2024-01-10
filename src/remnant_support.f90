@@ -591,7 +591,7 @@
      real(dp) :: tau, lx,rx, rc,am,mt,mc,aj
      real(dp) :: tbagb,mass,lums1,lums2,tn
      real(dp) :: D, mx
-     
+
         mass = t% zams_mass
         mt = t% pars% mass
         mc = t% pars% core_mass

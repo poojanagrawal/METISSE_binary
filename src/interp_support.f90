@@ -690,12 +690,12 @@ module interp_support
         !Todo: min_eeps-> nbr_eeps
 
         ! sometimes mergers can age issues, so we reassign negative timesteps in deltat to something large and make code exit, i.e., stop evolving the system.
-        ! temporary
+        !Todo: temporary
         if (age .gt. t% tr(age_col,t% eep(t% neep))) then
-        
-        min_eeps = [t% eep(t% neep)-1,t% eep(t% neep)]
-        return
+            min_eeps = [t% eep(t% neep)-1,t% eep(t% neep)]
+            return
         endif
+        
         last_age = 0.d0
         do i = 1,t% neep-1
             if (debug) print*,"loc_low", t% eep(i), t% eep(i+1),t%neep

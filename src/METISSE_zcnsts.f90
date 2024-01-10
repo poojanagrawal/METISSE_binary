@@ -160,11 +160,10 @@ subroutine METISSE_zcnsts(z,zpars)
     endif
 
     !Some unit numbers are reserved: 5 is standard input, 6 is standard output.
-
     if (write_error_to_file) then
         err_unit = 99   !will write to fort.99
     else
-        err_unit = 5      !will write to screen
+        err_unit = 6      !will write to screen
     endif
 end subroutine METISSE_zcnsts
 

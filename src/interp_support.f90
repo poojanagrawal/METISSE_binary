@@ -787,36 +787,25 @@ module interp_support
     end subroutine interp_4pt_pm
     
 
-    subroutine get_initial_mass_for_new_track(t,interpolate_all,id)
+    subroutine get_initial_mass_for_new_track(t,id)
 
 !        real(dp), intent(in) :: delta
         type(track), pointer :: t
 
-        integer :: min_index,num_list,Mupp,Mlow,i,j,k,nt,kw,id
+        integer :: min_index,num_list,Mupp,Mlow,i,j,k,nt,id
         real(dp), pointer :: age_list(:)
         real(dp), allocatable:: mlist(:)
 
         real(dp) :: Mnew,alfa,beta,age
         integer :: eep_m, eep_n, eep_core
 
-        logical :: debug, interpolate_all
+        logical :: debug
 
         debug = .false.
 !        if (id ==1) debug = .true.
-        interpolate_all = .false.
-
-        kw = t% pars% phase
-        if (kw<=1)then
-            interpolate_all = .true.
-        !        eep_core = 0.75* TAMS_EEP
-        !        if(identified(IAMS_EEP)) eep_core = IAMS_EEP
-        !        if (eep_n>=eep_core) interpolate_all = .false.
-        !        print*, 'eep_core', eep_core, IAMS_EEP,interpolate_all
-        !TODO: need to scale age as well in the age interpolation
-            endif
-            
+        
         !using the original age of the star to keep core properties comparable
-        !using other age doesn't matches well with detailed models either
+        !using other (secondary)age doesn't matches well with detailed models either
         
         age = t% pars% age
         
@@ -833,15 +822,16 @@ module interp_support
         Mnew = t% pars% mass-t% pars% delta
 
 
-        if (debug) print*,"getting new initial mass mnew at age and phase: ",mnew,age,kw,id
+        if (debug) print*,"getting new initial mass mnew at age and phase: ",mnew,age,t% pars% phase,id
         
         call index_search(nt,age_list,age,eep_m)
     !    if (age_list(eep_m)<age) eep_m = eep_m+1
         if (eep_m > nt) eep_m = nt
         if (debug) print*,"nearest index eep_m, ntrack : ",eep_m,nt
+        nullify(age_list)
         
-        ! it's crucial to avoid extrapolation here as it results in serious issues
-        ! Mmax_array is the maximum mass at given eep amongst all input tracks, similarily Mmin_array has minimums
+        ! It's crucial to avoid extrapolation here as it results in serious issues
+        ! Mmax_array is the maximum mass at given eep amongst all input tracks, similarily Mmin_array has minimum
         ! first check if mass bounds exist at eep_m,
         ! if not check higher eeps (older age) in case of mass loss, and lower eeps for mass gain
         
@@ -869,9 +859,7 @@ module interp_support
         endif
         
         if (debug) print*,"modified eep_n : ",eep_n
-
-        ! if no solution is found, we keep using the old tracks for inetrpolation
-        nullify(age_list)
+        
         if (eep_n >0) then
             ! get mass bounds for Mnew at eep_n
             num_list = size(s)
@@ -930,16 +918,19 @@ module interp_support
          endif
         
         if (debug)  print*, "Mup", Mupp, "mlow",Mlow,"min_index",min_index
+        ! if no solution is found, we keep using the old tracks for interpolation
+
         if(Mlow < 0 .or. Mupp <0) then
             if (debug) print*,"Error: beyond the bounds for interpolation"
-            if (debug) print*, "Mlow,Mupp,num_list,mnew,eep_n,kw", &
-                    Mlow,Mupp,num_list,mnew,eep_n,kw
+            if (debug) print*, "Mlow,Mupp,num_list,mnew,eep_n", &
+                    Mlow,Mupp,num_list,mnew,eep_n
             if (Mlow<1) Mlow = 1
             if (Mupp> num_list) Mupp = num_list
             if (allocated(mlist)) deallocate(mlist)
             
             return
         endif
+        
         if (debug) print*,"mnew =",mnew,"masses at Mup =",mlist(Mupp),"mlow = ",mlist(Mlow)
         
         !intrepolate the bounds and their initial masses to get the initial mass for the new track

@@ -1196,13 +1196,6 @@ module z_support
 
         end do
 
-        !if (.not. defined(Mup))then
-           ! Mup = Mec-1.8
-            !call index_search(num_tracks,s% initial_mass,Mup,min_index)
-            !m_cutoff(7) = min_index
-            !Mup = s(min_index)% initial_mass
-       ! end if
-
         !If the tracks are beyond the zpars limits, above procedure
         !picks up the first or second track, which can lead to errors later,
         !hence those values need to be reverted

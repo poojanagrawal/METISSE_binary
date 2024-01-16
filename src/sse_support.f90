@@ -36,32 +36,32 @@ contains
 
         t% MS_time = age(TAMS_EEP) - age(ZAMS_EEP)
         do i = 1, t% neep
+            if (t% eep(i) == TAMS_EEP) then    !MS
+                t% times(MS) = age(TAMS_EEP)
 
-        if (t% eep(i) == TAMS_EEP) then    !MS
-            t% times(MS) = age(TAMS_EEP)
+            elseif (t% eep(i) == cHeIgnition_EEP) then
+                !Herztsprung gap
+                t% times(HG) = age(cHeIgnition_EEP)
+                !t% times(HG) gets modified to t(BGB)
+                ! if RGB phase is present
+                t% times(RGB) = t% times(HG)
 
-        elseif (t% eep(i) == cHeIgnition_EEP) then
-            !Herztsprung gap
-            t% times(HG) = age(cHeIgnition_EEP)
-            !t% times(HG) gets modified to t(BGB) if RGB phase is present
-            t% times(RGB) = t% times(HG)
+            elseif (t% eep(i) == TA_cHeB_EEP) then
+                !red_HB_clump /core He Burning
+                t% times(HeBurn) = age(TA_cHeB_EEP)
 
-        elseif (t% eep(i) == TA_cHeB_EEP) then
-            !red_HB_clump /core He Burning
-            t% times(HeBurn) = age(TA_cHeB_EEP)
-
-        elseif (t% eep(i) == TPAGB_EEP) then
-            !AGB
-            t% times(EAGB) = age(TPAGB_EEP)
-
-        elseif (t% eep(i) == cCBurn_EEP) then
-            !EAGB/ core C burning
-            t% times(EAGB) = age(cCBurn_EEP)
-
-        elseif (t% eep(i) == post_AGB_EEP) then
-            !TP-AGB :only for low_inter mass stars
-            t% times(TPAGB) = age(post_AGB_EEP)
-        endif
+            elseif (t% eep(i) == cCBurn_EEP) then
+                !EAGB/ core C burning
+                t% times(EAGB) = age(cCBurn_EEP)
+                
+            elseif (t% eep(i) == TPAGB_EEP) then
+                !AGB
+                t% times(EAGB) = age(TPAGB_EEP)
+                
+            elseif (t% eep(i) == post_AGB_EEP) then
+                !TP-AGB :only for low_inter mass stars
+                t% times(TPAGB) = age(post_AGB_EEP)
+            endif
         enddo
         !print*,"bgb",BGB_EEP,identified(BGB_EEP)
 
@@ -123,13 +123,14 @@ contains
     tscls(3) = t% times(HeBurn)-t% times(HG)
 
    
-    tscls(13) = t% times(TPAGB)
+    tscls(13) = t% times(EAGB)
+    
     tscls(14) = t% times(11)
     tn = tscls(14)
-    
-    !filling in the gaps
     if (tscls(13)<0) tscls(13) = tn
-    tscls(4) = t% times(3)
+
+    !filling in the gaps
+    tscls(4) = t% times(RGB)
     tscls(5) = tscls(4)
     tscls(6) = tscls(4)
     

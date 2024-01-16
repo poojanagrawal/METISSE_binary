@@ -22,12 +22,12 @@
         !Base new time scale for changes in radius & mass on stellar type.
         select case (t% pars% phase)
             case(low_mass_MS:MS)
-                if (age< tMS_hook) then
+                if (age<= tMS_hook) then
                     dt = pts1* t% times(1)
                 else
                     dt = pts2*(t% times(1)-tMS_hook)
                 endif
-                    dtr = t% times(1)-age
+                dtr = t% times(1)-age
             case(HG)
                 dt = pts1*(t% times(2)-t% times(1))
                 dtr = t% times(2)-age

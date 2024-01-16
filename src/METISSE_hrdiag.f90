@@ -50,7 +50,7 @@
     t% pars% phase = kw
     t% pars% age = aj
     t% irecord = irecord
-!    t% pars% core_mass = mc
+    t% pars% core_mass = mc
 
     !if(irecord>0) print*,"In Hrdiag aj,tn ",t% pars% age,mt,t% tr(i_age,t% ntrack),t% tr(i_age2,t% ntrack)
     !print*, 'age, final time',t% pars% age,t% tr(i_age,t% ntrack),abs(t% pars% age-t% tr(i_age,t% ntrack))

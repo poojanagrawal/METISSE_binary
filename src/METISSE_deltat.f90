@@ -29,7 +29,7 @@
                 endif
                 dtr = t% times(1)-age
             case(HG)
-                dt = pts1*(t% times(2)-t% times(1))
+                dt = pts2*(t% times(2)-t% times(1))
                 dtr = t% times(2)-age
             case(RGB)
                 dt = pts2*(t% times(3)- t% times(2))

@@ -25,10 +25,10 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr=0
     
     debug = .false.
-!    if ((id == 2) .and. (kw<=6))debug = .true.
+!    if ((id == 2) .and. (kw>=3))debug = .true.
 
     if (debug) print*, '-----------STAR---------------'
-    if (debug) print*,"in star", mass,mt,kw,id
+    if (debug) print*,"in star", mass,mt,kw,id,t% pars% phase
 
     consvR = .false.
     interpolate_all = .false.
@@ -50,8 +50,12 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                 t% ms_old = t% times(MS)
                 mt = t% tr(i_mass,ZAMS_EEP)
                 t% pars% delta = 0.d0
+                t% ms_old = t% times(MS)
+                t% pars% age_old = t% pars% age
+                t% initial_mass_old = t% initial_mass
+
         !            call write_eep_track(t,t% initial_mass)
-            elseif (kw <t% pars% phase) then !gntage
+            elseif (t% pars% phase==-15) then !gntage
                     t% pars% mass = mt
                     t% pars% delta = 0.d0
                     t% pars% phase = kw

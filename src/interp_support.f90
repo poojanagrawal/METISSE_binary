@@ -804,6 +804,7 @@ module interp_support
         debug = .false.
 !        if (id ==1) debug = .true.
         
+        
         !using the original age of the star to keep core properties comparable
         !using other (secondary)age doesn't matches well with detailed models either
         

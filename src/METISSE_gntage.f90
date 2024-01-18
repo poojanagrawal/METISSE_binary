@@ -8,7 +8,7 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
     integer, intent(in), optional :: id
     real(dp) :: m0,aj,mt,mc
     real(dp):: tscls(20),lums(10),GB(10),zpars(20)
-    real(dp):: dtm,mcy,tm,tn
+    real(dp):: dtm,mcy,tm,tn,mt0
     integer :: kw,idd,j
     type(track), pointer :: t
     logical :: debug
@@ -20,15 +20,24 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
     debug = .false.
     
     if (debug) print*, 'in gntage',kw,m0,mt,mc,aj
-    write(UNIT=99,fmt=*) 'in gntage',kw,m0,mt,mc,aj
     dtm = 0.d0
-    mcy= 0.d0
+    mcy = 0.d0
+    mt0 = mt
+    ! for very low mass stars MS extends beyond the age of the universe
+    ! so higher phases are often missing
+    ! below simplification avoids error in length
+    if(mt<Mmin_array(TA_cHeB_EEP) .and. kw>1) then != very_low_mass_limit
+        mt = Mmin_array(TA_cHeB_EEP)
+!        print*,mt,mt0
+    endif
     
     !this is just to signal star that gnatge is calling it
     !pars% phase will get updated to its correct value in star
-    if (t% pars% phase<=kw) t% pars% phase = kw+1
+!    if (t% pars% phase<=kw) t% pars% phase = kw+1
+    t% pars% phase = -15
 
     !TODO: provide a backup in case one of the mcrits are not defined
+
     
     if(kw.eq.4)then
     ! Set the minimum CHeB core mass (at BGB or He ignition)
@@ -61,7 +70,6 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
     select case(kw)
     
     case(6)
-
         ! We try to start the star from the start of the SAGB
         ! by setting Mc = Mc,TP.
         t% pars% age = t% times(EAGB)
@@ -76,7 +84,10 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
     case(4)
         ! The supplied age is actually the fractional age, fage, of CHeB lifetime
         ! that has been completed, ie. 0 <= aj <= 1.
-        t% pars% age = tscls(2) + aj*tscls(3)
+        if(aj.lt.0.d0.or.aj.gt.1.d0) aj = 0.d0
+        t% pars% age = t% times(RGB) + aj*(t% times(HeBurn)-t% times(RGB))
+        
+        !for stars that don't have RGB phase, times(RGB) corresponds to times(HG)
         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         aj = tscls(2) + aj*tscls(3)
     case(3)
@@ -89,8 +100,9 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
     end select
     
     t% pars% age = aj
+    t% pars% phase = kw
+    mt = mt0
     nullify(t)
     
     if (debug) print*, 'exit gntage',kw,m0,mt,mc,aj
-    
 end subroutine METISSE_gntage

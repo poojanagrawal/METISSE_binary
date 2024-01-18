@@ -120,7 +120,7 @@ contains
     tm = t% times(MS)
     tscls(1) = t% times(HG)
     tscls(2) = t% times(RGB)        !for stars that don't have RGB phase, this corresponds to t% times(HG)
-    tscls(3) = t% times(HeBurn)-t% times(HG)
+    tscls(3) = t% times(HeBurn)-t% times(RGB)
 
    
     tscls(13) = t% times(EAGB)

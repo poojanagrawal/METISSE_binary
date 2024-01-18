@@ -40,7 +40,7 @@
       LOGICAL SSE_FLAG
       COMMON /SE/ SSE_FLAG
 *
-* mcx is a dummy variable in this subroutine; TODO: this should be fixed
+* mcx is a dummy variable in this subroutine
 *
 * Common envelope evolution - entered only when KW1 = 2, 3, 4, 5, 6, 8 or 9.
 *

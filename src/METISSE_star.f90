@@ -25,12 +25,13 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr=0
     
     debug = .false.
-!    if ((id == 2) .and. (kw<=6))debug = .true.
+!    if ((id == 2) .and. (kw>=3))debug = .true.
 
     if (debug) print*, '-----------STAR---------------'
-    if (debug) print*,"in star", mass,mt,kw,id
+    if (debug) print*,"in star", mass,mt,kw,id,t% pars% phase
 
     consvR = .false.
+    interpolate_all = .false.
     delta = 0.d0
     t% zams_mass = mass
 
@@ -49,7 +50,27 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                 t% ms_old = t% times(MS)
                 mt = t% tr(i_mass,ZAMS_EEP)
                 t% pars% delta = 0.d0
+                t% ms_old = t% times(MS)
+                t% pars% age_old = t% pars% age
+                t% initial_mass_old = t% initial_mass
+
         !            call write_eep_track(t,t% initial_mass)
+            elseif (t% pars% phase==-15) then !gntage
+                    t% pars% mass = mt
+                    t% pars% delta = 0.d0
+                    t% pars% phase = kw
+                    t% times_new = -1.d0
+                    nt = t% ntrack
+                    call get_initial_mass_for_new_track(t,id)
+                    if (debug)print*, 'rejuvanted giant, rewrite with new track'
+                    call interpolate_mass(t% initial_mass,id)
+                    if (t% ntrack<nt) write(UNIT=err_unit,fmt=*)'WARNING: track length reduced',t% initial_mass,nt,t% ntrack
+                    
+                    ! Calculate timescales and assign SSE phases (Hurley et al.2000)
+                    call calculate_timescales(t)
+                    t% times_new = t% times
+                    t% tr(i_age,:) = t% tr(i_age2,:)
+                    mass = t% initial_mass
             else
                 !first check whether star lost its envelope during binary interaction
                 !to avoid unneccesssary call to interpolation routine
@@ -95,13 +116,24 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                             t% ms_old = t% times(MS)
                             t% pars% age_old = t% pars% age
                             t% initial_mass_old = t% initial_mass
-                            call get_initial_mass_for_new_track(t,interpolate_all,idd)
+                            call get_initial_mass_for_new_track(t,idd)
                         endif
                         
-!                        call get_initial_mass_for_new_track(t,interpolate_all,idd)
+!                        call get_initial_mass_for_new_track(t,idd)
 
                         if (debug)print*, 'initial mass for the new track',t% initial_mass
                         t% pars% delta = 0.d0
+                        
+                        kw = t% pars% phase
+                        if (kw<=1)then
+                            interpolate_all = .true.
+                        !        eep_core = 0.75* TAMS_EEP
+                        !        if(identified(IAMS_EEP)) eep_core = IAMS_EEP
+                        !        if (eep_n>=eep_core) interpolate_all = .false.
+                        !        print*, 'eep_core', eep_core, IAMS_EEP,interpolate_all
+                        !TODO: need to scale age as well in the age interpolation
+                            endif
+                        
                         if (interpolate_all) then
                             ! kw=0,1: main-sequence star, rewrite all columns with new track
                             if (debug)print*, 'main-sequence star, rewrite with new track'

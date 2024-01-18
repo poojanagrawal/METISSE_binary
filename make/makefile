@@ -53,7 +53,7 @@ OBJT5 = $(SRCE5:.f=.o)
 
 
 SRCE_SSE = \
-SSE_hrdiag.f SSE_star.f SSE_zcnsts.f SSE_deltat.f SSE_mlwind.f
+SSE_hrdiag.f SSE_star.f SSE_zcnsts.f SSE_deltat.f SSE_mlwind.f SSE_gntage.f
 	
 OBJT_SSE = $(SRCE_SSE:.f=.o)
 
@@ -65,7 +65,7 @@ alloc_track.f90 dealloc_track.f90 assign_commons_bse.f90 \
 comenv_lambda.f90 initialize_front_end.f90 \
 METISSE_zcnsts.f90 metisse_star.f90 metisse_hrdiag.f90 \
 metisse_deltat.f90 metisse_mlwind.f90 assign_commons_main.f90\
-
+metisse_gntage.f90
  
 OBJT_METISSE = $(SRCE_METISSE:.f90=.o)
 
@@ -85,6 +85,7 @@ metisse_deltat.o: $(SRC_DIR)/metisse_deltat.f90 track_support.o
 metisse_zcnsts.o: $(SRC_DIR)/metisse_zcnsts.f90 z_support.o track_support.o
 metisse_star.o: $(SRC_DIR)/metisse_star.f90 track_support.o interp_support.o sse_support.o
 metisse_hrdiag.o: $(SRC_DIR)/metisse_hrdiag.f90 track_support.o interp_support.o remnant_support.o sse_support.o
+metisse_gntage.o: $(SRC_DIR)/metisse_gntage.f90 track_support.o interp_support.o z_support.o
 comenv_lambda.o: $(SRC_DIR)/comenv_lambda.f90 track_support.o
 
 assign_commons.o: $(SRC_DIR)/assign_commons_bse.f90 track_support.o remnant_support.o

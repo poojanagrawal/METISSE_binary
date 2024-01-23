@@ -88,7 +88,6 @@ module track_support
     integer :: cCBurn_EEP
     integer :: TPAGB_EEP
     integer :: post_AGB_EEP
-    integer :: WD_EEP
 
     integer :: Initial_EEP        !files will be read from this line number
     integer :: Final_EEP         !to this line
@@ -100,9 +99,9 @@ module track_support
     !quantities from history file that are needed directly in the code
 
     character(len=col_width) :: age_colname, mass_colname, log_L_colname,log_T_colname, &
-                                log_R_colname, log_mdot_colname,he_core_mass,c_core_mass, &
+                                log_R_colname, he_core_mass,c_core_mass, &
                                 log_Tc,c12_mass_frac,o16_mass_frac, he4_mass_frac, &
-                                Lum_colname,Teff_colname,Radius_colname, mdot_colname, &
+                                Lum_colname,Teff_colname,Radius_colname, &
                                 he_core_radius, co_core_radius, mass_conv_envelope, &
                                 radius_conv_envelope, moment_of_inertia
 
@@ -110,7 +109,7 @@ module track_support
     integer :: i_age2, i_RHe_core,i_RCO_core,i_mcenv, i_Rcenv,i_MoI
 
     integer :: i_logg, i_Tc, i_Rhoc, i_logLH, i_logLHe, i_gamma, i_surfH
-    integer :: i_Xc, i_Yc, i_Cc, i_he4, i_c12,i_o16, i_lum, i_rad, i_mdot
+    integer :: i_Xc, i_Yc, i_Cc, i_he4, i_c12,i_o16, i_lum, i_rad
 
     integer :: number_of_core_columns
     integer, allocatable :: core_cols(:)!, surface_cols(:)
@@ -485,8 +484,8 @@ module track_support
                 if (j_bgb>0) then
                     j_bgb = j_bgb+TAMS_EEP-1
                     phase(j_bgb: cHeIgnition_EEP) = RGB           !Red giant Branch
-                elseif (debug) then
-                    write(UNIT=err_unit,fmt=*) "Unable to locate BGB ", j_bgb
+                else
+                    write(UNIT=err_unit,fmt=*) "Unable to locate BGB ", j_bgb, t% initial_mass
                 end if
             endif
         endif

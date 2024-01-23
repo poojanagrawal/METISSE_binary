@@ -12,7 +12,7 @@
     ! Set read_eep_files to true only for MIST-like files
     ! generated from A Dotter's ISO code (Dotter 2016).
     ! If true; then extra_char, total_cols
-    ! and other information are pre-specified.
+    ! and other information are can be read directly from files.
     ! Set it to false other type of files
 
     read_eep_files = .false.
@@ -38,63 +38,13 @@
     
     total_cols = -1
 
-    !-------EEP DETAILS-------------
-    PreMS_EEP = -1
-    ZAMS_EEP = -1
-    IAMS_EEP = -1
-    TAMS_EEP = -1
-    BGB_EEP = -1
-    cHeIgnition_EEP = -1
-    cHeBurn_EEP = -1
-    TA_cHeB_EEP = -1
-
-    TPAGB_EEP = -1
-    cCBurn_EEP = -1
-    post_AGB_EEP = -1
-    WD_EEP = -1
-
-    !files will be read from this EEP/line number
-    !if <0, then ZAMS_EEP is used
-    Initial_EEP = -1
-    !to this EEP/line
-    ! if <0 then maximum of the above listed EEPs is used
-    Final_EEP = -1
-    
-    Extra_EEP1 = -1
-    Extra_EEP2= -1
-    Extra_EEP3 = -1
-
-    ! Usually two to four tracks neighboring are used for interpolation.
-    ! However, if any of them is incomplete,
-    ! then the interpolated track is also rendered incomplete.
-    ! If fix_track is true, METISSE relaxes the criteria for finding
-    ! the neighboring tracks in above cases and tries to get a complete track.
-    
-    fix_track = .true.
-
-    ! if fix_track is true, then
-    ! the completeness of tracks is determined by the following two:
-    
-    ! for stars with M< Mec
-    low_mass_final_eep = -1
-    ! for stars with M>= Mec
-    high_mass_final_eep = -1
-
-    ! When fixing an incomplete track
-    ! Search for the new neighboring tracks for interpolation 
-    ! within the mass range of initial_mass - (initial_mass*lookup_index) 
-    ! and initial_mass + (initial_mass*lookup_index)]
- 
-    lookup_index = 1.0
-
-
     !-------COLUMN NAMES---------------------------------
     ! Since columns can be named in different ways
     ! Use this section to names of some important columns
     ! Make sure units are correct
     
     ! ESSENTIAL columns-----------------------------------
-    ! Code will stop if it cannot determine these columns 
+    ! Code will stop if it cannot locate these columns
 
     !age in units of yrs
     age_colname = ''
@@ -126,15 +76,6 @@
     ! used if Teff_colname is an empty string('')
     log_T_colname = ''
     
-    
-    ! d(star_mass)/dt in msolar per year
-    ! If not supplied then log_mdot_colname is used
-    mdot_colname = ''
-    
-    
-    ! log10(abs(star_mdot)) (alternative to mdot_colname)
-    ! used if mdot_colname is an empty string('')
-    log_mdot_colname = ''
    
     ! mass of He enriched/H depleted core in solar units
     he_core_mass = ''
@@ -193,3 +134,58 @@
     ! these are interpolated based on the original age of the star before mass loss
     !number_of_core_columns = 0
     !core_columns = 'age,log_L,Mc_He,Mc_CO'
+
+
+    !-------EEP DETAILS for Hydrogen stars-------------
+    PreMS_EEP = -1
+    ZAMS_EEP = -1
+    IAMS_EEP = -1
+    TAMS_EEP = -1
+    BGB_EEP = -1
+    cHeIgnition_EEP = -1
+    cHeBurn_EEP = -1
+    TA_cHeB_EEP = -1
+
+    TPAGB_EEP = -1
+    cCBurn_EEP = -1
+    post_AGB_EEP = -1
+
+    !files will be read from this EEP/line number
+    !if <0, then ZAMS_EEP is used
+    Initial_EEP = -1
+    !to this EEP/line
+    ! if <0 then maximum of the above listed EEPs is used
+    Final_EEP = -1
+    
+    Extra_EEP1 = -1
+    Extra_EEP2= -1
+    Extra_EEP3 = -1
+
+    !----------- EEP DETAILS for He stars----------
+
+    
+    !--- HOW TO DEAL WITH INCOMPLETE TRACKS--------
+
+    ! Usually two to four tracks neighboring are used for interpolation.
+    ! However, if any of them is incomplete,
+    ! then the interpolated track is also rendered incomplete.
+    ! If fix_track is true, METISSE relaxes the criteria for finding
+    ! the neighboring tracks in above cases and tries to get a complete track.
+    
+    fix_track = .true.
+
+    ! if fix_track is true, then
+    ! the completeness of tracks is determined by the following two:
+    
+    ! for stars with M< Mec
+    low_mass_final_eep = -1
+    ! for stars with M>= Mec
+    high_mass_final_eep = -1
+
+    ! When fixing an incomplete track
+    ! Search for the new neighboring tracks for interpolation
+    ! within the mass range of initial_mass - (initial_mass*lookup_index)
+    ! and initial_mass + (initial_mass*lookup_index)]
+ 
+    lookup_index = 1.0
+

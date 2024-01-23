@@ -58,14 +58,13 @@ module z_support
     namelist /format_controls/ file_extension, read_eep_files,total_cols,&
                         extra_char, header_location, column_name_file, &
                         PreMS_EEP, ZAMS_EEP, IAMS_EEP, TAMS_EEP, BGB_EEP, cHeIgnition_EEP, &
-                        cHeBurn_EEP, TA_cHeB_EEP, TPAGB_EEP, cCBurn_EEP, post_AGB_EEP, WD_EEP, &
+                        cHeBurn_EEP, TA_cHeB_EEP, TPAGB_EEP, cCBurn_EEP, post_AGB_EEP, &
                         Initial_EEP, Final_EEP, Extra_EEP1 ,Extra_EEP2, Extra_EEP3, &
                         fix_track, low_mass_final_eep, high_mass_final_eep, lookup_index, &
-                        age_colname, mass_colname, log_L_colname ,log_T_colname, &
-                        log_R_colname, he_core_mass, c_core_mass, &
+                        age_colname, mass_colname, log_L_colname ,log_T_colname, log_R_colname, &
+                        Lum_colname, Teff_colname, Radius_colname, &
+                        he_core_mass, c_core_mass, he_core_radius, co_core_radius, &
                         log_Tc, c12_mass_frac, o16_mass_frac,he4_mass_frac, &
-                        Lum_colname, Teff_colname, Radius_colname,&
-                        log_mdot_colname, mdot_colname, he_core_radius, co_core_radius,&
                         mass_conv_envelope, radius_conv_envelope, moment_of_inertia
 
     contains
@@ -573,17 +572,6 @@ module z_support
         i_o16 = locate_column(cols, o16_mass_frac)
         i_Tc = locate_column(cols, log_Tc)
 
-
-!        if (log_mdot_colname/= '') then
-!            i_mdot = locate_column(cols, log_mdot_colname)
-!            call make_pow10column(s,i_mdot,"Mdot")
-!        elseif (mdot_colname/= '') then
-!             i_mdot =  locate_column(cols, mdot_colname)          !star_mdot
-!        !            call make_logcolumn(s, i_mdot)
-!        else
-!             i_mdot = -1
-!        endif
-
 !        if (i_RHe_core > 0) number_of_core_columns = number_of_core_columns+1
 !        if (i_RCO_core > 0) number_of_core_columns = number_of_core_columns+1
 
@@ -921,9 +909,6 @@ module z_support
         if(add_eep(temp,ieep)) ieep=ieep+1
 
         temp(ieep) = post_AGB_EEP
-        if(add_eep(temp,ieep)) ieep=ieep+1
-
-        temp(ieep) = WD_EEP
         if(add_eep(temp,ieep)) ieep=ieep+1
 
         temp(ieep) = Extra_EEP1

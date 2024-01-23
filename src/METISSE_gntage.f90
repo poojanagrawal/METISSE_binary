@@ -13,13 +13,16 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
     type(track), pointer :: t
     logical :: debug
     
+    debug = .false.
+        if (debug) print*, 'in gntage',kw,m0,mt,mc,aj
+
+    
     idd = 1
     if(present(id)) idd = id
     t => tarr(idd)
     
-    debug = .false.
     
-    if (debug) print*, 'in gntage',kw,m0,mt,mc,aj
+    
     dtm = 0.d0
     mcy = 0.d0
     mt0 = mt

@@ -797,7 +797,7 @@ module interp_support
         real(dp), allocatable:: mlist(:)
 
         real(dp) :: Mnew,alfa,beta,age
-        integer :: eep_m, eep_n, eep_core
+        integer :: eep_m, eep_n
 
         logical :: debug
 
@@ -944,5 +944,40 @@ module interp_support
         deallocate(mlist)
 
     end subroutine get_initial_mass_for_new_track
+    
+        subroutine save_values(new_line,pars)
+        type(star_parameters) :: pars
+        real(dp),intent (in) :: new_line(:,:)
+        real(dp) :: lim_R
+        
+        pars% mass = new_line(i_mass,1)
+        pars% McHe = new_line(i_he_core,1)
+        pars% McCO = new_line(i_co_core,1)
+        pars% log_L = new_line(i_logL,1)
+        pars% luminosity = 10**pars% log_L
+        pars% log_Teff = new_line(i_logTe,1)
+        pars% Teff = 10**(pars% log_Teff)
+        pars% log_R = new_line(i_logR,1)
+    !        pars% log_R = 2*(3.762+(0.25*pars% log_L)-pars% log_Teff )
+    
+        !restrict radius from going beyond the hayashi
+        !limit during extrapolation
+        lim_R = 2*(3.762+(0.25*pars% log_L)-3.555 )
+        if (pars% log_R>lim_R) pars% log_R = lim_R
+
+        pars% radius = 10**pars% log_R
+        if (pars% phase <= EAGB) then
+            pars% core_mass = pars% McHe
+            if (i_RHe_core>0) pars% core_radius = new_line(i_RHe_core,1)
+        else
+            pars% core_mass = pars% McCO
+            if (i_RCO_core>0) pars% core_radius = new_line(i_RCO_core,1)
+        endif
+        
+        if (i_mcenv>0) pars% mcenv = new_line(i_mcenv,1)
+        if (i_rcenv>0) pars% rcenv = new_line(i_rcenv,1)
+            
+    !        if (pars% phase>=5) print*, "mass",pars% McHe,pars% McCO,pars% phase
+    end subroutine
     
   end module interp_support

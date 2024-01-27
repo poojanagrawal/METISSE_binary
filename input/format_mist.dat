@@ -27,7 +27,6 @@
     TPAGB_EEP = 808
     cCBurn_EEP = 808
     post_AGB_EEP = 1409
-    WD_EEP = 1710
 
     Initial_EEP = 202       !files will be read from this line number
     Final_EEP = 1409        !to this line
@@ -55,11 +54,8 @@
     log_R_colname = 'log_R'                  !log of radius
     
     he_core_mass = 'he_core_mass'        !mass of He enriched/H depleted core in solar units
-    c_core_mass = 'c_core_mass'             !mass of C enriched/He depleted core in solar units
+    co_core_mass = 'c_core_mass'             !mass of C enriched/He depleted core in solar units
 
-    mdot_colname = 'star_mdot'                 !d(star_mass)/dt in msolar per year  OR
-    log_mdot_colname = ''                          !log10(abs(star_mdot))
-    
     Teff_colname = ''                               !Effective/surface temperature in K OR
     log_T_colname = 'log_Teff'               !log of surface temperature
 

@@ -156,11 +156,11 @@ contains
     
     integer :: i,j_bgb
     real(dp) :: lums(10), mass
-    real(dp), pointer :: Lumt(:) 
+    real(dp), allocatable :: Lumt(:)
     
     logical :: debug
     debug = .false.
-    Lumt => t% tr(i_lum,:)
+    Lumt = 10**(t% tr(i_logL,:))
     mass = t% initial_mass
             
     do i = 1, t% neep
@@ -181,7 +181,7 @@ contains
             lums(3) = lums(4)
     endif
     
-    nullify(Lumt)
+    deallocate(Lumt)
     end subroutine
 
     ! GB = giant branch parameters

@@ -30,9 +30,10 @@ module track_support
     integer, parameter :: BSE = 1
     integer, parameter :: COSMIC = 2
 
-    character(len=strlen) :: METISSE_DIR,TRACKS_DIR
+    character(len=strlen) :: METISSE_DIR,TRACKS_DIR,TRACKS_DIR_HE
+    
     integer :: low_mass_final_eep, high_mass_final_eep
-    integer, allocatable :: key_eeps(:)
+    integer, allocatable :: key_eeps(:),key_eeps_he(:)
 
     ! for use when constructing EEP distance
     logical :: weight_center_rho_T_by_Xc
@@ -95,21 +96,29 @@ module track_support
     integer :: Extra_EEP2
     integer :: Extra_EEP3
 
-
+    ! for he stars
+    
+    integer :: ZAMS_HE_EEP
+    integer :: TAMS_HE_EEP
+    integer :: GB_HE_EEP
+    integer :: cCBurn_HE_EEP
+    integer :: post_AGB_HE_EEP
+    
     !quantities from history file that are needed directly in the code
 
     character(len=col_width) :: age_colname, mass_colname, log_L_colname,log_T_colname, &
-                                log_R_colname, he_core_mass,c_core_mass, &
+                                log_R_colname, he_core_mass,co_core_mass, &
                                 log_Tc,c12_mass_frac,o16_mass_frac, he4_mass_frac, &
                                 Lum_colname,Teff_colname,Radius_colname, &
                                 he_core_radius, co_core_radius, mass_conv_envelope, &
                                 radius_conv_envelope, moment_of_inertia
 
-    integer :: i_age, i_mass, i_logTe, i_logL, i_logR, i_he_core, i_co_core
-    integer :: i_age2, i_RHe_core,i_RCO_core,i_mcenv, i_Rcenv,i_MoI
+    integer :: i_age, i_age2, i_mass, i_logTe, i_logL, i_logR, i_he_core, i_co_core
+    integer :: i_RHe_core,i_RCO_core,i_mcenv, i_Rcenv,i_MoI
+    integer :: i_he_RCO,i_he_mcenv, i_he_Rcenv,i_he_MoI
 
-    integer :: i_logg, i_Tc, i_Rhoc, i_logLH, i_logLHe, i_gamma, i_surfH
-    integer :: i_Xc, i_Yc, i_Cc, i_he4, i_c12,i_o16, i_lum, i_rad
+    integer :: i_Tc, i_he4, i_c12,i_o16
+    integer :: i_Xc, i_Yc, i_Cc,i_Rhoc, i_gamma, i_surfH
 
     integer :: number_of_core_columns
     integer, allocatable :: core_cols(:)!, surface_cols(:)
@@ -140,7 +149,7 @@ module track_support
         type(column), allocatable :: cols(:)
 
         logical :: has_phase = .false., ignore=.false.
-        logical :: has_mass_loss
+        logical :: has_mass_loss, is_he_track
         integer :: ncol, ntrack, neep
         integer :: star_type = unknown
 
@@ -197,9 +206,8 @@ module track_support
     end type track
     
     !defining array for input tracks
-    type(eep_track), allocatable,target :: s(:)
-    type(track), allocatable,target :: tarr(:)
-    integer :: num_tracks
+    type(eep_track), allocatable, target :: s(:), s_he(:)
+    type(track), allocatable, target :: tarr(:)
     real(dp) :: initial_Z
 
     !variable declaration-- for main
@@ -331,41 +339,6 @@ module track_support
      end if
 
     end function binary_search
-
-    subroutine save_values(new_line,pars)
-        type(star_parameters) :: pars
-        real(dp),intent (in) :: new_line(:,:)
-        real(dp) :: lim_R
-        
-        pars% mass = new_line(i_mass,1)
-        pars% McHe = new_line(i_he_core,1)
-        pars% McCO = new_line(i_co_core,1)
-        pars% log_L = new_line(i_logL,1)
-        pars% luminosity = 10**pars% log_L
-        pars% log_Teff = new_line(i_logTe,1)
-        pars% Teff = 10**(pars% log_Teff)
-        pars% log_R = new_line(i_logR,1)
-    !        pars% log_R = 2*(3.762+(0.25*pars% log_L)-pars% log_Teff )
-    
-        !restrict radius from going beyond the hayashi
-        !limit during extrapolation
-        lim_R = 2*(3.762+(0.25*pars% log_L)-3.555 )
-        if (pars% log_R>lim_R) pars% log_R = lim_R
-
-        pars% radius = 10**pars% log_R
-        if (pars% phase <= EAGB) then
-            pars% core_mass = pars% McHe
-            if (i_RHe_core>0) pars% core_radius = new_line(i_RHe_core,1)
-        else
-            pars% core_mass = pars% McCO
-            if (i_RCO_core>0) pars% core_radius = new_line(i_RCO_core,1)
-        endif
-        
-        if (i_mcenv>0) pars% mcenv = new_line(i_mcenv,1)
-        if (i_rcenv>0) pars% rcenv = new_line(i_rcenv,1)
-            
-    !        if (pars% phase>=5) print*, "mass",pars% McHe,pars% McCO,pars% phase
-    end subroutine
     
     subroutine stop_code()
         print*, 'Error encountered; stopping METISSE'

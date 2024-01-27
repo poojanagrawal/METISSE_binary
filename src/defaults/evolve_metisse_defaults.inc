@@ -1,12 +1,14 @@
 ! Defaults control for METISSE
 ! Do NOT make any changes to this file
 ! Use evolve_metisse.in for input
+! Make sure to ADD a new line at the end (after / symbol)in the inlist
+
 
 ! NOTE: SSE_input_controls in evolve_metisse.in are read 
 ! only when METISSE is called directly through its main unit/ standalone mode.
 ! Otherwise, values provided by the overlying code are used.
-! Make sure to ADD a new line at the end (after / symbol)
 
+    !path is relative to the executable
     METISSE_DIR = '.'
     
 !SSE_input_controls
@@ -88,8 +90,10 @@
     
     metallicity_file_list = ''
 
-
+    metallicity_file_list_he = ''
+    
     ! if (abs(Z_input-Z_required)/MIN(Z_input,Z_required)) > Z_accuracy_limit
+    
     Z_accuracy_limit = 1d-2
 
     ! INTERPOLATION CONTROLS

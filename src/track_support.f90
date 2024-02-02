@@ -21,7 +21,7 @@ module track_support
     real(dp), parameter :: undefined  =  -1.0
     integer, parameter :: undefined_i = -1
     
-    logical :: verbose
+    logical :: verbose, use_sse_NHe
     logical :: write_track_to_file, write_eep_file, write_error_to_file
     integer :: err_unit
 
@@ -31,9 +31,6 @@ module track_support
     integer, parameter :: COSMIC = 2
 
     character(len=strlen) :: METISSE_DIR,TRACKS_DIR,TRACKS_DIR_HE
-    
-    integer :: low_mass_final_eep, high_mass_final_eep
-    integer, allocatable :: key_eeps(:),key_eeps_he(:)
 
     ! for use when constructing EEP distance
     logical :: weight_center_rho_T_by_Xc
@@ -46,9 +43,15 @@ module track_support
     !stellar types for handling primary eeps
     integer, parameter :: unknown           =  1 !for initialization only
     integer, parameter :: sub_stellar       =  2 !no fusion = brown dwarf
-    integer, parameter :: star_low_mass     =  3 !ends as a WD
-    integer, parameter :: star_high_mass    =  4 !does not end as a WD
-
+    integer, parameter :: star_low_mass     =  3 !ends as a WD  (applies to both H and He tracks)
+    integer, parameter :: star_high_mass    =  4 !does not end as a WD (applies to both H and He tracks)
+!    integer, parameter :: post_agb          =  5
+    integer, parameter :: remnant           =  6
+    integer, parameter :: rejuvenated       =  7
+    integer, parameter :: sse_he_star       =  8    ! special type for He star evolved using sse formulae
+                                                    
+    
+    
     character(len=10) :: star_label(4) = ['   unknown', 'substellar', '  low-mass', ' high-mass']
     character(len=5) :: phase_label(16) = ['lm_MS','   MS','   HG','  FGB',' CHeB',' EAGB',&
     'TPAGB','He_MS', 'He_HG','He_GB','He_WD','CO_WD','ONeWD','   NS','   BH','   MR']
@@ -90,8 +93,7 @@ module track_support
     integer :: TPAGB_EEP
     integer :: post_AGB_EEP
 
-    integer :: Initial_EEP        !files will be read from this line number
-    integer :: Final_EEP         !to this line
+    
     integer :: Extra_EEP1
     integer :: Extra_EEP2
     integer :: Extra_EEP3
@@ -104,6 +106,13 @@ module track_support
     integer :: cCBurn_HE_EEP
     integer :: post_AGB_HE_EEP
     
+    integer :: Initial_EEP, Initial_EEP_HE
+    integer :: Final_EEP, Final_EEP_HE
+    integer :: low_mass_final_eep, high_mass_final_eep
+    integer :: low_mass_eep_he, high_mass_eep_he
+
+    integer, allocatable :: key_eeps(:),key_eeps_he(:)
+    
     !quantities from history file that are needed directly in the code
 
     character(len=col_width) :: age_colname, mass_colname, log_L_colname,log_T_colname, &
@@ -115,13 +124,13 @@ module track_support
 
     integer :: i_age, i_age2, i_mass, i_logTe, i_logL, i_logR, i_he_core, i_co_core
     integer :: i_RHe_core,i_RCO_core,i_mcenv, i_Rcenv,i_MoI
-    integer :: i_he_RCO,i_he_mcenv, i_he_Rcenv,i_he_MoI
+    integer :: i_he_RCO,i_he_mcenv, i_he_Rcenv,i_he_MoI,i_he_age
 
     integer :: i_Tc, i_he4, i_c12,i_o16
     integer :: i_Xc, i_Yc, i_Cc,i_Rhoc, i_gamma, i_surfH
 
     integer :: number_of_core_columns
-    integer, allocatable :: core_cols(:)!, surface_cols(:)
+    integer, allocatable :: core_cols(:), core_cols_he(:)
     !for columns
     integer, parameter :: max_col = 180
     integer, parameter :: column_int=0
@@ -187,7 +196,9 @@ module track_support
     type track
         type(column), allocatable :: cols(:)
         logical :: has_RGB =.false., complete=.true.
-        logical :: has_mass_loss
+        logical :: has_mass_loss,is_he_track
+        logical :: post_agb = .false.
+
         integer :: ncol, ntrack, neep,min_index
         integer :: star_type = unknown, irecord,ierr
         
@@ -200,13 +211,12 @@ module track_support
         integer, allocatable :: eep(:), bounds(:)
 
         type(star_parameters) :: pars    ! parameters at any instant
-        logical :: post_agb = .false.
         type(agb_parameters) :: agb
         type(sse_parameters) :: He_pars
     end type track
     
     !defining array for input tracks
-    type(eep_track), allocatable, target :: s(:), s_he(:)
+    type(eep_track), allocatable, target :: sa(:), sa_he(:)
     type(track), allocatable, target :: tarr(:)
     real(dp) :: initial_Z
 
@@ -741,6 +751,5 @@ module track_support
 !        deallocate(t% times)
         deallocate(t% cols)
 
-        deallocate(t% bounds)
     end subroutine deallocate_arrays
 end module track_support

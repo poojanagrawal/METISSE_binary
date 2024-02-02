@@ -14,6 +14,7 @@ subroutine METISSE_zcnsts(z,zpars)
 
     debug = .false.
     
+    
     if (initial_Z >0 .and.(relative_diff(initial_Z,z) < Z_accuracy_limit)) then
         if (debug) print*, '**** No change in metallicity, exiting METISSE_zcnsts ****'
         return
@@ -23,6 +24,7 @@ subroutine METISSE_zcnsts(z,zpars)
     
     ierr = 0
     nloop = 2
+    use_sse_NHe = .true.
     
     if (allocated(core_cols)) deallocate(core_cols)
     if (allocated(m_cutoff)) deallocate(m_cutoff)
@@ -60,6 +62,14 @@ subroutine METISSE_zcnsts(z,zpars)
         
         if(debug) print*,'metallicity files: ',metallicity_file_list
         if(debug) print*,'metallicity files he : ', metallicity_file_list_he
+        
+        !Some unit numbers are reserved: 5 is standard input, 6 is standard output.
+        if (write_error_to_file) then
+            err_unit = 99   !will write to fort.99
+        else
+            err_unit = 6      !will write to screen
+        endif
+    
         read_inputs = .false.
     end if
     
@@ -68,6 +78,14 @@ subroutine METISSE_zcnsts(z,zpars)
     !first calculate zpars the SSE way for use as backup
     call calculate_sse_zpars(z,zpars)
     
+    ! need to intialize these seperately as they may be
+    ! used unitialized if he tracks are not present
+    i_he_RCO = -1
+    i_he_mcenv = -1
+    i_he_Rcenv = -1
+    i_he_MoI = -1
+    i_he_age = -1
+            
     do i = nloop,1, -1
         !read metallicity related variables
         
@@ -166,15 +184,33 @@ subroutine METISSE_zcnsts(z,zpars)
                 if(debug) write(*,'(a100,f8.2,99i8)') trim(xa(j)% filename), xa(j)% initial_mass, xa(j)% ncol
             end do
         endif
+        
         if (i==2) then
             call set_zparameters_he()
-            call copy_and_deallocatex(s_he)
+            call copy_and_deallocatex(sa_he)
+!            use_sse_NHe = .false.
+            allocate(core_cols_he(4))
+            core_cols_he = -1
+            core_cols_he(1) = i_he_age
+            core_cols_he(2) = i_logL
+            core_cols_he(3) = i_co_core
+            if (i_he_RCO > 0) core_cols_he(4) = i_he_RCO
         else
            
             !reset z parameters where available
             !and determine cutoff masses
             call set_zparameters(zpars)
-            call copy_and_deallocatex(s)
+            call copy_and_deallocatex(sa)
+            allocate(core_cols(6))
+            core_cols = -1
+            
+            core_cols(1) = i_age
+            core_cols(2) = i_logL
+            core_cols(3) = i_he_core
+            core_cols(4) = i_co_core
+
+            if (i_RHe_core > 0) core_cols(5) = i_RHe_core
+            if (i_RCO_core > 0) core_cols(6) = i_RCO_core
         endif
         deallocate(track_list)
     end do
@@ -182,17 +218,17 @@ subroutine METISSE_zcnsts(z,zpars)
 
     
     ! Processing the input tracks
-    nmax = maxval(s% ntrack)
+    nmax = maxval(sa% ntrack)
     allocate(Mmax_array(nmax), Mmin_array(nmax))
     Mmax_array = 0.d0
     Mmin_array = huge(0.0d0)    !largest float
     
-    do i = 1,size(s)        
+    do i = 1,size(sa)
         !Find maximum and minimum mass at each eep
         do j = 1, nmax
-            if (s(i)% ntrack>=j) then
-                Mmax_array(j) = max(Mmax_array(j),s(i)% tr(i_mass,j))
-                Mmin_array(j) = min(Mmin_array(j),s(i)% tr(i_mass,j))
+            if (sa(i)% ntrack>=j) then
+                Mmax_array(j) = max(Mmax_array(j),sa(i)% tr(i_mass,j))
+                Mmin_array(j) = min(Mmin_array(j),sa(i)% tr(i_mass,j))
             endif
         end do
         
@@ -201,18 +237,7 @@ subroutine METISSE_zcnsts(z,zpars)
     !TODO: 1. check for monotonicity of initial masses
     ! 2. incompleteness of the tracks
     ! 3. BGB phase
-    if (debug) print*,s% initial_mass
-     
-    number_of_core_columns = 6
-    allocate(core_cols(number_of_core_columns))
-    core_cols = -1
-    core_cols(1) = i_logL
-    core_cols(2) = i_he_core
-    core_cols(3) = i_co_core
-
-    if (i_RHe_core > 0) core_cols(4) = i_RHe_core
-    if (i_RCO_core > 0) core_cols(5) = i_RCO_core
-    if (i_he_RCO > 0) core_cols(6) = i_he_RCO
+    if (debug) print*,sa% initial_mass
     
     if (front_end == main) then
     ! sets remnant schmeme from SSE_input_controls
@@ -222,12 +247,5 @@ subroutine METISSE_zcnsts(z,zpars)
         call assign_commons()
     endif
 
-    !Some unit numbers are reserved: 5 is standard input, 6 is standard output.
-    if (write_error_to_file) then
-        err_unit = 99   !will write to fort.99
-    else
-        err_unit = 6      !will write to screen
-    endif
-    
 end subroutine METISSE_zcnsts
 

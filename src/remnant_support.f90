@@ -491,7 +491,7 @@
                     t% pars% McCO = 0.d0
                     t% pars% McHe = 0.d0
 
-                    call calculate_he_timescales(t)
+                    call calculate_SSE_He_timescales(t)
                 endif
 
             case(HeBurn)  !core he Burning
@@ -500,7 +500,7 @@
                 t% pars% core_mass = 0.d0
                 t% pars% McCO = 0.d0
                 t% pars% McHe = 0.d0
-                call calculate_he_timescales(t)
+                call calculate_SSE_He_timescales(t)
                 HeI_time = t% times(3)
                 HeB_time = t% times(4)-t% times(3)
                 t% pars% age = t% MS_time*((t% pars% age- HeI_time)/HeB_time)
@@ -511,7 +511,7 @@
                 t% zams_mass = t% pars% mass
                 t% pars% McHe = t% pars% mass
                 t% pars% core_mass = t% pars% McCO
-                call calculate_he_timescales(t)
+                call calculate_SSE_He_timescales(t)
                 t% pars% age = He_GB_age(t% pars% core_mass,t% times(8), &
                                 t% times(9),t% He_pars% D, t% He_pars% Mx)
                 t% pars% age = MAX(t% pars% age,t% MS_time)

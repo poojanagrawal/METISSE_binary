@@ -1,7 +1,6 @@
 module sse_support
 !module to help interface metisse with sse
     use track_support
-    use z_support, only: Mcrit
     implicit none
     
  !SSE parameters required if envelope is lost
@@ -18,77 +17,6 @@ module sse_support
 !    real(dp) :: Tinf1,Tinf2,Tx
 
 contains
-
-    subroutine calculate_timescales(t)
-        !subroutine to assign sse phases to the interpolated track
-        !also calculate timescales associated with different phases
-        implicit none
-        
-        type(track), pointer,intent(inout) :: t
-        integer :: i,j_bgb
-        real(dp) :: mass
-        real(dp), pointer :: age(:)=> NULL()
-        logical :: debug
-        debug = .false.
-
-        age => t% tr(i_age2,:)
-        mass = t% initial_mass
-
-        t% MS_time = age(TAMS_EEP) - age(ZAMS_EEP)
-        do i = 1, t% neep
-            if (t% eep(i) == TAMS_EEP) then    !MS
-                t% times(MS) = age(TAMS_EEP)
-
-            elseif (t% eep(i) == cHeIgnition_EEP) then
-                !Herztsprung gap
-                t% times(HG) = age(cHeIgnition_EEP)
-                !t% times(HG) gets modified to t(BGB)
-                ! if RGB phase is present
-                t% times(RGB) = t% times(HG)
-
-            elseif (t% eep(i) == TA_cHeB_EEP) then
-                !red_HB_clump /core He Burning
-                t% times(HeBurn) = age(TA_cHeB_EEP)
-
-            elseif (t% eep(i) == cCBurn_EEP) then
-                !EAGB/ core C burning
-                t% times(EAGB) = age(cCBurn_EEP)
-                
-            elseif (t% eep(i) == TPAGB_EEP) then
-                !AGB
-                t% times(EAGB) = age(TPAGB_EEP)
-                
-            elseif (t% eep(i) == post_AGB_EEP) then
-                !TP-AGB :only for low_inter mass stars
-                t% times(TPAGB) = age(post_AGB_EEP)
-            endif
-        enddo
-        !print*,"bgb",BGB_EEP,identified(BGB_EEP)
-
-        t% times(11) = age(min(Final_EEP,t% ntrack))
-        !Todo: nuc_time should be for WR phase
-        t% nuc_time = t% times(11)
-        !determine the base of the giant branch times, if present
-        if (mass > Mcrit(2)% mass .and. mass< Mcrit(5)% mass) then
-            if (identified(BGB_EEP)) then
-                !Red giant Branch
-                t% times(HG) = age(BGB_EEP)
-            elseif (t% ntrack >TAMS_EEP) then
-                j_bgb =  base_GB(t)
-                if (j_bgb>0) then
-                    j_bgb = j_bgb+TAMS_EEP-1
-                    !Red giant Branch
-                    t% times(HG) = age(j_bgb)
-                elseif (debug) then
-                    print*, "Unable to locate BGB ", j_bgb
-!                    STOP
-                end if
-            endif
-        endif
-
-        nullify(age)
-    end subroutine calculate_timescales
-
 
     subroutine calculate_SSE_parameters(t,zpars,tscls,lums,GB,tm,tn)
         type(track), pointer, intent(in) :: t
@@ -237,7 +165,7 @@ contains
     end subroutine
 
 !     subroutine calculate_he_timescales(t,t% He_pars% LtMS, Mx, Tinf1, Tx, Tinf2)
-     subroutine calculate_He_timescales(t)
+     subroutine calculate_SSE_He_timescales(t)
       !only for phases 7 to 9
             type(track), pointer, intent(inout) :: t
             real(dp) :: Tinf1, Tx, Tinf2
@@ -301,7 +229,7 @@ contains
             t% times(10) = Tx
             if(debug) print*,"He timescales", tinf1, tx, tinf2, tmax,t% MS_time,t% nuc_time
         return
-        end subroutine calculate_He_timescales
+        end subroutine calculate_SSE_He_timescales
 
     subroutine calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
             type(track), pointer, intent(in) :: t

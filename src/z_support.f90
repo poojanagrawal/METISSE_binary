@@ -157,7 +157,7 @@ module z_support
         integer :: i
         logical:: found_z,debug
         
-        debug = .true.
+        debug = .false.
 
         if (verbose) write(*,'(a,f7.3)') ' Input Z is', Z_req
         ierr = 0
@@ -529,6 +529,7 @@ module z_support
         ! i_age is the extra age column for recording age values of new tracks
         ! it is used for interpolating in surface quantities after any explicit mass gain/loss
         ! It is the same as i_age2 if the input tracks already include mass loss due to winds/no mass loss
+        
         i_age = ncol+1
         
         i_age2 = locate_column(cols, age_colname, essential)
@@ -565,36 +566,22 @@ module z_support
         
         !optional columns
         if (is_he_track) then
-            i_he_RCO = -1
-
             if (co_core_radius/= '') i_he_RCO = locate_column(cols, co_core_radius)
-                
-            i_he_mcenv = -1
             if (mass_conv_envelope/= '') i_he_mcenv = locate_column(cols, mass_conv_envelope)
-
-            i_he_Rcenv = -1
             if (radius_conv_envelope/= '') i_he_rcenv = locate_column(cols, radius_conv_envelope)
-
-            i_he_MoI = -1
             if (moment_of_inertia/= '') i_he_MoI = locate_column(cols, moment_of_inertia)
-            
+            i_he_age = ncol+1
         else
-
             i_RHe_core = -1
             i_RCO_core = -1
-
             if (he_core_radius/= '') i_RHe_core = locate_column(cols, he_core_radius)
             if (co_core_radius/= '') i_RCO_core = locate_column(cols, co_core_radius)
-
             i_mcenv = -1
             if (mass_conv_envelope/= '') i_mcenv = locate_column(cols, mass_conv_envelope)
-
             i_Rcenv = -1
             if (radius_conv_envelope/= '') i_rcenv = locate_column(cols, radius_conv_envelope)
-
             i_MoI = -1
             if (moment_of_inertia/= '') i_MoI = locate_column(cols, moment_of_inertia)
-                
         endif
         
         i_he4 = locate_column(cols, he4_mass_frac)
@@ -736,6 +723,7 @@ module z_support
         key_cols% loc = temp(1:n-1)% loc
 
         i_age = n
+        if(is_he_track) i_he_age = n
     end subroutine get_key_columns
 
     subroutine assign_sgl_col(temp, col, colname,n)
@@ -838,6 +826,7 @@ module z_support
 
     subroutine read_key_eeps()
     integer :: temp(15), neep,ieep
+    
         temp = -1
         if (allocated(key_eeps)) deallocate(key_eeps)
         ieep = 1
@@ -883,14 +872,17 @@ module z_support
         temp(ieep) = Extra_EEP3
         if(.not. add_eep(temp,ieep)) temp(ieep) = -1
 
-    neep = count(temp > 0,1)
-    allocate(key_eeps(neep))
-    key_eeps = pack(temp,temp > 0)
-    
-    !define initial and final eep if not already defined
-    if (Initial_EEP <0 .or. Initial_EEP< minval(key_eeps))  Initial_EEP = ZAMS_EEP
-    if (Final_EEP < 0 .or. Final_EEP > maxval(key_eeps))  Final_EEP = maxval(key_eeps)
-    
+        neep = count(temp > 0,1)
+        allocate(key_eeps(neep))
+        key_eeps = pack(temp,temp > 0)
+        
+        !define initial and final eep if not already defined
+        if(Initial_EEP <0 .or. Initial_EEP< minval(key_eeps)) Initial_EEP = ZAMS_EEP
+        if(Final_EEP < 0 .or. Final_EEP > maxval(key_eeps)) Final_EEP = maxval(key_eeps)
+        
+        if(low_mass_final_eep<0 .or. low_mass_final_eep>final_eep) low_mass_final_eep = final_eep
+        if(high_mass_final_eep<0 .or. high_mass_final_eep>final_eep) high_mass_final_eep = final_eep
+!        print*, 'eep main', Initial_EEP, final_eep, low_mass_final_eep, high_mass_final_eep
     end subroutine
 
     subroutine read_key_eeps_he()
@@ -917,6 +909,14 @@ module z_support
         allocate(key_eeps_he(neep))
         key_eeps_he = pack(temp,temp > 0)
         
+        !define initial and final eep if not already defined
+        if (Initial_EEP < 0 .or. Initial_EEP< minval(key_eeps_he)) Initial_EEP_HE = ZAMS_HE_EEP
+        if (Final_EEP < 0 .or. Final_EEP > maxval(key_eeps_he)) Final_EEP_HE = maxval(key_eeps_he)
+    
+        if(low_mass_final_eep<0 .or. low_mass_final_eep>final_eep_he) low_mass_eep_he = Final_EEP_HE
+        if(high_mass_final_eep<0 .or. low_mass_final_eep>final_eep_he) high_mass_eep_he = Final_EEP_HE
+        
+!        print*, 'eep he', Initial_EEP_he, final_eep_he, low_mass_eep_he, high_mass_eep_he
     end subroutine read_key_eeps_he
      
     logical function add_eep(temp, i)

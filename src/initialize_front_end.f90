@@ -29,7 +29,7 @@ subroutine initialize_front_end(front_end_name,path_to_tracks)!,path_to_he_track
 !        METISSE_DIR = path_to_metisse
         TRACKS_DIR = path_to_tracks
         
-        TRACKS_DIR_HE = '/Users/poojan/stellar_tracks/MESA/helium/He_z02/eeps/' !path_to_he_tracks
+        TRACKS_DIR_HE = '/Users/poojan/stellar_tracks/MESA/helium/He_z02/' !path_to_he_tracks
 !        print*, 'setting front end to cosmic'
     else
         print*, "Error: Unrecongnized front_end_name for METISSE"

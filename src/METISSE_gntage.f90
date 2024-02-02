@@ -13,15 +13,13 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
     type(track), pointer :: t
     logical :: debug
     
-    debug = .false.
-        if (debug) print*, 'in gntage',kw,m0,mt,mc,aj
+    debug = .true.
+    if (debug)write(UNIT=err_unit,fmt=*) 'in gntage',kw,m0,mt,mc,aj
 
-    
     idd = 1
     if(present(id)) idd = id
     t => tarr(idd)
-    
-    
+
     
     dtm = 0.d0
     mcy = 0.d0
@@ -37,17 +35,16 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
     !this is just to signal star that gnatge is calling it
     !pars% phase will get updated to its correct value in star
 !    if (t% pars% phase<=kw) t% pars% phase = kw+1
-    t% pars% phase = -15
+    t% star_type = rejuvenated 
 
     !TODO: provide a backup in case one of the mcrits are not defined
 
-    
     if(kw.eq.4)then
     ! Set the minimum CHeB core mass (at BGB or He ignition)
     ! using M = Mflash/Mhef
          if(Mcrit(4)% loc >0) then
-             j = min(s(Mcrit(4)% loc)% ntrack,cHeIgnition_EEP)
-             mcy = s(Mcrit(4)% loc)% tr(i_he_core,j)
+             j = min(sa(Mcrit(4)% loc)% ntrack,cHeIgnition_EEP)
+             mcy = sa(Mcrit(4)% loc)% tr(i_he_core,j)
          endif
          if(mc.le.mcy) then
             kw = 3
@@ -60,8 +57,8 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
       if(kw.eq.3)then
         ! Set the maximum GB core mass using M = Mfgb
         if(Mcrit(5)% loc >0) then
-            j = min(s(Mcrit(5)% loc)% ntrack,cHeIgnition_EEP)
-            mcy = s(Mcrit(5)% loc)% tr(i_he_core,j)
+            j = min(sa(Mcrit(5)% loc)% ntrack,cHeIgnition_EEP)
+            mcy = sa(Mcrit(5)% loc)% tr(i_he_core,j)
         endif
         if(mc.ge.mcy)then
             kw = 4
@@ -107,5 +104,5 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
     mt = mt0
     nullify(t)
     
-    if (debug) print*, 'exit gntage',kw,m0,mt,mc,aj
+    if (debug)write(UNIT=err_unit,fmt=*)'exit gntage',kw,m0,mt,mc,aj
 end subroutine METISSE_gntage

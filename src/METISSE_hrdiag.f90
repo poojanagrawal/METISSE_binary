@@ -67,7 +67,7 @@
                     write(UNIT=err_unit,fmt=*) 'WARNING: Early end of file due to incomplete track beyond phase, mass and id',&
                     kw,t% initial_mass,id
                     t% ierr = -1
-!                    call stop_code
+                    call stop_code
                 endif
 
                 end_of_file = .true.
@@ -137,6 +137,7 @@
       
     if(has_become_remnant) then
 !        print*, 'star',id,'is remnant',t% pars% mass,mcbagb,t% pars% core_mass
+        t% star_type = remnant
         if (front_end == main .or. front_end == BSE) then
             if(t% pars% phase /= HeWD) then
                 call assign_remnant_METISSE(t% pars, mcbagb)
@@ -162,8 +163,6 @@
         !has_become_remnant is only for assigning remnants, setting it to false now
     endif
 
-
-
     lum = t% pars% luminosity
     r =  t% pars% radius
     mc = t% pars% core_mass
@@ -173,7 +172,6 @@
     kw = t% pars% phase
     aj = t% pars% age
     mass= t% zams_mass
-
 
     ! Calculate mass and radius of convective envelope, and envelope gyration radius.
     ! this needs to be separate from the above loop
@@ -230,10 +228,7 @@
     t% pars% rcenv = renv
 !    t% pars% env_frac = (mt-t% pars% McHe)/mt
 
-
-    if (irecord>0) then
-!        if (id==1)print*,"saving pars",mt,mc,aj,kw,r,t%pars% age
-    else
+    if (irecord<=0) then
         t% pars = old_pars
         t% post_agb = post_agb
         !tm and tn get calculated in star.f90
@@ -242,6 +237,5 @@
 
 !    if(id==1)print*,"finished hrdiag",t% pars% mass, t% pars% core_mass,t% pars% age,t% pars% radius
 
-    
     nullify(t)
     end subroutine METISSE_hrdiag

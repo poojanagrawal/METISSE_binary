@@ -58,19 +58,26 @@
             case(He_MS)
                 dt = pts1* t% times(7)
                 dtr = t% times(7) - age
-!                print*, 'deltat',dt, dtr,t% times(7),age
-                !this gets modified if star is losing too much mass
+                ! this is same for he stars with sse formulae as well as interpolated tracks
             case(He_HG:He_GB)
-                if(age < t% times(10))then
-                    dt = pts2*(t% times(8) - age)
-                else
-                    dt = pts2*(t% times(9) - age)
+                if (t% star_type == sse_he_star) then
+                    if(age < t% times(10))then
+                        dt = pts2*(t% times(8) - age)
+                    else
+                        dt = pts2*(t% times(9) - age)
+                    endif
+                     dtr = t% nuc_time -age
+                    !TODO: Next line requires a check
+                    !Note that this is done to avoid negative timesteps
+                    ! that result from more massive cores than what sse formulae can handle
+                    dtr = max(dtr,1d-10)
+                elseif(t% pars% phase== HE_HG) then
+                    dt = pts2*(t% times(8)-t% times(7))
+                    dtr = t% times(8)-age
+                elseif(t% pars% phase== HE_GB) then
+                    dt = pts2*(t% times(9)-t% times(8))
+                    dtr = t% times(9)-age
                 endif
-                dtr = t% nuc_time -age
-                !TODO: Next line requires a check
-                !Note that this is done to avoid negative timesteps that result from more massive cores than what sse formulae predict
-                dtr = max(dtr,1d-10)
-                
             case(HeWD:NS)
                 dt = MAX(0.1d0,age*10.0)
                 dt = MAX(0.1d0,dt*10.0)
@@ -92,8 +99,6 @@
                 t% ierr = -1
                 t% pars% dt = 1e+10
                 ! forcing stellar type to 15 to avoid crashing of code outside this function
-                ! not sure if it works
-                t% pars% phase = 15
 !               call stop_code
             endif
             

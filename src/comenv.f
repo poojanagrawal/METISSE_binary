@@ -392,7 +392,7 @@
          JSPIN2 = OSPIN2*(K22*R2*R2*(M2-MC2)+K3*RC2*RC2*MC2)
       ENDIF
    30 SEP = SEPF
-        if (dbg) print*, 'comenv end',kw1,kw2,j1,j2
+        if (dbg) print*, 'comenv end',kw1,kw2,j1,j2,coel
         if (dbg) print*, M01,M1,MC1,AJ1,M02,M2,MC2,AJ2,SEP
 *        if ((kw1==6) .or.(kw2==6)) stop
       RETURN

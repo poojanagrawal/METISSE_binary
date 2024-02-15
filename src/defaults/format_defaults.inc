@@ -164,12 +164,13 @@
     Extra_EEP3 = -1
     
     !----------- EEP DETAILS for He stars----------
+    ! Use the following syntax to provide he stars eeps in your format file
     
-    ZAMS_HE_EEP = -1
-    TAMS_HE_EEP = -1
-    GB_HE_EEP = -1
-    cCBurn_HE_EEP = -1
-    post_AGB_HE_EEP = -1
+    !ZAMS_HE_EEP = -1
+    !TAMS_HE_EEP = -1
+    !GB_HE_EEP = -1
+    !cCBurn_HE_EEP = -1
+    !post_AGB_HE_EEP = -1
     
     
     !--- HOW TO DEAL WITH INCOMPLETE TRACKS--------

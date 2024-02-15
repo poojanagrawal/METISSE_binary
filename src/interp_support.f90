@@ -25,7 +25,7 @@ module interp_support
         integer :: iseg, keyword,min_index
         type(eep_track), pointer :: a(:), s(:)
         real(dp) :: f(3), dx, x(4), y(4), alfa, beta
-        integer :: i, j, k, mlo, mhi,nt,age_col
+        integer :: i, j, k, mlo, mhi,nt,age_col,start
         integer, allocatable :: min_eeps(:), excl_cols(:)
         
         debug_mass = .false.
@@ -51,6 +51,7 @@ module interp_support
             s => sa_he
             excl_cols = core_cols_he
             age_col = i_he_age
+            start = ZAMS_HE_EEP
             print*, 'using he tracks'
             ! mcutoff
             !min, max array
@@ -60,6 +61,7 @@ module interp_support
             s => sa
             excl_cols = core_cols
             age_col = i_age
+            start = ZAMS_EEP
         endif
 
         
@@ -101,8 +103,8 @@ module interp_support
         case(Steffen1990)
             x = a(mlo:mhi)% initial_mass
             dx = t% initial_mass - x(2)
-            if (ZAMS_EEP>1) t% tr(:,1:ZAMS_EEP-1) =-1
-            do i=ZAMS_EEP,t% ntrack
+            if (start>1) t% tr(:,1:start-1) =-1
+            do i=start,t% ntrack
                 do j=1,t% ncol
                     if (exclude_core .and. any(j .eq. excl_cols,1)) cycle
                     do k=1,4
@@ -120,12 +122,10 @@ module interp_support
         ! check if mass and age are monotonic
         call smooth_track(t)
 
-        ! allocate timescales
-!        allocate(t% times(11), t% times_new(11))
-        t% times = undefined
         
         ! recalibrate age from ZAMS
-        t% tr(i_age2,:) = t% tr(i_age2,:)- t% tr(i_age2,ZAMS_EEP)
+        
+        t% tr(i_age2,:) = t% tr(i_age2,:)- t% tr(i_age2,start)
         t% tr(i_age2,:) = t% tr(i_age2,:)*1E-6          !Myrs
         
         
@@ -268,7 +268,7 @@ module interp_support
         b% tr = 0d0
         b% complete = .true.
         b% has_mass_loss = a% has_mass_loss
-
+        b% is_he_track = a% is_he_track
     end subroutine
 
     subroutine check_length(iseg,t,min_index,exclude_core)
@@ -489,9 +489,15 @@ module interp_support
     subroutine smooth_track(t)
     implicit none
     type(track), intent(inout) :: t
-    integer :: i
-        call mod_PAV(t% tr(i_age2,ZAMS_EEP:))
-        do i = ZAMS_EEP+1,t% ntrack
+    integer :: i, start
+        if (t% is_he_track) then
+            start = ZAMS_HE_EEP
+        else
+            start = ZAMS_EEP
+        endif
+        
+        call mod_PAV(t% tr(i_age2,start:))
+        do i = start+1,t% ntrack
             t% tr(i_mass,i) = min(t% tr(i_mass,i), t% tr(i_mass,i-1))
         end do
     end subroutine smooth_track
@@ -584,8 +590,9 @@ module interp_support
         type(track), pointer :: t
 
         debug = .false.
-
-        if (debug) print*,"in interpolate age"
+!         if (t% is_he_track) debug = .true.
+         
+        if (debug) print*,"in interpolate age",t% pars% phase
         frac = 0.d0
         them = 0.d0; them_new = 0.d0
         dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
@@ -602,12 +609,12 @@ module interp_support
 
         kw = t% pars% phase
         
-        if (kw<=1) then
+        if (kw<=1 .or. kw ==7) then
             age2 = input_age
             n_pass = 1
             call find_nearest_eeps(t,min_eeps2, age2, i_age2)
 !            if (kw <=1) age2= input_age*(t% MS_time/t% ms_old)
-        elseif (kw>1 .and. kw<=6) then
+        elseif (kw>1 .and. kw<=9) then
 
             !TODO: this is temporary until gntage is modified
             ! to avoid NaN during interpolation
@@ -670,11 +677,14 @@ module interp_support
                     interpolate = check_core_quant(j,n_pass, pass)
                     if (interpolate) then
                         new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
-                        if (new_line(j,1)/= new_line(j,1)) then
+                        if (new_line(j,1)/= new_line(j,1) .and. t% ierr==0) then
                         write(UNIT=err_unit,fmt=*) 'Warning: NaN encountered during interpolation age',&
                                         t% initial_mass,input_age,j,mhi,mlo
-                        call stop_code()
+                        t% ierr = -1
+                        return
+!                        call stop_code()
                         endif
+                        
                     endif
                 end do
                 if (debug) print*, "ending linear interp in age"
@@ -725,8 +735,8 @@ module interp_support
         if (debug) print*, 'exiting interpolate_age'
     end subroutine interpolate_age
     
-    real(dp) function new_age(tc,tprev,tnew,tnew_prev,age)
-        real(dp), intent(in) :: tc,tprev,tnew,tnew_prev,age
+    real(dp) function new_age(tc,tc_prev,tprime,tprime_prev,age)
+        real(dp), intent(in) :: tc,tc_prev,tprime,tprime_prev,age
         real(dp) ::  frac
     
         !tc = t% times(kw)
@@ -734,8 +744,8 @@ module interp_support
         !tnew = t% times_new(kw)
         !tnew_prev = t% times_new(kw-1)
 
-        frac = (age-tprev)/(tc-tprev)
-        new_age = tnew_prev+(frac*(tnew-tnew_prev))
+        frac = (age-tc_prev)/(tc-tc_prev)
+        new_age = tprime_prev+(frac*(tprime-tprime_prev))
         
     end function
             
@@ -760,7 +770,7 @@ module interp_support
         type(track), pointer :: t
         integer, allocatable, intent(out) :: min_eeps(:)
         real(dp), intent(in) :: age
-        integer :: i, j, len_eep, min_index, age_col
+        integer :: i, j, len_eep, min_index,age_col
         real(dp), allocatable :: age_list(:)
         real(dp) :: last_age
         logical :: debug
@@ -834,8 +844,159 @@ module interp_support
             write(UNIT=err_unit,fmt=*)'Error finding nearest eeps for age:',age,age_col
 
     end subroutine find_nearest_eeps
+    
+    subroutine save_values(new_line,pars)
+        type(star_parameters) :: pars
+        real(dp),intent (in) :: new_line(:,:)
+        real(dp) :: lim_R
+        
+        pars% mass = new_line(i_mass,1)
+        pars% McHe = new_line(i_he_core,1)
+        pars% McCO = new_line(i_co_core,1)
+        pars% log_L = new_line(i_logL,1)
+        pars% luminosity = 10**pars% log_L
+        pars% log_Teff = new_line(i_logTe,1)
+        pars% Teff = 10**(pars% log_Teff)
+        pars% log_R = new_line(i_logR,1)
+    !        pars% log_R = 2*(3.762+(0.25*pars% log_L)-pars% log_Teff )
+    
+        !restrict radius from going beyond the hayashi
+        !limit during extrapolation
+        lim_R = 2*(3.762+(0.25*pars% log_L)-3.555 )
+        if (pars% log_R>lim_R) pars% log_R = lim_R
 
+        pars% radius = 10**pars% log_R
+        pars% core_radius = -1.0
+        
+        if (pars% phase <= EAGB) then
+            pars% core_mass = pars% McHe
+            if (i_RHe_core>0) pars% core_radius = new_line(i_RHe_core,1)
+            if (i_mcenv>0) pars% mcenv = new_line(i_mcenv,1)
+            if (i_rcenv>0) pars% rcenv = new_line(i_rcenv,1)
+        elseif (pars% phase == TPAGB) then
+            pars% core_mass = pars% McCO
+            if (i_RCO_core>0) pars% core_radius = new_line(i_RCO_core,1)
+            if (i_mcenv>0) pars% mcenv = new_line(i_mcenv,1)
+            if (i_rcenv>0) pars% rcenv = new_line(i_rcenv,1)
+        elseif(pars% phase >= He_MS) then
+            pars% core_mass = pars% McCO
+            if (i_he_RCO>0) pars% core_radius = new_line(i_he_RCO,1)
+            if (i_he_mcenv>0) pars% mcenv = new_line(i_he_mcenv,1)
+            if (i_he_rcenv>0) pars% rcenv = new_line(i_he_rcenv,1)
+        endif
+            
+    end subroutine
+    
+    subroutine calculate_timescales(t)
+        !calculate timescales associated with different phases (0-6)
+        implicit none
+        
+        type(track), pointer,intent(inout) :: t
+        integer :: i,j_bgb
+        real(dp), pointer :: age(:)=> NULL()
+        logical :: debug
+        debug = .false.
 
+        if (t% is_he_track) then
+            call calculate_he_timescales(t)
+            return
+        endif
+        
+        age => t% tr(i_age2,:)
+        t% times = undefined
+
+        do i = 1, t% neep
+            if (t% eep(i) == TAMS_EEP) then    !MS
+                t% times(MS) = age(TAMS_EEP)
+
+            elseif (t% eep(i) == cHeIgnition_EEP) then
+                !Herztsprung gap
+                t% times(HG) = age(cHeIgnition_EEP)
+                !t% times(HG) gets modified to t(BGB)
+                ! if RGB phase is present
+                t% times(RGB) = t% times(HG)
+
+            elseif (t% eep(i) == TA_cHeB_EEP) then
+                !red_HB_clump /core He Burning
+                t% times(HeBurn) = age(TA_cHeB_EEP)
+
+            elseif (t% eep(i) == cCBurn_EEP) then
+                !EAGB/ core C burning
+                t% times(EAGB) = age(cCBurn_EEP)
+                
+            elseif (t% eep(i) == TPAGB_EEP) then
+                !AGB
+                t% times(EAGB) = age(TPAGB_EEP)
+                
+            elseif (t% eep(i) == post_AGB_EEP) then
+                !TP-AGB :only for low_inter mass stars
+                t% times(TPAGB) = age(post_AGB_EEP)
+            endif
+        enddo
+        !print*,"bgb",BGB_EEP,identified(BGB_EEP)
+
+        t% times(11) = age(min(Final_EEP,t% ntrack))
+        
+        !determine the base of the giant branch times, if present
+        if (t% initial_mass > Mcrit(2)% mass .and. t% initial_mass< Mcrit(5)% mass) then
+            if (identified(BGB_EEP)) then
+                !Red giant Branch
+                t% times(HG) = age(BGB_EEP)
+            elseif (t% ntrack >TAMS_EEP) then
+                j_bgb =  base_GB(t)
+                if (j_bgb>0) then
+                    j_bgb = j_bgb+TAMS_EEP-1
+                    !Red giant Branch
+                    t% times(HG) = age(j_bgb)
+                elseif (debug) then
+                    print*, "Unable to locate BGB ", j_bgb
+!                    STOP
+                end if
+            endif
+        endif
+
+        nullify(age)
+    end subroutine calculate_timescales
+    
+    subroutine calculate_he_timescales(t)
+        !calculate timescales associated with different he star phases (7,8,9)
+        implicit none
+        
+        type(track), pointer,intent(inout) :: t
+        integer :: i
+        real(dp), pointer :: age(:)=> NULL()
+
+        age => t% tr(i_age2,:)
+        
+        t% times = undefined
+
+        t% MS_time = age(TAMS_HE_EEP) - age(ZAMS_HE_EEP)
+        do i = 1, t% neep
+            if (t% eep(i) == TAMS_HE_EEP) then    !MS
+                t% times(He_MS) = age(TAMS_HE_EEP)
+
+            elseif (t% eep(i) == GB_HE_EEP) then
+                !helium Herztsprung gap
+                t% times(HE_HG) = age(GB_HE_EEP)
+
+            elseif (t% eep(i) == cCBurn_HE_EEP) then
+                !EAGB/ core C burning
+                t% times(HE_HG) = age(cCBurn_HE_EEP)
+                
+            elseif (t% eep(i) == post_AGB_HE_EEP) then
+                !TP-AGB :only for low_inter mass stars
+                t% times(HE_GB) = age(post_AGB_HE_EEP)
+            endif
+        enddo
+        !print*,"bgb",BGB_EEP,identified(BGB_EEP)
+        t% times(10) = t% times(9)
+        t% times(11) = age(min(Final_EEP_HE,t% ntrack))
+        
+        t% nuc_time = t% times(11)
+
+        nullify(age)
+    end subroutine calculate_he_timescales
+    
     !from MESA-r7503/1d_interp/
     subroutine interp_4pt_pm(x, y, a)
         ! returns coefficients for monotonic cubic interpolation from x(2) to x(3)
@@ -866,15 +1027,16 @@ module interp_support
     end subroutine interp_4pt_pm
     
 
-    subroutine get_initial_mass_for_new_track(t,id)
+    subroutine get_initial_mass_for_new_track(t,id, eep_m)
 
 !        real(dp), intent(in) :: delta
         type(eep_track), pointer :: s(:)
         type(track), pointer :: t
 
-        integer :: min_index,num_list,Mupp,Mlow,i,j,k,nt,id
+        integer :: num_list,Mupp,Mlow,i,j,k,nt,id
         real(dp), pointer :: age_list(:)
-        real(dp), allocatable:: mlist(:)
+
+        real(dp), allocatable:: mlist(:), Mmax(:), Mmin(:)
 
         real(dp) :: Mnew,alfa,beta,age
         integer :: eep_m, eep_n
@@ -887,30 +1049,33 @@ module interp_support
         !using the original age of the star to keep core properties comparable
         !using other (secondary)age doesn't matches well with detailed models either
         
+        
+        if (t% pars% age<0.d0) return
+        
         age = t% pars% age
         
-        if (age<1d-6) return
         !nt is the length of the track before new interpolation
+        nt = t% ntrack
+        
         eep_m = -1
         eep_n = -1
-        nt = t% ntrack
-
-        ! create appropiate pointers
-        if (t% is_he_track) then
-            s => sa_he
-            ! mcutoff
-            !min, max array
-            !zpars
-            age_list => t% tr(i_he_age,1:nt)
-        else
-            s => sa
-            age_list => t% tr(i_age,1:nt)
-        endif
         Mlow = -1
         Mupp = -1
-        min_index = t% min_index
         Mnew = t% pars% mass-t% pars% delta
-
+        
+        
+        ! create appropiate age pointers
+        
+        if (t% is_he_track .and. t% star_type /= switch) then
+            if (debug) print*, 'switching from h to he star'
+            age_list => t% tr(i_he_age,1:nt)
+        elseif (t% star_type == switch .and. (.not. t% is_he_track)) then
+            if (debug) print*, 'switching from he to h star- rejuvenataion'
+            age_list => t% tr(i_he_age,1:nt)
+        else
+            if (debug) print*, 'business as usual'
+            age_list => t% tr(i_age,1:nt)
+        endif
 
         if (debug) print*,"getting new initial mass mnew at age and phase: ",mnew,age,t% pars% phase,id
         
@@ -919,18 +1084,41 @@ module interp_support
         if (eep_m > nt) eep_m = nt
         if (debug) print*,"nearest index eep_m, ntrack : ",eep_m,nt
         
+        nullify(age_list)
+        
+        if(t% star_type == switch)then
+            if (t% is_he_track) then
+                eep_m = nint(new_age(DBLE(TA_cHeB_EEP),DBLE(cHeIgnition_EEP),DBLE(TAMS_HE_EEP),DBLE(ZAMS_HE_EEP),DBLE(eep_m)))
+            else
+                eep_m = nint(new_age(DBLE(TAMS_HE_EEP),DBLE(ZAMS_HE_EEP),DBLE(TA_cHeB_EEP),DBLE(cHeIgnition_EEP),DBLE(eep_m)))
+            endif
+             ! get correct t% min_index
+!            call findtracks_for_interpolation(t% zams_mass,t% is_he_track,t% bounds,t% min_index,keyword,iseg)
+            t% min_index = 1
+            
+            if (debug) print*, 'new eep_m for switch', eep_m
+        endif
+        
+        if (t% is_he_track) then
+            s => sa_he
+            Mmin = Mmin_he_array
+            Mmax = Mmax_he_array
+        else
+            s => sa
+            Mmin = Mmin_array
+            Mmax = Mmax_array
+        endif
         
         ! It's crucial to avoid extrapolation here as it results in serious issues
         ! Mmax_array is the maximum mass at given eep amongst all input tracks, similarily Mmin_array has minimum
         ! first check if mass bounds exist at eep_m,
         ! if not check higher eeps (older age) in case of mass loss, and lower eeps for mass gain
         
-        
         if (t% pars% delta>0.d0) then
         ! mass loss
             do j = 0,nt
                 if (eep_m+j<= nt) then
-                    if (Mnew>= Mmin_array(eep_m+j).and.Mnew<=Mmax_array(eep_m+j)) then
+                    if (Mnew>= Mmin(eep_m+j).and.Mnew<=Mmax(eep_m+j)) then
                         eep_n = eep_m+j
                         exit
                     endif
@@ -940,7 +1128,7 @@ module interp_support
         ! mass gain
             do j = 0,nt
                 if (eep_m-j>=1) then
-                    if (Mnew>= Mmin_array(eep_m-j).and.Mnew<=Mmax_array(eep_m-j)) then
+                    if (Mnew>= Mmin(eep_m-j).and.Mnew<=Mmax(eep_m-j)) then
                         eep_n = eep_m-j
                         exit
                     endif
@@ -965,7 +1153,7 @@ module interp_support
             
             !find lower bound, start at Min_index
             do i = 0, num_list
-                k = min_index+i
+                k = t% min_index+i
                 if (k <= num_list) then
     !                print*, 'low',k,mlist(k),mnew
                     if (mlist(k) >0 .and. mlist(k)<Mnew) then
@@ -974,7 +1162,7 @@ module interp_support
                     endif
                 endif
                 ! search the other side now
-                k = min_index-i
+                k = t% min_index-i
                 if (k >=1 .and. i>0) then
     !                print*, 'low',k,mlist(k),mnew
                     if (mlist(k) >0 .and. mlist(k)<Mnew) then
@@ -1007,7 +1195,7 @@ module interp_support
             end do
          endif
         
-        if (debug)  print*, "Mup", Mupp, "mlow",Mlow,"min_index",min_index
+        if (debug)  print*, "Mup", Mupp, "mlow",Mlow,"min_index",t% min_index
         ! if no solution is found, we keep using the old tracks for interpolation
 
         if(Mlow < 0 .or. Mupp <0) then
@@ -1027,120 +1215,10 @@ module interp_support
             if (debug) print*, "new ini mass",t% initial_mass, s(Mupp)% initial_mass, s(Mlow)% initial_mass
         endif
         
-        nullify(age_list,s)
+        nullify(s)
+        deallocate(Mmax,Mmin)
         if (allocated(mlist)) deallocate(mlist)
 
     end subroutine get_initial_mass_for_new_track
-    
-    subroutine save_values(new_line,pars)
-        type(star_parameters) :: pars
-        real(dp),intent (in) :: new_line(:,:)
-        real(dp) :: lim_R
-        
-        pars% mass = new_line(i_mass,1)
-        pars% McHe = new_line(i_he_core,1)
-        pars% McCO = new_line(i_co_core,1)
-        pars% log_L = new_line(i_logL,1)
-        pars% luminosity = 10**pars% log_L
-        pars% log_Teff = new_line(i_logTe,1)
-        pars% Teff = 10**(pars% log_Teff)
-        pars% log_R = new_line(i_logR,1)
-    !        pars% log_R = 2*(3.762+(0.25*pars% log_L)-pars% log_Teff )
-    
-        !restrict radius from going beyond the hayashi
-        !limit during extrapolation
-        lim_R = 2*(3.762+(0.25*pars% log_L)-3.555 )
-        if (pars% log_R>lim_R) pars% log_R = lim_R
-
-        pars% radius = 10**pars% log_R
-        
-        if (pars% phase <= EAGB) then
-            pars% core_mass = pars% McHe
-            if (i_RHe_core>0) pars% core_radius = new_line(i_RHe_core,1)
-            if (i_mcenv>0) pars% mcenv = new_line(i_mcenv,1)
-            if (i_rcenv>0) pars% rcenv = new_line(i_rcenv,1)
-        elseif (pars% phase == TPAGB) then
-            pars% core_mass = pars% McCO
-            if (i_RCO_core>0) pars% core_radius = new_line(i_RCO_core,1)
-            if (i_mcenv>0) pars% mcenv = new_line(i_mcenv,1)
-            if (i_rcenv>0) pars% rcenv = new_line(i_rcenv,1)
-        elseif(pars% phase >= He_MS) then
-            pars% core_mass = pars% McCO
-            if (i_he_RCO>0) pars% core_radius = new_line(i_he_RCO,1)
-            if (i_he_mcenv>0) pars% mcenv = new_line(i_he_mcenv,1)
-            if (i_he_rcenv>0) pars% rcenv = new_line(i_he_rcenv,1)
-        endif
-            
-    end subroutine
-    
-    subroutine calculate_timescales(t)
-        !subroutine to assign sse phases to the interpolated track
-        !also calculate timescales associated with different phases
-        implicit none
-        
-        type(track), pointer,intent(inout) :: t
-        integer :: i,j_bgb
-        real(dp) :: mass
-        real(dp), pointer :: age(:)=> NULL()
-        logical :: debug
-        debug = .false.
-
-        age => t% tr(i_age2,:)
-        mass = t% initial_mass
-
-        t% MS_time = age(TAMS_EEP) - age(ZAMS_EEP)
-        do i = 1, t% neep
-            if (t% eep(i) == TAMS_EEP) then    !MS
-                t% times(MS) = age(TAMS_EEP)
-
-            elseif (t% eep(i) == cHeIgnition_EEP) then
-                !Herztsprung gap
-                t% times(HG) = age(cHeIgnition_EEP)
-                !t% times(HG) gets modified to t(BGB)
-                ! if RGB phase is present
-                t% times(RGB) = t% times(HG)
-
-            elseif (t% eep(i) == TA_cHeB_EEP) then
-                !red_HB_clump /core He Burning
-                t% times(HeBurn) = age(TA_cHeB_EEP)
-
-            elseif (t% eep(i) == cCBurn_EEP) then
-                !EAGB/ core C burning
-                t% times(EAGB) = age(cCBurn_EEP)
-                
-            elseif (t% eep(i) == TPAGB_EEP) then
-                !AGB
-                t% times(EAGB) = age(TPAGB_EEP)
-                
-            elseif (t% eep(i) == post_AGB_EEP) then
-                !TP-AGB :only for low_inter mass stars
-                t% times(TPAGB) = age(post_AGB_EEP)
-            endif
-        enddo
-        !print*,"bgb",BGB_EEP,identified(BGB_EEP)
-
-        t% times(11) = age(min(Final_EEP,t% ntrack))
-        !Todo: nuc_time should be for WR phase
-        t% nuc_time = t% times(11)
-        !determine the base of the giant branch times, if present
-        if (mass > Mcrit(2)% mass .and. mass< Mcrit(5)% mass) then
-            if (identified(BGB_EEP)) then
-                !Red giant Branch
-                t% times(HG) = age(BGB_EEP)
-            elseif (t% ntrack >TAMS_EEP) then
-                j_bgb =  base_GB(t)
-                if (j_bgb>0) then
-                    j_bgb = j_bgb+TAMS_EEP-1
-                    !Red giant Branch
-                    t% times(HG) = age(j_bgb)
-                elseif (debug) then
-                    print*, "Unable to locate BGB ", j_bgb
-!                    STOP
-                end if
-            endif
-        endif
-
-        nullify(age)
-    end subroutine calculate_timescales
     
   end module interp_support

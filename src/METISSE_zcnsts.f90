@@ -6,7 +6,7 @@ subroutine METISSE_zcnsts(z,zpars)
     real(dp), intent(in) :: z
     real(dp), intent(out) :: zpars(20)
 
-    integer :: i,ierr,j,nmax,nloop
+    integer :: i,ierr,j,nloop
     logical :: debug, res
     logical :: read_inputs = .true.
     character(LEN=strlen), allocatable :: track_list(:)
@@ -79,7 +79,7 @@ subroutine METISSE_zcnsts(z,zpars)
     call calculate_sse_zpars(z,zpars)
     
     ! need to intialize these seperately as they may be
-    ! used unitialized if he tracks are not present
+    ! used uninitialized if he tracks are not present
     i_he_RCO = -1
     i_he_mcenv = -1
     i_he_Rcenv = -1
@@ -90,6 +90,12 @@ subroutine METISSE_zcnsts(z,zpars)
         !read metallicity related variables
         
         if (i == 2) then
+            ZAMS_HE_EEP = -1
+            TAMS_HE_EEP = -1
+            GB_HE_EEP = -1
+            cCBurn_HE_EEP = -1
+            post_AGB_HE_EEP = -1
+    
             if (verbose) print*, 'Reading naked helium star tracks'
             call get_metallcity_file_from_Z(initial_Z,metallicity_file_list_he,ierr)
             if (ierr/=0) then
@@ -185,10 +191,13 @@ subroutine METISSE_zcnsts(z,zpars)
             end do
         endif
         
+        ! Processing the input tracks
         if (i==2) then
             call set_zparameters_he()
             call copy_and_deallocatex(sa_he)
-!            use_sse_NHe = .false.
+            call get_minmax(sa_he,Mmax_he_array,Mmin_he_array)
+
+            use_sse_NHe = .false.
             allocate(core_cols_he(4))
             core_cols_he = -1
             core_cols_he(1) = i_he_age
@@ -201,6 +210,9 @@ subroutine METISSE_zcnsts(z,zpars)
             !and determine cutoff masses
             call set_zparameters(zpars)
             call copy_and_deallocatex(sa)
+            
+            call get_minmax(sa,Mmax_array,Mmin_array)
+
             allocate(core_cols(6))
             core_cols = -1
             
@@ -215,24 +227,6 @@ subroutine METISSE_zcnsts(z,zpars)
         deallocate(track_list)
     end do
 !    if(debug) print*, s(1)% cols% name, s(1)% tr(:,1)
-
-    
-    ! Processing the input tracks
-    nmax = maxval(sa% ntrack)
-    allocate(Mmax_array(nmax), Mmin_array(nmax))
-    Mmax_array = 0.d0
-    Mmin_array = huge(0.0d0)    !largest float
-    
-    do i = 1,size(sa)
-        !Find maximum and minimum mass at each eep
-        do j = 1, nmax
-            if (sa(i)% ntrack>=j) then
-                Mmax_array(j) = max(Mmax_array(j),sa(i)% tr(i_mass,j))
-                Mmin_array(j) = min(Mmin_array(j),sa(i)% tr(i_mass,j))
-            endif
-        end do
-        
-    end do
 
     !TODO: 1. check for monotonicity of initial masses
     ! 2. incompleteness of the tracks

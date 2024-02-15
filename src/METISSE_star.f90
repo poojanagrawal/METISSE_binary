@@ -14,7 +14,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
 
     real(dp) :: times_old(11), nuc_old, delta,dtm, delta1,delta_wind, quant
 
-    integer :: idd, ierr,  age_col
+    integer :: idd, ierr,  age_col,eep_m
     logical :: debug, exclude_core,consvR
     type(track), pointer :: t
 
@@ -25,8 +25,8 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr = 0
     
     debug = .false.
-!    if ((id == 1) .and. (kw==8))debug = .true.
-
+!    if ((id == 1) .and. (kw==9))debug = .true.
+!if (t% is_he_track) debug = .true.
     if (debug) print*, '-----------STAR---------------'
     if (debug) print*,"in star", mass,mt,kw,id,t% pars% phase
 
@@ -35,60 +35,69 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     delta = 0.d0
     t% zams_mass = mass
 
-    if(kw>= He_MS .and. kw<=He_GB .and. use_sse_NHe) t% star_type = sse_he_star
-    if(kw>= HeWD) t% star_type = remnant       !to be double sure, in case star becomes a remnant outside hrdiag
+    !to be double sure, in case star changes type outside hrdiag
+    if(kw>= HeWD) then
+        t% star_type = remnant
+    elseif(kw>= He_MS .and. kw<=He_GB) then
+        if (t% pars% phase< He_MS) t% star_type = switch
+        if (use_sse_NHe) then
+            t% star_type = sse_he_star
+        else
+            t% is_he_track = .true.
+            age_col = i_he_age
+!            write(UNIT=err_unit,fmt=*) 'switching to he tracks'
+        endif
+    else
+        t% is_he_track = .false.
+        age_col = i_age
+        if (t% pars% phase>= He_MS .and. t% pars% phase<=He_GB) t% star_type = switch
+    endif
+            
     
     select case(t% star_type)
     case(unknown)
         ! Initial call- just do normal interpolation
         t% initial_mass = mass
-        
-        if (debug) print*, "initial interpolate mass", t% initial_mass,t% zams_mass,t% pars% mass,mt,kw
-        
         t% pars% delta = 0.d0
-        t% pars% extra = 0
-        t% pars% bhspin = 0.d0
         t% is_he_track = .false.
-        t% ierr = 0
-        call interpolate_mass(id,exclude_core)
-        call calculate_timescales(t)
 
+        if (debug)print*, "initial interpolate mass", t% initial_mass,t% zams_mass,t% pars% mass,mt,kw
+        call interpolate_mass(id,exclude_core)
+        mt = t% tr(i_mass,ZAMS_EEP)
+        call calculate_timescales(t)
         !Todo: explain what age 2 and Times_new are
         t% times_new = t% times
         t% tr(i_age,:) = t% tr(i_age2,:)
-        mt = t% tr(i_mass,ZAMS_EEP)
+        
         t% ms_old = t% times(MS)
         t% pars% age_old = t% pars% age
         t% initial_mass_old = t% initial_mass
-        
+        t% pars% extra = 0
+        t% pars% bhspin = 0.d0
+        t% ierr = 0
         !call write_eep_track(t,t% initial_mass)
 
-    case(rejuvenated) !gntage
+    case(rejuvenated:switch) !gntage
         t% pars% mass = mt
         t% pars% delta = 0.d0
         t% pars% phase = kw
-        t% times_new = -1.d0
-        if(kw>= He_MS .and. kw<=He_GB) then
-            t% is_he_track = .true.
-            age_col = i_he_age
-        else
-            t% is_he_track = .false.
-            age_col = i_age
-        endif
-    
-        call get_initial_mass_for_new_track(t,id)
-        if (debug)print*, 'rejuvanted giant, rewrite with new track'
+        
+        call get_initial_mass_for_new_track(t,idd,eep_m)
+        if (debug)print*, 'rejuvenated giant, rewrite with new track'
         call interpolate_mass(id,exclude_core)
         
-        ! Calculate timescales and assign SSE phases (Hurley et al.2000)
+        t% initial_mass_old = t% initial_mass
+        mass = t% initial_mass
+        t% zams_mass = mass
+        
         call calculate_timescales(t)
         t% times_new = t% times
-        t% tr(age_col,:) = t% tr(i_age2,:)
-        mass = t% initial_mass
         t% ms_old = t% times(MS)
         t% pars% age_old = t% pars% age
-        t% initial_mass_old = t% initial_mass
-        t% zams_mass = mass
+        t% tr(age_col,:) = t% tr(i_age2,:)
+        
+        t% pars% age = t% tr(age_col,eep_m)
+
     case(remnant)
         tm = 1.0d+10
         tscls(1) = t% MS_time
@@ -103,19 +112,11 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             !Check whether star lost its envelope during binary interaction
             !to avoid unneccesssary call to interpolation routine
 !            if (debug)write(UNIT=err_unit,fmt=*)
-            if (debug) print*,'star has lost envelope, exiting star',t% pars% core_mass,mt,kw
+            if (debug) print*,'star has lost envelope',t% pars% core_mass,mt,kw
         else
             ! Check if mass has changed since last time star was called.
             ! For tracks that already have wind mass loss,
             ! exclude mass loss due to winds
-            if(kw>= He_MS .and. kw<=He_GB) then
-                t% is_he_track = .true.
-                age_col = i_he_age
-                write(UNIT=err_unit,fmt=*) 'switching to he tracks'
-            else
-                t% is_he_track = .false.
-                age_col = i_age
-            endif
             
             if (t% has_mass_loss .and. (abs(mt-t% pars% mass))>1.0d-06) then
                 delta_wind = (t% pars% dms*dtm*1.0d+06)
@@ -149,7 +150,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     t% ms_old = t% times(MS)
                     t% pars% age_old = t% pars% age
                     t% initial_mass_old = t% initial_mass
-                    call get_initial_mass_for_new_track(t,idd)
+                    call get_initial_mass_for_new_track(t,idd,eep_m)
                 endif
                     
                 if (debug)print*, 'initial mass for the new track',t% initial_mass
@@ -191,7 +192,6 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     if (debug)print*, 'main-sequence star, rewrite with new track'
                     call interpolate_mass(id,exclude_core)
                     
-                    ! Calculate timescales and assign SSE phases (Hurley et al.2000)
                     call calculate_timescales(t)
                     t% times_new = t% times
                     t% tr(age_col,:) = t% tr(i_age2,:)
@@ -204,8 +204,22 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             endif
     end select
     
-    if (kw<= TPAGB) call calculate_SSE_parameters(t,zpars,tscls,lums,GB,tm,tn)
-    
+    if (kw<= TPAGB) then
+        t% MS_time = t% times(MS)
+        !Todo: nuc_time should be for WR phase
+        t% nuc_time = t% times(11)
+        call calculate_SSE_parameters(t,zpars,tscls,lums,GB,tm,tn)
+    elseif(kw>= He_MS .and. kw<=He_GB .and. (.not. use_sse_NHe)) then
+        t% MS_time = t% times(He_MS)
+        t% nuc_time = t% times(11)
+        t% He_pars% Lzams = 10.d0**t% tr(i_logL, ZAMS_HE_EEP)
+        t% He_pars% LtMS = 10.d0**t% tr(i_logL, TAMS_HE_EEP)
+        t% He_pars% lx = 0.d0
+        call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
+        tm = t% MS_time
+        tn = t% nuc_time
+    endif
+        
     t% MS_time = tm
     t% nuc_time = tn
 

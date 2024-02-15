@@ -72,9 +72,9 @@ OBJT_METISSE = $(SRCE_METISSE:.f90=.o)
 
 track_support.o: $(SRC_DIR)/track_support.f90
 z_support.o: $(SRC_DIR)/z_support.f90 track_support.o
+interp_support.o: $(SRC_DIR)/interp_support.f90 track_support.o z_support.o
 sse_support.o: $(SRC_DIR)/sse_support.f90 track_support.o
-remnant_support.o: $(SRC_DIR)/remnant_support.f90 track_support.o sse_support.o
-interp_support.o: $(SRC_DIR)/interp_support.f90 track_support.o z_support.o 
+remnant_support.o: $(SRC_DIR)/remnant_support.f90 track_support.o interp_support.o sse_support.o
 
 initialize_front_end.o: $(SRC_DIR)/initialize_front_end.f90 track_support.o
 alloc_track.o: $(SRC_DIR)/alloc_track.f90 track_support.o

@@ -1,6 +1,8 @@
  module remnant_support
     use track_support
     use sse_support
+    use interp_support, only: new_age
+
 !    use z_support, only: Mup_core, Mec_core
     implicit none
     
@@ -30,31 +32,21 @@
     contains
     
 
-    logical function check_remnant_phase(pars,mcbagb)
-        implicit none
-        
+    logical function check_remnant_phase(pars,mc_max)
         type(star_parameters) :: pars
-        real(dp) :: Mcbagb
-
-        real(dp) :: mc_max,mc_threshold,Mc11
-
+        real(dp) :: mc_max,mc_threshold
 
         debug_rem = .false.
         check_remnant_phase = .false.
-        mc_max= 0.d0
-        Mc11 = 0.d0
         !mcmax1 = 0.d0
     
-
-        if (pars% phase>1 .and.pars% phase <=6) then       !without envelope loss
-            Mc11 = 0.773* Mcbagb-0.35
-            mc_max = MAX(M_ch,Mc11)
+        mc_threshold = pars% core_mass
+        
+        if (pars% phase <= TPAGB) then       !without envelope loss
             !mc = MAX(mc_max,mc_threshold)
             !mc_max = MIN(pars% mass,mc_max)
             mc_threshold = pars% McCO
         elseif (pars% phase ==8 .or. pars% phase ==9) then
-            mc_max = max_core_mass_he(pars% mass, mcbagb)
-            ! Mcbagb = t% zams_mass for naked helium/stripped stars
             mc_threshold = pars% core_mass
         else
             return
@@ -71,9 +63,9 @@
             pars% age_old = pars% age
             check_remnant_phase = .true.
             if (debug_rem) then
-                print*, "In check_remnant_phase"
-                print*, "mass, core_mass, McCO, mc_max, 0.773*mcbagb-0.35,mcbagb"
-                print*, pars% mass, pars% core_mass, pars% McCO, mc_max, Mc11, Mcbagb
+                print*, "check_remnant_phase is true"
+                print*, "mass, core_mass, McCO, mc_max"
+                print*, pars% mass, pars% core_mass, pars% McCO, mc_max
             end if
         endif
         
@@ -463,12 +455,15 @@
         pars% radius= 1.4E-05
     end subroutine
     
-    subroutine assign_stripped_star_phase(t)
-        type(track), pointer, intent(inout) :: t
+    subroutine assign_stripped_star_phase(t,HeI_time)
+    
+        type(track), pointer :: t
         real(dp) :: HeI_time, HeB_time
         logical :: debug
 
         debug = .false.
+        
+        HeI_time = 0.d0
         if (debug) print*,"Lost envelope at phase", t% pars% phase
         if (debug) print*,"age, core mass, mass", t% pars% age, t% pars% core_mass, t% pars% mass
 
@@ -482,16 +477,15 @@
                     t% pars% phase = HeWD      !Zero-age helium white dwarf
                     t% pars% core_mass = t% pars% mass
                     t% zams_mass = t% pars% mass
-!                    call initialize_white_dwarf(t% pars)
                 else
                     t% pars% phase = He_MS       !Zero-age helium star
-                    t% pars% age = 0.d0
                     t% zams_mass = t% pars% mass
                     t% pars% core_mass = 0.d0
                     t% pars% McCO = 0.d0
                     t% pars% McHe = 0.d0
-
-                    call calculate_SSE_He_timescales(t)
+                    HeI_time = t% pars% age
+!                    call initialize_helium_star(t,id,HeI_time)
+!                    t% pars% age = 0.d0
                 endif
 
             case(HeBurn)  !core he Burning
@@ -500,23 +494,48 @@
                 t% pars% core_mass = 0.d0
                 t% pars% McCO = 0.d0
                 t% pars% McHe = 0.d0
-                call calculate_SSE_He_timescales(t)
                 HeI_time = t% times(3)
-                HeB_time = t% times(4)-t% times(3)
-                t% pars% age = t% MS_time*((t% pars% age- HeI_time)/HeB_time)
+!                call initialize_helium_star(t,id,HeI_time)
 
             case(EAGB) !eAGB
-                t% pars% phase = He_GB       !Evolved naked He star
+                t% pars% phase = He_HG       !Evolved naked He star
                 t% pars% mass = t% pars% core_mass
-                t% zams_mass = t% pars% mass
                 t% pars% McHe = t% pars% mass
                 t% pars% core_mass = t% pars% McCO
-                call calculate_SSE_He_timescales(t)
+                t% zams_mass = t% pars% mass
+                
+!                call initialize_helium_star(t,id,HeI_time)
+                
+        end select
+        
+    end subroutine
+    
+    
+    subroutine initialize_helium_star(t,HeI_time)
+        type(track), pointer, intent(inout) :: t
+        real(dp) :: HeI_time, HeB_time
+
+        if (use_sse_NHe) then
+            t% star_type = sse_he_star
+            call calculate_SSE_He_timescales(t)
+            
+            if (t% pars% phase == He_MS) then
+                HeB_time = t% times(4)-t% times(3)
+                t% pars% age = t% MS_time*((t% pars% age- HeI_time)/HeB_time)
+            else
                 t% pars% age = He_GB_age(t% pars% core_mass,t% times(8), &
                                 t% times(9),t% He_pars% D, t% He_pars% Mx)
                 t% pars% age = MAX(t% pars% age,t% MS_time)
-                
-        end select
+            endif
+!        else
+!            if (t% pars% phase == He_MS) then
+!                t% pars% age = new_age(t% times(4),t% times(3),t% MS_time,0.d0,t% pars% age)
+!            else
+!                t% pars% age = new_age(t% times(5),t% times(4),t% times(9),t% times(8),t% pars% age)
+!                t% pars% age = MAX(t% pars% age,t% MS_time)
+!            endif
+        endif
+        
     end subroutine
 
     subroutine evolve_after_envelope_loss(t,McHeI)
@@ -566,7 +585,6 @@
         t% pars% McHe = t% pars% mass
         t% pars% McCO = t% pars% core_mass
     endif
-!    if (t% pars% phase>=He_HG) call check_remnant_phase(t)
 
     if (debug) print*,"End: Phase",t% pars% phase ," core mass",t% pars% core_mass
 !        print*,"lum", t% pars% luminosity, "rad", t% pars% radius

@@ -153,7 +153,6 @@ module z_support
         integer, intent(out) :: ierr
         character(LEN=strlen), allocatable :: file_list(:)
 
-
         integer :: i
         logical:: found_z,debug
         
@@ -518,6 +517,29 @@ module z_support
         deallocate(key_cols)
     end subroutine
 
+    subroutine get_minmax(x,Mmax,Mmin)
+    
+        type(eep_track) :: x(:)
+        real(dp), allocatable :: Mmax(:), Mmin(:)
+        integer :: i,j,nmax
+        
+        nmax = maxval(x% ntrack)
+        allocate(Mmax(nmax), Mmin(nmax))
+        Mmax = 0.d0
+        Mmin = huge(0.0d0)    !largest float
+        
+        do i = 1,size(x)
+            !Find maximum and minimum mass at each eep
+            do j = 1, nmax
+                if (x(i)% ntrack>=j) then
+                    Mmax(j) = max(Mmax(j),x(i)% tr(i_mass,j))
+                    Mmin(j) = min(Mmin(j),x(i)% tr(i_mass,j))
+                endif
+            end do
+        end do
+        
+    end subroutine
+    
     !locating essential columns here
     subroutine locate_column_numbers(cols,ncol,is_he_track)
         type(column), intent(in) :: cols(:)

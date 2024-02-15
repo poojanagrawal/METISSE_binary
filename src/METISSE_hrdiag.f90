@@ -15,8 +15,9 @@
     real(dp) :: r,lum,mc,rc,menv,renv,k2,mcx
     
     integer :: kw,i,idd,j_bagb,k
+    integer :: rcenv_col, mcenv_col
     real(dp) :: rg,rzams,rtms
-    real(dp) :: Mcbagb
+    real(dp) :: Mcbagb, mc_max,HeI_time
     real(dp) :: bhspin ! only for cosmic
     type(star_parameters) :: old_pars
 
@@ -33,17 +34,20 @@
     t => tarr(idd)
     
 !    if ((id == 1) .and. kw>=3)debug = .true.
-
+!if (t% is_he_track) debug = .true.
     if (debug) print*, '-----------HRDIAG-------------'
     if (debug) print*,"started hrdiag",mt,mc,aj,kw,tn,id
 
     end_of_file = .false. !this is just the end of eep track
     has_become_remnant = .false.
-    
+    mc_max= 0.d0
+
+
     if (irecord<=0) then
         !save input state
         post_agb = t% post_agb
         old_pars = t% pars
+        ! is_he_track etc.
     endif
   
     t% pars% mass = mt
@@ -67,13 +71,15 @@
                     write(UNIT=err_unit,fmt=*) 'WARNING: Early end of file due to incomplete track beyond phase, mass and id',&
                     kw,t% initial_mass,id
                     t% ierr = -1
-                    call stop_code
+!                    call stop_code
                 endif
 
                 end_of_file = .true.
+                
                 j_bagb = min(t% ntrack, TA_cHeB_EEP)
                 Mcbagb = t% tr(i_he_core, j_bagb)
-                if (check_remnant_phase(t% pars, mcbagb)) has_become_remnant = .true.
+                mc_max = MAX(M_ch,0.773* Mcbagb-0.35)
+                if (check_remnant_phase(t% pars, mc_max)) has_become_remnant = .true.
             else
                 !check if phase/type/kw of the star has changed
                 if (t% initial_mass<very_low_mass_limit .and. kw<2) t% pars% phase =0
@@ -89,12 +95,10 @@
                 end do
                 
                 !interpolate in age and other checks for nuclear burning phases
-                t% pars% core_radius = -1.0
                 call interpolate_age(t,t% pars% age)
                 if (debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
                 t% pars% mass = mt
                 
-
                 !check if envelope has been lost for post-main sequence star
                 
                 if ((t% pars% core_mass.ge.t% pars% mass) .or. &
@@ -103,28 +107,69 @@
                     if (debug) print*, "envelope lost at", t% pars% mass, t% pars% age,t% pars% phase
                     
                     if (t% pars% phase == TPAGB) then
-                        ! TPAGB star becomes a WD upon losing envelope
-                        ! calling assign_remnant_phase to determine CO-WD/ONe WD
+                        ! TPAGB star becomes a CO-WD/ONe WD upon losing envelope
                         j_bagb = min(t% ntrack, TA_cHeB_EEP)
                         Mcbagb = t% tr(i_he_core, j_bagb)
                         has_become_remnant = .true.
                         !TODO: add a check if it's not a white dwarf
                     else
-                        call assign_stripped_star_phase(t)
-                        call evolve_after_envelope_loss(t,zpars(10))
-                        call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
-                        if(t% pars% phase == HeWD) has_become_remnant = .true.
+                        call assign_stripped_star_phase(t, HeI_time)
+                        if(t% pars% phase == HeWD) then
+                            has_become_remnant = .true.
+                        elseif (use_sse_NHe) then
+                            t% star_type = sse_he_star
+                            call initialize_helium_star(t,HeI_time)
+            
+                            call evolve_after_envelope_loss(t,zpars(10))
+                            call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
+                        else
+                            t% is_he_track = .true.
+                            t% star_type = switch
+                            j_bagb = min(t% ntrack, TA_cHeB_EEP)
+                            if (t% pars% phase >= He_HG) t% zams_mass = t% tr(i_mass, j_bagb)
+                            call star(t% pars% phase,t% zams_mass,t% pars% mass,t% MS_time,t% nuc_time,tscls,lums,GB,zpars,0.d0,id)
+                            
+                            !interpolate in age and other checks for nuclear burning phases
+                            t% pars% core_radius = -1.0
+                            call interpolate_age(t,t% pars% age)
+!                            call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
+                        endif
                     endif
                 endif
             endif
-        case(He_MS)
-            call evolve_after_envelope_loss(t,zpars(10))
-            rzams = t% He_pars% Rzams
-        case(He_HG:He_GB)
-            call evolve_after_envelope_loss(t,zpars(10))
-            rzams = t% He_pars% Rzams
-            Mcbagb = t% zams_mass
-            if(check_remnant_phase(t% pars, mcbagb)) has_become_remnant = .true.
+        case(He_MS:He_GB)
+            if (use_sse_NHe) then
+                call evolve_after_envelope_loss(t,zpars(10))
+                Mcbagb = t% zams_mass
+                mc_max = max_core_mass_he(t% pars% mass, Mcbagb)
+                if(t% pars% phase >He_MS .and. check_remnant_phase(t% pars, mc_max)) has_become_remnant = .true.
+            else
+                if (check_ge(t% pars% age,t% tr(i_he_age,t% ntrack))) then
+                    !have reached the end of the eep track; self explanatory
+                    if (debug) print*,"end of file:aj,tn ",t% pars% age,t% tr(i_age,t% ntrack),t% times(kw)
+                    end_of_file = .true.
+                    
+                    j_bagb = min(t% ntrack, TAMS_HE_EEP)
+                    Mcbagb = t% tr(i_mass, j_bagb)
+                    mc_max = MAX(M_ch,0.773* Mcbagb-0.35)
+                    if (check_remnant_phase(t% pars, mc_max)) has_become_remnant = .true.
+                else
+                    !check if phase/type/kw of the star has changed
+                    do i = t% pars% phase,8
+                        if (.not. defined(t% times(i+1))) exit
+                        if (check_ge(t% pars% age,t% times(i))) then
+                            t% pars% phase = i+1
+                            if (debug) print*,"phase change",t% pars% age,t% times(i),i+1
+                        endif
+                    end do
+                    
+                    !interpolate in age and other checks for nuclear burning phases
+                    
+                    call interpolate_age(t,t% pars% age)
+                    if (debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
+                    t% pars% mass = mt
+                endif
+            endif
             
         case(HeWD:Massless_Rem)
             if (front_end == main .or. front_end == BSE) then
@@ -177,52 +222,66 @@
     ! this needs to be separate from the above loop
     ! as phases may change during the evolution step
 
-    select case(t% pars% phase)
-    case(low_mass_MS:TPAGB)
-        !rc, menv and renv are calculated during age interpolation if neccessary columns are present,
-        !revert to SSE method if those columns are not present
+    rc = r
+    menv = 1.0d-10
+    renv = 1.0d-10
+    k2 = 0.21d0
+    
+    if (t% pars% phase<= He_GB) then
 
-        if (t% pars% core_radius<0) CALL calculate_rc(t,tscls,zpars,t% pars% core_radius)
-        rc = t% pars% core_radius
+        if (t% pars% phase>= He_MS .and. use_sse_NHe) then
+            rzams = t% He_pars% Rzams
 
-        if (i_mcenv>0) then
-            !mass of convective envelope
-            menv = t% pars% mcenv
-            menv = min(menv,mt-mc)  ! limit it to the total envelope mass
-            menv = MAX(menv,1.0d-10)
-
-            if (i_rcenv>0) then
-                renv = t% pars% rcenv
-                renv = min(renv,r-rc)! limit it to the total envelope radius
-            else
-                if((mt-mc)>0) then
-                    renv = (r - rc)*menv/(mt - mc)
-                else
-                    renv = 0.d0
-                endif
-            endif
-            renv = MAX(renv,1.0d-10)
-            k2 = 0.21
-            !TODO: add similar lines K2(M.I.) if column is present)
-        else
-            !revert to SSE method
-            rzams = 10.d0**t% tr(i_logR, ZAMS_EEP)
-            rtms = 10.d0**t% tr(i_logR, TAMS_EEP)
+            CALL calculate_rc(t,tscls,zpars,rc)
             CALL calculate_rg(t,rg)
             CALL mrenv(kw,mass,mt,mc,lum,r,rc,aj,tm,lums(2),lums(3),&
-            lums(4),rzams,rtms,rg,menv,renv,k2)
-        endif
-    case(He_MS:He_GB)
-        CALL calculate_rc(t,tscls,zpars,rc)
-        CALL calculate_rg(t,rg)
-        CALL mrenv(kw,mass,mt,mc,lum,r,rc,aj,tm,lums(2),lums(3),&
                     lums(4),rzams,rtms,rg,menv,renv,k2)
-    case(HeWD:Massless_Rem)
-            rc = r
-            menv = 1.0d-10
-            renv = 1.0d-10
-            k2 = 0.21d0
-    end select
+        else
+        
+            if (t% is_he_track) then
+                mcenv_col = i_he_mcenv
+                rcenv_col = i_he_rcenv
+                rzams = 10.d0**t% tr(i_logR, ZAMS_HE_EEP)
+                rtms = 10.d0**t% tr(i_logR, TAMS_HE_EEP)
+            else
+                mcenv_col = i_mcenv
+                rcenv_col = i_rcenv
+                rzams = 10.d0**t% tr(i_logR, ZAMS_EEP)
+                rtms = 10.d0**t% tr(i_logR, TAMS_EEP)
+            endif
+            !TODO: add similar lines K2(M.I.) if column is present)
+
+            !rc, menv and renv are calculated during age interpolation if neccessary columns are present,
+            !revert to SSE method if those columns are not present
+
+            if (t% pars% core_radius<0) CALL calculate_rc(t,tscls,zpars,t% pars% core_radius)
+            rc = t% pars% core_radius
+
+            if (mcenv_col>0) then
+                !mass of convective envelope
+                menv = t% pars% mcenv
+                menv = min(menv,mt-mc)  ! limit it to the total envelope mass
+                menv = MAX(menv,1.0d-10)
+
+                if (rcenv_col>0) then
+                    renv = t% pars% rcenv
+                    renv = min(renv,r-rc)! limit it to the total envelope radius
+                else
+                    if((mt-mc)>0) then
+                        renv = (r - rc)*menv/(mt - mc)
+                    else
+                        renv = 0.d0
+                    endif
+                endif
+                renv = MAX(renv,1.0d-10)
+            else
+                !revert to SSE method
+                CALL calculate_rg(t,rg)
+                CALL mrenv(kw,mass,mt,mc,lum,r,rc,aj,tm,lums(2),lums(3),&
+                lums(4),rzams,rtms,rg,menv,renv,k2)
+            endif
+        endif
+    endif
 
     t% pars% mcenv = menv
     t% pars% rcenv = renv
@@ -234,7 +293,6 @@
         !tm and tn get calculated in star.f90
     endif
     if (irecord>0 .and. debug) print*,"finished hrdiag",mt,mc,aj,kw,id
-
 !    if(id==1)print*,"finished hrdiag",t% pars% mass, t% pars% core_mass,t% pars% age,t% pars% radius
 
     nullify(t)

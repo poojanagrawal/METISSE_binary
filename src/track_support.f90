@@ -47,8 +47,9 @@ module track_support
     integer, parameter :: star_high_mass    =  4 !does not end as a WD (applies to both H and He tracks)
 !    integer, parameter :: post_agb          =  5
     integer, parameter :: remnant           =  6
-    integer, parameter :: rejuvenated       =  7
-    integer, parameter :: sse_he_star       =  8    ! special type for He star evolved using sse formulae
+    integer, parameter :: sse_he_star       =  7    ! special type for He star evolved using sse formulae
+    integer, parameter :: rejuvenated       =  8
+    integer, parameter :: switch            =  9     ! temporary type when switching from hydrogen to helium stars
                                                     
     
     
@@ -150,6 +151,7 @@ module track_support
 
     real(dp), allocatable :: t_incomplete(:), t_notfound(:)
     real(dp), allocatable :: Mmax_array(:), Mmin_array(:)
+    real(dp), allocatable :: Mmax_he_array(:), Mmin_he_array(:)
 
   !holds an evolutionary track for input, use an array of these for multiple tracks
 
@@ -233,7 +235,10 @@ module track_support
     logical :: fix_track
     real(dp) :: lookup_index, mass_accuracy_limit
     
-    !for remnant support in case of direct call
+    !for remnant support
+    real(dp), parameter :: M_ch = 1.44d0
+
+    !in case of direct call
     real(dp) :: max_NS_mass         !maximum NS mass
     logical :: construct_wd_track, allow_electron_capture, use_Initial_final_mass_relation
     character (len=strlen) :: BHNS_mass_scheme, WD_mass_scheme

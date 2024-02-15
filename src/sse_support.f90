@@ -9,7 +9,6 @@ module sse_support
     real(dp) :: p = 5.0
     real(dp) :: q = 3.0
     real(dp), parameter :: pow = 2.d0/3.d0
-    real(dp), parameter :: M_ch = 1.44d0
 
 !
 !    some of these needs recalculation at every step and others need to be a part of t
@@ -236,10 +235,11 @@ contains
             real(dp) :: tscls(20),lums(10),GB(10),tm,tn
 
                 GB(3) = 4.1d+04
-                GB(4) = t% He_pars% D
+                GB(4) = 5.5d+04/(1.d0+0.4d0* t% zams_mass**4)
+
                 GB(5) = 5.d0
                 GB(6) = 3.d0
-                GB(7) = t% He_pars% Mx
+                GB(7) = (GB(3)/GB(4))**(1.d0/(GB(5)-GB(6)))
                 GB(8) = 8.0d-05
                 
                 lums(1) = t% He_pars% Lzams

@@ -70,33 +70,67 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
     select case(kw)
     
     case(6)
-        ! We try to start the star from the start of the SAGB
-        ! by setting Mc = Mc,TP.
-        t% pars% age = t% times(EAGB)
+        ! We try to start the star from the start of the SAGB.
+        
+        if (t% is_he_track) then
+            t% pars% age = (t% times(He_HG))
+            t% star_type = switch
+        else
+            t% pars% age = t% times(EAGB)
+        endif
+
         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         aj = tscls(13)
             
     case(5)
         ! We fit a Helium core mass at the base of the AGB.
-        t% pars% age = t% times(HeBurn)
+        
+        if (t% is_he_track) then
+            t% pars% age = t% times(He_MS)
+            t% star_type = switch
+        else
+            t% pars% age = t% times(HeBurn)
+        endif
+
         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         aj = tscls(2) + tscls(3)
+        
     case(4)
         ! The supplied age is actually the fractional age, fage, of CHeB lifetime
         ! that has been completed, ie. 0 <= aj <= 1.
-        if(aj.lt.0.d0.or.aj.gt.1.d0) aj = 0.d0
-        t% pars% age = t% times(RGB) + aj*(t% times(HeBurn)-t% times(RGB))
+        if(aj.lt.0.d0) aj = 0.d0
+        if(aj.gt.1.d0) aj = 1.d0
+
+        if (t% is_he_track) then
+            t% pars% age = aj*(t% times(He_MS))
+            t% star_type = switch
+        else
+            t% pars% age = t% times(RGB) + aj*(t% times(HeBurn)-t% times(RGB))
+        endif
+        
         
         !for stars that don't have RGB phase, times(RGB) corresponds to times(HG)
         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         aj = tscls(2) + aj*tscls(3)
     case(3)
         !Place the star at the BGB
-        t% pars% age = t% times(RGB)
+        if (t% is_he_track) then
+            t% pars% age = 0.d0
+            t% star_type = switch
+        else
+            t% pars% age = t% times(HG)
+        endif
         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         aj = tscls(1) + 1.0d-06*(tscls(2) - tscls(1))
-!    case(9)
-
+    case(8:9)
+        if (t% is_he_track) then
+            t% pars% age = t% times(He_MS)
+        else
+            t% pars% age = t% times(HeBurn)
+            t% star_type = switch
+        endif
+        CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
+        aj = tm + 1.0d-10*tm
     end select
     
     t% pars% age = aj

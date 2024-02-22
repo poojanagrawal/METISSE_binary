@@ -73,10 +73,10 @@
                     dtr = max(dtr,1d-10)
                 elseif(t% pars% phase== HE_HG) then
                     dt = pts2*(t% times(8)-t% times(7))
-                    dtr = t% times(8)-age
+                    dtr = MIN(t% nuc_time,t% times(8))-age
                 elseif(t% pars% phase== HE_GB) then
                     dt = pts2*(t% times(9)-t% times(8))
-                    dtr = t% times(9)-age
+                    dtr = MIN(t% nuc_time,t% times(9))-age
                 endif
             case(HeWD:NS)
                 dt = MAX(0.1d0,age*10.0)

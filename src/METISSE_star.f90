@@ -25,7 +25,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr = 0
     
     debug = .false.
-!    if ((id == 1) .and. (kw==9))debug = .true.
+!    if ((id == 1) .and. (kw>=7))debug = .true.
 !if (t% is_he_track) debug = .true.
     if (debug) print*, '-----------STAR---------------'
     if (debug) print*,"in star", mass,mt,kw,id,t% pars% phase
@@ -96,7 +96,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         t% pars% age_old = t% pars% age
         t% tr(age_col,:) = t% tr(i_age2,:)
         
-        t% pars% age = t% tr(age_col,eep_m)
+        if (t% star_type==switch)t% pars% age = t% tr(age_col,eep_m)
 
     case(remnant)
         tm = 1.0d+10
@@ -113,6 +113,8 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             !to avoid unneccesssary call to interpolation routine
 !            if (debug)write(UNIT=err_unit,fmt=*)
             if (debug) print*,'star has lost envelope',t% pars% core_mass,mt,kw
+            ! we can't have ultra stripped stars atm
+            if (t% pars% phase >=7) mt = t% pars% mass
         else
             ! Check if mass has changed since last time star was called.
             ! For tracks that already have wind mass loss,
@@ -130,7 +132,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             delta1 = 1.0d-04*mt
             
             if (debug) print*, 'delta is', delta,t% pars% delta,delta1,t% pars% mass
-            if (delta.ge.10) then
+            if (delta.ge.0.2*mt) then
                 write(UNIT=err_unit,fmt=*)'large delta',delta,t% pars% mass,id
     !           call stop_code
             endif
@@ -166,7 +168,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     times_old = t% times
                     nuc_old = t% nuc_time
                     
-                    if ((t% pars% mcenv/t% pars% mass).ge.0.2) then
+                    if ((t% pars% mcenv/t% pars% mass).ge.0.2d0) then
 !                     .and.(t% pars% env_frac.ge.0.2)
                         allocate(rlist(t% ntrack))
                         rlist = t% tr(i_logR,:)
@@ -205,19 +207,15 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     end select
     
     if (kw<= TPAGB) then
-        t% MS_time = t% times(MS)
-        !Todo: nuc_time should be for WR phase
-        t% nuc_time = t% times(11)
         call calculate_SSE_parameters(t,zpars,tscls,lums,GB,tm,tn)
     elseif(kw>= He_MS .and. kw<=He_GB .and. (.not. use_sse_NHe)) then
-        t% MS_time = t% times(He_MS)
-        t% nuc_time = t% times(11)
         t% He_pars% Lzams = 10.d0**t% tr(i_logL, ZAMS_HE_EEP)
         t% He_pars% LtMS = 10.d0**t% tr(i_logL, TAMS_HE_EEP)
         t% He_pars% lx = 0.d0
         call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
         tm = t% MS_time
         tn = t% nuc_time
+
     endif
         
     t% MS_time = tm

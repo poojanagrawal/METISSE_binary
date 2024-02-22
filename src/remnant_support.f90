@@ -458,7 +458,7 @@
     subroutine assign_stripped_star_phase(t,HeI_time)
     
         type(track), pointer :: t
-        real(dp) :: HeI_time, HeB_time
+        real(dp) :: HeI_time
         logical :: debug
 
         debug = .false.
@@ -498,7 +498,7 @@
 !                call initialize_helium_star(t,id,HeI_time)
 
             case(EAGB) !eAGB
-                t% pars% phase = He_HG       !Evolved naked He star
+                t% pars% phase = He_GB       !Evolved naked He star
                 t% pars% mass = t% pars% core_mass
                 t% pars% McHe = t% pars% mass
                 t% pars% core_mass = t% pars% McCO

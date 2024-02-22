@@ -52,9 +52,13 @@
   
     t% pars% mass = mt
     t% pars% phase = kw
-    t% pars% age = aj
     t% irecord = irecord
     t% pars% core_mass = mc
+    if (aj/=aj) aj = t% pars% age
+    t% pars% age = aj
+
+
+
 
     !if(irecord>0) print*,"In Hrdiag aj,tn ",t% pars% age,mt,t% tr(i_age,t% ntrack),t% tr(i_age2,t% ntrack)
     !print*, 'age, final time',t% pars% age,t% tr(i_age,t% ntrack),abs(t% pars% age-t% tr(i_age,t% ntrack))
@@ -155,13 +159,21 @@
                     if (check_remnant_phase(t% pars, mc_max)) has_become_remnant = .true.
                 else
                     !check if phase/type/kw of the star has changed
-                    do i = t% pars% phase,8
-                        if (.not. defined(t% times(i+1))) exit
-                        if (check_ge(t% pars% age,t% times(i))) then
-                            t% pars% phase = i+1
-                            if (debug) print*,"phase change",t% pars% age,t% times(i),i+1
+                    do i = size(t% times),7
+                        if (.not. defined(t% times(i))) cycle
+                        if (t% pars% age .lt. t% times(i)) then
+                            t% pars% phase = i
+                            if (debug) print*,"phase change",t% pars% age,t% times(i),i
+                            exit
                         endif
-                    end do
+                    enddo
+!                    do i = t% pars% phase,8
+!                        if (.not. defined(t% times(i+1))) exit
+!                        if (check_ge(t% pars% age,t% times(i))) then
+!                            t% pars% phase = i+1
+!                            if (debug) print*,"phase change",t% pars% age,t% times(i),i+1
+!                        endif
+!                    end do
                     
                     !interpolate in age and other checks for nuclear burning phases
                     

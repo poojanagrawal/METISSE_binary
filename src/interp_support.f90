@@ -52,7 +52,7 @@ module interp_support
             excl_cols = core_cols_he
             age_col = i_he_age
             start = ZAMS_HE_EEP
-            print*, 'using he tracks'
+!            print*, 'using he tracks'
             ! mcutoff
             !min, max array
             !zpars
@@ -936,6 +936,9 @@ module interp_support
         !print*,"bgb",BGB_EEP,identified(BGB_EEP)
 
         t% times(11) = age(min(Final_EEP,t% ntrack))
+        t% MS_time = t% times(MS)
+        !Todo: nuc_time should be for WR phase
+        t% nuc_time = t% times(11)
         
         !determine the base of the giant branch times, if present
         if (t% initial_mass > Mcrit(2)% mass .and. t% initial_mass< Mcrit(5)% mass) then
@@ -992,6 +995,7 @@ module interp_support
         t% times(10) = t% times(9)
         t% times(11) = age(min(Final_EEP_HE,t% ntrack))
         
+        t% MS_time = t% times(He_MS)
         t% nuc_time = t% times(11)
 
         nullify(age)

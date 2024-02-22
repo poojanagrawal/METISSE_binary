@@ -13,8 +13,13 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
     type(track), pointer :: t
     logical :: debug
     
-    debug = .true.
+    debug = .false.
     if (debug)write(UNIT=err_unit,fmt=*) 'in gntage',kw,m0,mt,mc,aj
+
+    if (kw>7 .and. use_sse_NHe)  then
+        CALL SSE_gntage(mc,mt,kw,zpars,m0,aj,id)
+        return
+    endif
 
     idd = 1
     if(present(id)) idd = id
@@ -27,7 +32,7 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
     ! for very low mass stars MS extends beyond the age of the universe
     ! so higher phases are often missing
     ! below simplification avoids error in length
-    if(mt<Mmin_array(TA_cHeB_EEP) .and. kw>1) then != very_low_mass_limit
+    if(mt<Mmin_array(TA_cHeB_EEP) .and. kw>1 .and. kw<7) then != very_low_mass_limit
         mt = Mmin_array(TA_cHeB_EEP)
 !        print*,mt,mt0
     endif

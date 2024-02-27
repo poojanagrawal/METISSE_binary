@@ -93,8 +93,13 @@ subroutine METISSE_zcnsts(z,zpars)
             ZAMS_HE_EEP = -1
             TAMS_HE_EEP = -1
             GB_HE_EEP = -1
+            TPAGB_HE_EEP = -1
+
             cCBurn_HE_EEP = -1
             post_AGB_HE_EEP = -1
+            Initial_EEP_HE = -1
+    
+            Final_EEP_HE = -1
     
             if (verbose) print*, 'Reading naked helium star tracks'
             call get_metallcity_file_from_Z(initial_Z,metallicity_file_list_he,ierr)

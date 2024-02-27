@@ -57,7 +57,7 @@ module track_support
     character(len=5) :: phase_label(16) = ['lm_MS','   MS','   HG','  FGB',' CHeB',' EAGB',&
     'TPAGB','He_MS', 'He_HG','He_GB','He_WD','CO_WD','ONeWD','   NS','   BH','   MR']
     
-    real(dp) :: T_bgb_limit = 3.8
+    real(dp) :: T_bgb_limit = 3.85
     real(dp) :: very_low_mass_limit = 0.75d0 !Msun
 
     !sse phases
@@ -104,6 +104,7 @@ module track_support
     integer :: ZAMS_HE_EEP
     integer :: TAMS_HE_EEP
     integer :: GB_HE_EEP
+    integer :: TPAGB_HE_EEP
     integer :: cCBurn_HE_EEP
     integer :: post_AGB_HE_EEP
     

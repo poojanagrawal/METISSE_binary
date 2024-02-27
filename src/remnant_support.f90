@@ -484,8 +484,6 @@
                     t% pars% McCO = 0.d0
                     t% pars% McHe = 0.d0
                     HeI_time = t% pars% age
-!                    call initialize_helium_star(t,id,HeI_time)
-!                    t% pars% age = 0.d0
                 endif
 
             case(HeBurn)  !core he Burning
@@ -495,45 +493,32 @@
                 t% pars% McCO = 0.d0
                 t% pars% McHe = 0.d0
                 HeI_time = t% times(3)
-!                call initialize_helium_star(t,id,HeI_time)
 
             case(EAGB) !eAGB
-                t% pars% phase = He_GB       !Evolved naked He star
+                t% pars% phase = He_HG       !Evolved naked He star
                 t% pars% mass = t% pars% core_mass
                 t% pars% McHe = t% pars% mass
                 t% pars% core_mass = t% pars% McCO
                 t% zams_mass = t% pars% mass
-                
-!                call initialize_helium_star(t,id,HeI_time)
-                
+                                
         end select
         
     end subroutine
     
     
-    subroutine initialize_helium_star(t,HeI_time)
+    subroutine initialize_SSE_helium_star(t,HeI_time)
         type(track), pointer, intent(inout) :: t
         real(dp) :: HeI_time, HeB_time
 
-        if (use_sse_NHe) then
-            t% star_type = sse_he_star
-            call calculate_SSE_He_timescales(t)
-            
-            if (t% pars% phase == He_MS) then
-                HeB_time = t% times(4)-t% times(3)
-                t% pars% age = t% MS_time*((t% pars% age- HeI_time)/HeB_time)
-            else
-                t% pars% age = He_GB_age(t% pars% core_mass,t% times(8), &
-                                t% times(9),t% He_pars% D, t% He_pars% Mx)
-                t% pars% age = MAX(t% pars% age,t% MS_time)
-            endif
-!        else
-!            if (t% pars% phase == He_MS) then
-!                t% pars% age = new_age(t% times(4),t% times(3),t% MS_time,0.d0,t% pars% age)
-!            else
-!                t% pars% age = new_age(t% times(5),t% times(4),t% times(9),t% times(8),t% pars% age)
-!                t% pars% age = MAX(t% pars% age,t% MS_time)
-!            endif
+        call calculate_SSE_He_timescales(t)
+        
+        if (t% pars% phase == He_MS) then
+            HeB_time = t% times(4)-t% times(3)
+            t% pars% age = t% MS_time*((t% pars% age- HeI_time)/HeB_time)
+        else
+            t% pars% age = He_GB_age(t% pars% core_mass,t% times(8), &
+                            t% times(9),t% He_pars% D, t% He_pars% Mx)
+            t% pars% age = MAX(t% pars% age,t% MS_time)
         endif
         
     end subroutine

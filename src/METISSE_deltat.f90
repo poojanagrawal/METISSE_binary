@@ -56,9 +56,12 @@
                     dtr = MIN(t% nuc_time,t% times(6))- age
                 endif
             case(He_MS)
+                ! this is same for he stars with sse formulae as well as interpolated tracks
+
                 dt = pts1* t% times(7)
                 dtr = t% times(7) - age
-                ! this is same for he stars with sse formulae as well as interpolated tracks
+!                if (id==1)print*, 'deltat',t% times(7), age
+
             case(He_HG:He_GB)
                 if (t% star_type == sse_he_star) then
                     if(age < t% times(10))then
@@ -74,10 +77,12 @@
                 elseif(t% pars% phase== HE_HG) then
                     dt = pts2*(t% times(8)-t% times(7))
                     dtr = MIN(t% nuc_time,t% times(8))-age
+                    
                 elseif(t% pars% phase== HE_GB) then
                     dt = pts2*(t% times(9)-t% times(8))
-                    dtr = MIN(t% nuc_time,t% times(9))-age
+                    dtr = t% nuc_time-age
                 endif
+!                    print*, 'deltat',t% nuc_time,t% times(8),t% times(9),age,dt,dtr
             case(HeWD:NS)
                 dt = MAX(0.1d0,age*10.0)
                 dt = MAX(0.1d0,dt*10.0)
@@ -89,16 +94,15 @@
                 dt = 10.d0
                 dtr = dt
         end select
-
+!err_unit=6
             t% pars% dt = min(dt,dtr)
-            
             if (t% pars% dt<=0.0 .and. t% ierr==0) then
                 write(UNIT=err_unit,fmt=*)"fatal error: invalid timestep", t% pars% dt ,"for phase and id", t% pars% phase,id
-                write(UNIT=err_unit,fmt=*)"zams_mass, nuc_time, age, pars% mass"
-                write(UNIT=err_unit,fmt=*)t% zams_mass, t% nuc_time, age, t% pars% mass
+                write(UNIT=err_unit,fmt=*)"zams_mass, pars% mass, nuc_time, age, dt,dtr"
+                write(UNIT=err_unit,fmt=*)t% zams_mass, t% pars% mass,t% nuc_time, age, dt,dtr
                 t% ierr = -1
                 t% pars% dt = 1e+10
-                ! forcing stellar type to 15 to avoid crashing of code outside this function
+                ! forcing a large timestep to avoid crashing of code outside this function
 !               call stop_code
             endif
             

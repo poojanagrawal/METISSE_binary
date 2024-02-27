@@ -28,7 +28,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
 !    if ((id == 1) .and. (kw>=7))debug = .true.
 !if (t% is_he_track) debug = .true.
     if (debug) print*, '-----------STAR---------------'
-    if (debug) print*,"in star", mass,mt,kw,id,t% pars% phase
+    if (debug) print*,"in star", mass,mt,kw,id,t% pars% phase, t% star_type
 
     consvR = .false.
     exclude_core = .false.
@@ -45,7 +45,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         else
             t% is_he_track = .true.
             age_col = i_he_age
-!            write(UNIT=err_unit,fmt=*) 'switching to he tracks'
+!            write(UNIT=*,fmt=*) 'switching to he tracks'
         endif
     else
         t% is_he_track = .false.
@@ -78,26 +78,27 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         !call write_eep_track(t,t% initial_mass)
 
     case(rejuvenated:switch) !gntage
+!        print*,'reju',kw, t% pars% phase,t% star_type
+
         t% pars% mass = mt
         t% pars% delta = 0.d0
         t% pars% phase = kw
         
+        if(debug.and.t% star_type==rejuvenated)print*,'rejuvenated giant, rewrite with new track'
+        if(debug.and.t% star_type==switch)print*,'switching to/from he track',t% pars% mass
+
         call get_initial_mass_for_new_track(t,idd,eep_m)
-        if (debug)print*, 'rejuvenated giant, rewrite with new track'
         call interpolate_mass(id,exclude_core)
         
         t% initial_mass_old = t% initial_mass
         mass = t% initial_mass
         t% zams_mass = mass
-        
         call calculate_timescales(t)
         t% times_new = t% times
-        t% ms_old = t% times(MS)
+        t% ms_old = t% MS_time
         t% pars% age_old = t% pars% age
         t% tr(age_col,:) = t% tr(i_age2,:)
-        
-        if (t% star_type==switch)t% pars% age = t% tr(age_col,eep_m)
-
+        t% pars% age = min(t% tr(age_col,eep_m), t% times(11)-1d-6)
     case(remnant)
         tm = 1.0d+10
         tscls(1) = t% MS_time
@@ -110,11 +111,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         if (debug) print*,'nuc burn star'
         if (t% pars% core_mass.ge.mt) then
             !Check whether star lost its envelope during binary interaction
-            !to avoid unneccesssary call to interpolation routine
-!            if (debug)write(UNIT=err_unit,fmt=*)
             if (debug) print*,'star has lost envelope',t% pars% core_mass,mt,kw
-            ! we can't have ultra stripped stars atm
-            if (t% pars% phase >=7) mt = t% pars% mass
         else
             ! Check if mass has changed since last time star was called.
             ! For tracks that already have wind mass loss,
@@ -215,7 +212,6 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
         tm = t% MS_time
         tn = t% nuc_time
-
     endif
         
     t% MS_time = tm

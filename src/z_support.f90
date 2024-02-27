@@ -67,8 +67,9 @@ module z_support
                         he_core_mass, co_core_mass, he_core_radius, co_core_radius, &
                         log_Tc, c12_mass_frac, o16_mass_frac,he4_mass_frac, &
                         mass_conv_envelope, radius_conv_envelope, moment_of_inertia, &
-                        ZAMS_HE_EEP, TAMS_HE_EEP, GB_HE_EEP, cCBurn_HE_EEP, post_AGB_HE_EEP
-
+                        ZAMS_HE_EEP, TAMS_HE_EEP, GB_HE_EEP, cCBurn_HE_EEP, TPAGB_HE_EEP, &
+                        post_AGB_HE_EEP, Initial_EEP_HE, Final_EEP_HE
+            
     contains
 
     subroutine read_defaults(ierr)
@@ -922,6 +923,9 @@ module z_support
         temp(ieep) = GB_HE_EEP
         if(add_eep(temp,ieep)) ieep=ieep+1
         
+        temp(ieep) = TPAGB_HE_EEP
+        if(add_eep(temp,ieep)) ieep=ieep+1
+        
         temp(ieep) = cCBurn_HE_EEP
         if(add_eep(temp,ieep)) ieep=ieep+1
         
@@ -932,8 +936,8 @@ module z_support
         key_eeps_he = pack(temp,temp > 0)
         
         !define initial and final eep if not already defined
-        if (Initial_EEP < 0 .or. Initial_EEP< minval(key_eeps_he)) Initial_EEP_HE = ZAMS_HE_EEP
-        if (Final_EEP < 0 .or. Final_EEP > maxval(key_eeps_he)) Final_EEP_HE = maxval(key_eeps_he)
+        if (Initial_EEP_HE < 0 .or. Initial_EEP_HE< minval(key_eeps_he)) Initial_EEP_HE = ZAMS_HE_EEP
+        if (Final_EEP_HE < 0 .or. Final_EEP_HE > maxval(key_eeps_he)) Final_EEP_HE = maxval(key_eeps_he)
     
         if(low_mass_final_eep<0 .or. low_mass_final_eep>final_eep_he) low_mass_eep_he = Final_EEP_HE
         if(high_mass_final_eep<0 .or. low_mass_final_eep>final_eep_he) high_mass_eep_he = Final_EEP_HE
@@ -1177,7 +1181,7 @@ module z_support
 
             !determining Mfgb- all masses
             if (.not. defined(Mcrit(5)% mass))then
-                if (smass<=20.0 .and. len_track>=cHeIgnition_EEP) then
+                if (len_track>=cHeIgnition_EEP) then
                     Teff = xa(i)% tr(i_logTe,cHeIgnition_EEP-1)       !temp at the end of HG/FGB
                     he_diff = abs(xa(i)% tr(i_he4, cHeIgnition_EEP-1)-xa(i)% tr(i_he4, TAMS_EEP))
 !                    print*,"bgb",smass,Teff, he_diff
@@ -1192,9 +1196,9 @@ module z_support
             !determining Mec
             if (.not. defined(Mcrit(7)% mass))then
                 if (xa(i)% star_type == star_high_mass) then
-                Mcrit(7)% mass = smass
-                Mcrit(7)% loc = i
-                if (debug) print*,"Mec",smass,i
+                    Mcrit(7)% mass = smass
+                    Mcrit(7)% loc = i
+                    if (debug) print*,"Mec",smass,i
                 endif
             endif
 
@@ -1267,8 +1271,8 @@ module z_support
 
 
     subroutine set_zparameters_he()
-        real(dp) :: smass
-        integer :: len_track, i, min_index, start
+        real(dp) :: smass,frac_mcenv
+        integer :: len_track, i, j,min_index, start,jstart,jend
         real(dp), allocatable :: mass_list(:)
 
         logical:: debug
@@ -1283,16 +1287,22 @@ module z_support
 
 !        Mcrit_he(2)% mass =!very_low_mass_limit
         !keep it empty for now
-        Mcrit_he(3)% mass = Mfgb
-        Mcrit_he(4)% mass = Mec
 
-        Mcrit_he(5)% mass = xa(num_tracks)% initial_mass
-        Mcrit_he(5)% loc = num_tracks+1
+        Mcrit_he(3)% mass = Mhook
+!        Mcrit_he(4)% mass = Mhef
+        Mcrit_he(5)% mass = Mfgb
+        Mcrit_he(6)% mass = Mup
+        Mcrit_he(7)% mass = Mec
+        Mcrit_he(8)% mass = Mextra
+        
+        
+        Mcrit_he(9)% mass = xa(num_tracks)% initial_mass
+        Mcrit_he(9)% loc = num_tracks+1
 
         if (verbose) write(*,'(a,f7.1)') ' Minimum initial mass', Mcrit_he(1)% mass
-        if (verbose) write(*,'(a,f7.1)') ' Maximum initial mass', Mcrit_he(5)% mass
+        if (verbose) write(*,'(a,f7.1)') ' Maximum initial mass', Mcrit_he(9)% mass
         
-        if (.not. defined(Mcrit_he(4)% mass)) then
+        if (.not. defined(Mcrit_he(7)% mass)) then
           do i = 1,size(xa)
             call set_star_type_from_history(xa(i))
 !            print*, xa(i)% initial_mass, xa(i)% star_type
@@ -1317,31 +1327,61 @@ module z_support
             smass = xa(i)% initial_mass
             !print*,smass, xa(i)% star_type
             len_track = xa(i)% ntrack
-
-            !determining Mfgb- all masses
              
-            ! TODO: this will need some modification
-            
-!            if (.not. defined(Mcrit_he(3)% mass))then
-!                if (smass<=20.0 .and. len_track>=post_AGB_HE_EEP) then
-!                    Teff = xa(i)% tr(i_logTe,post_AGB_HE_EEP-1)       !temp at the end of HG/FGB
-!!                    print*,"bgb",smass,Teff, he_diff
-!                    if (Teff> T_bgb_limit) then !
-!                        Mcrit_he(3)% mass = smass
-!                        Mcrit_he(3)% loc = i
-!                        if (debug) print*,"Mfgb",smass,i
-!                    endif
+            IF (.not. defined(Mcrit_he(3)% mass) .and. i_logTe>0)THEN
+                if (len_track>= TPAGB_HE_EEP) then
+                    !temp at the end of HG/FGB <= temp at TAMS
+                    if (xa(i)% tr(i_logTe,TPAGB_HE_EEP) .le. xa(i)% tr(i_logTe,TAMS_HE_EEP)) then
+                        Mcrit_he(3)% mass = smass
+                        Mcrit_he(3)% loc = i
+                        if (debug) print*,"Mhook",smass,i
+                    endif
+                endif
+!            ELSEIF (.not. defined(Mcrit_he(8)% mass))THEN
+!                if (xa(i)% tr(i_logL,TAMS_HE_EEP) .le. xa(i)% tr(i_logL,ZAMS_HE_EEP)) then
+!                    Mcrit_he(8)% mass = smass
+!                    Mcrit_he(8)% loc = i
+!                    if (debug) print*,"Mextra",smass,i
 !                endif
-!            endif
+            ENDIF
+            
+            IF (.not. defined(Mcrit_he(5)% mass) .and. i_he_mcenv>0)THEN
+                if (GB_HE_EEP>0 .and. len_track>=GB_HE_EEP) then
+                    frac_mcenv = xa(i)% tr(i_he_mcenv,GB_HE_EEP)/xa(i)% tr(i_mass,GB_HE_EEP)
+                    if (.not. defined(Mcrit_he(4)% mass) .and. frac_mcenv.ge.0.12d0) then
+                        Mcrit_he(4)% mass = smass
+!                        Mcrit_he(4)% loc = i
+                        if (debug) print*,"Mfgb1",smass,i
+
+                    elseif(defined(Mcrit_he(4)% mass) .and. frac_mcenv.lt.0.12d0) then
+                        Mcrit_he(5)% mass = smass
+                        Mcrit_he(5)% loc = i
+                        if (debug) print*,"Mfgb2",smass,i
+                    endif
+!                elseif (len_track>= min(TPAGB_HE_EEP,cCBurn_HE_EEP)) then
+!                    jstart = TAMS_HE_EEP
+!                    jend = min(TPAGB_HE_EEP,cCBurn_HE_EEP) ! TODO: this might needs modification
+!                    do j = jstart,jend
+!                        if (xa(i)% tr(i_mcenv,j)/xa(i)% tr(i_mass,j).ge.0.12d0) then
+!                            Mcrit_he(5)% mass = smass
+!                            Mcrit_he(5)% loc = i
+!                            if (debug) print*,"Mfgb",smass,i
+!                            exit
+!                        endif
+!                    enddo
+                endif
+            ENDIF
 
             !determining Mec
-            if (.not. defined(Mcrit_he(4)% mass))then
+            if (.not. defined(Mcrit_he(7)% mass))then
                 if (xa(i)% star_type == star_high_mass) then
-                Mcrit_he(4)% mass = smass
-                Mcrit_he(4)% loc = i
+                Mcrit_he(7)% mass = smass
+                Mcrit_he(7)% loc = i
                 if (debug) print*,"Mec",smass,i
                 endif
             endif
+            
+            
 
         end do
 
@@ -1357,7 +1397,7 @@ module z_support
         end do
 
         !Mec
-        Mcrit_he(4)% loc = max(Mcrit_he(4)% loc,1)
+        Mcrit_he(7)% loc = max(Mcrit_he(7)% loc,1)
 
         allocate (m_cutoff_he(size(Mcrit_he)))
         m_cutoff_he = Mcrit_he% loc
@@ -1366,7 +1406,7 @@ module z_support
 
         deallocate(mass_list)
     end subroutine set_zparameters_he
-
+    
     subroutine sort_mcutoff(m_cutoff)
      !subroutine to sort Mcutoffs, removing the ones who are at less than 2 distance from the last one
     !making sure there are at least 2 tracks between subsequent mcutoff

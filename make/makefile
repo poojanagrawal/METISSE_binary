@@ -6,20 +6,28 @@ METISSE_DIR=$(BSE_DIR)/src
 
 #com
 FC=gfortran
-DEBUG=-g3 -fbacktrace -fcheck=all -fbounds-check
-WARN=-Wall -pedantic -Wno-tabs -Wno-maybe-uninitialized 
+#DEBUG=-g3 -fbacktrace -fcheck=all -fbounds-check
+#WARN=-Wall -pedantic -Wno-tabs -Wno-maybe-uninitialized
 # -Wconversion -Wextra
 
 #Optimization flag
-OPT=-O3
+#OPT=-O3
 
 #NOT USED
 #Tells gfortran to compile using OpenMP
-OMP=-fopenmp
+#OMP=-fopenmp
+
+WARN=-Wall -Wno-tabs -Wno-maybe-uninitialized -fimplicit-none  -Wsurprising  -Waliasing
+DEBUG=-g3 -O0 -fbacktrace -fcheck=all -fbounds-check
 
 
-FFLAGS1= -ffree-form -fimplicit-none $(OPT) $(WARN) $(DEBUG)
-FFLAGS2= -ffixed-form -fimplicit-none
+#-O2    -Wall  -Wline-truncation  -Wcharacter-truncation   -Wimplicit-interface  -Wunused-parameter   -fcheck=all  -std=f2008    -fbacktrace
+
+
+
+
+FFLAGS1= -ffree-form -fimplicit-none $(WARN) $(DEBUG)
+FFLAGS2= -ffixed-form -fimplicit-none $(WARN) $(DEBUG)
 
 POPBIN =popbin
 

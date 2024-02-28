@@ -27,7 +27,7 @@ DEBUG=-g3 -O0 -fbacktrace -fcheck=all -fbounds-check
 
 
 FFLAGS1= -ffree-form -fimplicit-none $(WARN) $(DEBUG)
-FFLAGS2= -ffixed-form -fimplicit-none $(WARN) $(DEBUG)
+FFLAGS2= -ffixed-form -fimplicit-none $(DEBUG)
 
 POPBIN =popbin
 

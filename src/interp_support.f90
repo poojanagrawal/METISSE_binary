@@ -1,7 +1,6 @@
 module interp_support
 
     use track_support
-    use z_support, only: Mcrit, Mcrit_he,m_cutoff,m_cutoff_he
     implicit none
 
     integer, parameter :: no_interpolation = 0
@@ -850,21 +849,23 @@ module interp_support
         pars% radius = 10**pars% log_R
         pars% core_radius = -1.0
         
-        if (pars% phase <= EAGB) then
-            pars% core_mass = pars% McHe
-            if (i_RHe_core>0) pars% core_radius = new_line(i_RHe_core,1)
+        if (pars% phase <= TPAGB) then
+            if (pars% phase == TPAGB ) then
+                pars% core_mass = pars% McCO
+                if (i_RCO_core>0) pars% core_radius = new_line(i_RCO_core,1)
+            else
+                pars% core_mass = pars% McHe
+                if (i_RHe_core>0) pars% core_radius = new_line(i_RHe_core,1)
+            endif
             if (i_mcenv>0) pars% mcenv = new_line(i_mcenv,1)
             if (i_rcenv>0) pars% rcenv = new_line(i_rcenv,1)
-        elseif (pars% phase == TPAGB) then
-            pars% core_mass = pars% McCO
-            if (i_RCO_core>0) pars% core_radius = new_line(i_RCO_core,1)
-            if (i_mcenv>0) pars% mcenv = new_line(i_mcenv,1)
-            if (i_rcenv>0) pars% rcenv = new_line(i_rcenv,1)
+            if (i_MoI>0) pars% moi = new_line(i_MoI,1)
         elseif(pars% phase >= He_MS) then
             pars% core_mass = pars% McCO
             if (i_he_RCO>0) pars% core_radius = new_line(i_he_RCO,1)
             if (i_he_mcenv>0) pars% mcenv = new_line(i_he_mcenv,1)
             if (i_he_rcenv>0) pars% rcenv = new_line(i_he_rcenv,1)
+            if (i_he_MoI>0) pars% moi = new_line(i_he_MoI,1)
         endif
             
     end subroutine
@@ -1071,6 +1072,7 @@ module interp_support
         debug = .false.
 !        if(t% is_he_track) debug = .true.
 !        if (id ==1) debug = .true.
+!        if (t% star_type==rejuvenated) debug = .true.
         
         !using the original age of the star to keep core properties comparable
         !using other (secondary)age doesn't matches well with detailed models either
@@ -1197,30 +1199,35 @@ module interp_support
             !find lower bound, start at Min_index
             do i = 0, num_list
                 k = t% min_index+i
+!                if (debug) print*,'check0',k,i,mlow
+
                 if (k <= num_list) then
     !                print*, 'low',k,mlist(k),mnew
-                    if (mlist(k) >0 .and. mlist(k)<Mnew) then
+
+                    if (mlist(k) >0 .and. mlist(k).le.Mnew) then
                         Mlow = k
                         exit
                     endif
                 endif
                 ! search the other side now
                 k = t% min_index-i
+!                if (debug) print*,'check2',k,i,mlow
+
                 if (k >=1 .and. i>0) then
-    !                print*, 'low',k,mlist(k),mnew
-                    if (mlist(k) >0 .and. mlist(k)<Mnew) then
+
+                    if (mlist(k) >0 .and. mlist(k).le.Mnew) then
                         Mlow = k
                         exit
                     endif
                 endif
             end do
-                        
+!            if (debug) print*,'check00000',k,i,mlow,t% min_index
+
             
             ! find upper bound, start at tracks neighbouring Mlow
             do i = 1, size(s)
                 k = Mlow+i
                 if (k <= num_list) then
-    !            print*,'high', k,mlist(k),mnew
                     if (mlist(k) >0 .and. mlist(k)>Mnew) then
                         Mupp = k
                         exit

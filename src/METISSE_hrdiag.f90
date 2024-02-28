@@ -15,7 +15,6 @@
     real(dp) :: r,lum,mc,rc,menv,renv,k2,mcx
     
     integer :: kw,i,idd,j_bagb,k, old_phase
-    integer :: rcenv_col, mcenv_col
     real(dp) :: rg,rzams,rtms
     real(dp) :: Mcbagb, mc_max,HeI_time
     real(dp) :: bhspin ! only for cosmic
@@ -97,8 +96,8 @@
             t% pars% mass = mt
             !check if envelope has been lost
             
-            if ((t% pars% core_mass.ge.t% pars% mass) .or. &
-                (t% initial_mass>=10.0 .and. abs(t% pars% core_mass-t% pars% mass)<0.01)) then
+            IF ((t% pars% core_mass.ge.t% pars% mass) .or. &
+                (t% initial_mass>=10.0 .and. abs(t% pars% core_mass-t% pars% mass)<0.01)) THEN
                     
                 if (debug) print*, "envelope lost at", t% pars% mass, t% pars% age,t% pars% phase
                 
@@ -125,16 +124,29 @@
 !                        print*, 'lost envelope', t% pars% phase, t% pars% age,t% MS_time,t% nuc_time,id
                     endif
                 endif
-            endif
+            ELSE
+                if (t% pars% core_radius<0) CALL calculate_rc(t,tscls,zpars,t% pars% core_radius)
+                call get_mcrenv_from_cols(t,lums,menv,renv,k2)
+            ENDIF
         endif
     ENDIF
     
+    ! Stripped/ naked helium stars phase 7:9
     IF(t% pars% phase >= He_MS .and. t% pars% phase <=He_GB) THEN
         if (use_sse_NHe) then
             call evolve_after_envelope_loss(t,zpars(10))
             Mcbagb = t% zams_mass
             mc_max = max_core_mass_he(t% pars% mass, Mcbagb)
             if(t% pars% phase >He_MS .and. check_remnant_phase(t% pars, mc_max)) has_become_remnant = .true.
+            
+            if (has_become_remnant .eqv..false.) then
+                rzams = t% He_pars% Rzams
+
+                CALL calculate_rc(t,tscls,zpars,rc)
+                CALL calculate_rg(t,rg)
+                CALL mrenv(kw,mass,mt,mc,lum,r,rc,aj,tm,lums(2),lums(3),&
+                    lums(4),rzams,rtms,rg,menv,renv,k2)
+            endif
         else
             if (check_ge(t% pars% age,t% times(11)) .or. (t% pars% core_mass.ge.t% pars% mass)) then
                 !have reached the end of the eep track; self explanatory
@@ -159,11 +171,15 @@
                 call interpolate_age(t,t% pars% age)
                 if (debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
                 t% pars% mass = mt
+                if (t% pars% core_radius<0) CALL calculate_rc(t,tscls,zpars,t% pars% core_radius)
+                
+                call get_mcrenv_from_cols(t,lums,menv,renv,k2)
             endif
         endif
-   ENDIF
+    ENDIF
       
-    if(has_become_remnant) then
+    ! remnants phases 10:15
+    IF(has_become_remnant) THEN
 !        print*, 'star',id,'is remnant',t% pars% mass,mcbagb,t% pars% core_mass
         t% star_type = remnant
         if (front_end == main .or. front_end == BSE) then
@@ -186,7 +202,7 @@
         endif
         has_become_remnant = .false.
         !has_become_remnant is only for assigning remnants, setting it to false now
-    endif
+    ENDIF
 
     IF(t% pars% phase >= HeWD) THEN
         if (front_end == main .or. front_end == BSE) then
@@ -195,6 +211,10 @@
             call hrdiag_remnant(zpars,t% pars% mass,t% pars% core_mass,t% pars% luminosity,&
                             t% pars% radius,t% pars% age,t% pars% phase)
         endif
+        rc = r
+        menv = 1.0d-10
+        renv = 1.0d-10
+        k2 = 0.21d0
     ENDIF
     
     kw = t% pars% phase
@@ -211,66 +231,6 @@
     ! this needs to be separate from the above loop
     ! as phases may change during the evolution step
 
-    rc = r
-    menv = 1.0d-10
-    renv = 1.0d-10
-    k2 = 0.21d0
-    
-    if (t% pars% phase<= He_GB) then
-
-        if (t% pars% phase>= He_MS .and. use_sse_NHe) then
-            rzams = t% He_pars% Rzams
-
-            CALL calculate_rc(t,tscls,zpars,rc)
-            CALL calculate_rg(t,rg)
-            CALL mrenv(kw,mass,mt,mc,lum,r,rc,aj,tm,lums(2),lums(3),&
-                    lums(4),rzams,rtms,rg,menv,renv,k2)
-        else
-        
-            if (t% is_he_track) then
-                mcenv_col = i_he_mcenv
-                rcenv_col = i_he_rcenv
-                rzams = 10.d0**t% tr(i_logR, ZAMS_HE_EEP)
-                rtms = 10.d0**t% tr(i_logR, TAMS_HE_EEP)
-            else
-                mcenv_col = i_mcenv
-                rcenv_col = i_rcenv
-                rzams = 10.d0**t% tr(i_logR, ZAMS_EEP)
-                rtms = 10.d0**t% tr(i_logR, TAMS_EEP)
-            endif
-            !TODO: add similar lines K2(M.I.) if column is present)
-
-            !rc, menv and renv are calculated during age interpolation if neccessary columns are present,
-            !revert to SSE method if those columns are not present
-
-            if (t% pars% core_radius<0) CALL calculate_rc(t,tscls,zpars,t% pars% core_radius)
-            rc = t% pars% core_radius
-
-            if (mcenv_col>0) then
-                !mass of convective envelope
-                menv = t% pars% mcenv
-                menv = min(menv,mt-mc)  ! limit it to the total envelope mass
-                menv = MAX(menv,1.0d-10)
-
-                if (rcenv_col>0) then
-                    renv = t% pars% rcenv
-                    renv = min(renv,r-rc)! limit it to the total envelope radius
-                else
-                    if((mt-mc)>0) then
-                        renv = (r - rc)*menv/(mt - mc)
-                    else
-                        renv = 0.d0
-                    endif
-                endif
-                renv = MAX(renv,1.0d-10)
-            else
-                !revert to SSE method
-                CALL calculate_rg(t,rg)
-                CALL mrenv(kw,mass,mt,mc,lum,r,rc,aj,tm,lums(2),lums(3),&
-                lums(4),rzams,rtms,rg,menv,renv,k2)
-            endif
-        endif
-    endif
 
     t% pars% mcenv = menv
     t% pars% rcenv = renv

@@ -18,7 +18,7 @@ module track_support
     real(dp), parameter :: ln10 = log(1.0d1)
     real(sp), parameter :: ln10_sp = log(10.0)
     real(dp), parameter :: tiny = 1.0d-6
-    real(dp), parameter :: undefined  =  -1.0
+    real(dp), parameter :: undefined  =  -1.d0
     integer, parameter :: undefined_i = -1
     
     logical :: verbose, use_sse_NHe
@@ -178,7 +178,7 @@ module track_support
         real(dp) :: luminosity,Teff,radius
         real(dp) :: log_L,log_Teff,log_R                !log values
         real(dp) :: epoch, age, age_old,age2
-        real(dp) :: delta, dt, dms, mcenv, rcenv,bhspin
+        real(dp) :: delta, dt, dms, mcenv, rcenv,moi,bhspin
     end type star_parameters
     
 
@@ -231,6 +231,14 @@ module track_support
     !for z_support
     real(dp) :: Mhook, Mhef,Mfgb, Mup, Mec, Mextra,Mup_core,Mec_core
     real(dp) :: Z04, Z_H, Z_He
+    integer, allocatable :: m_cutoff(:), m_cutoff_he(:)
+
+    type critical_mass
+        integer :: loc
+        real(dp) :: mass
+    end type critical_mass
+
+    type(critical_mass) :: Mcrit(9), Mcrit_he(9)
     
     !for interp_support
     logical :: fix_track
@@ -703,7 +711,7 @@ module track_support
     ! used for checking if locations are identified
     logical function identified(x) result(y)
         integer, intent(in) :: x
-        if (abs(x-undefined_i)<=tiny) then
+        if (abs(x-undefined_i)<=0) then
             y = .false.
         else
             y = .true.

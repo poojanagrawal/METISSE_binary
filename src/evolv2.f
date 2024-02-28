@@ -1684,7 +1684,6 @@
                   bpp(jp,8) = rad(1)/rol(1)
                   bpp(jp,9) = rad(2)/rol(2)
                   bpp(jp,10) = 8.0
-                  if (dbg) print*, 'MERGER/gntage'
                   if(j1.eq.2)then
                      bpp(jp,2) = mt2
                      bpp(jp,3) = mass(j1)
@@ -1953,6 +1952,8 @@
 *
 * Update the masses.
 *
+         if (dbg)print*,'updating masses1',mass,mt2,j1
+
          kstar(j2) = kst
          mass(j1) = mass(j1) - dm1 - dms(j1)
          
@@ -1960,7 +1961,7 @@
          mass(j2) = mass(j2) + dm22 - dms(j2)
          if(kstar(j2).le.1.or.kstar(j2).eq.7) mass0(j2) = mass(j2)
 *
-*         print*,'updating masses',j1,dm1,dms(j1),dm22,dms(j2),dtm*1.0d+6
+         if (dbg)print*,'updating masses2',mass,mt2
 *         print*, 'test delta',dmr(k)*tb*km, dmr(k)*dtm*1.0d+6
          
 * For a HG star check if the initial mass can be reduced. 

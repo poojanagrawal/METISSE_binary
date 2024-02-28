@@ -34,14 +34,6 @@ module z_support
     real(dp) :: he_core_mass_limit = 2.2
 
 !    real(dp) ::  Mup_core,Mec_core
-    integer, allocatable :: m_cutoff(:), m_cutoff_he(:)
-
-    type critical_mass
-        integer :: loc
-        real(dp) :: mass
-    end type critical_mass
-
-    type(critical_mass) :: Mcrit(9), Mcrit_he(9)
 
 
     namelist /SSE_input_controls/ initial_Z, max_age,read_mass_from_file,&
@@ -705,7 +697,7 @@ module z_support
             if (i_mcenv>0) call assign_sgl_col(temp, i_mcenv, mass_conv_envelope,n)
             if (i_Rcenv>0) call assign_sgl_col(temp, i_Rcenv, radius_conv_envelope,n)
             if (i_MoI>0) call assign_sgl_col(temp, i_MoI, moment_of_inertia,n)
-
+                        
 !            if (i_Tc >0) call assign_sgl_col(temp, i_Tc, log_Tc,n)
 !            if (i_he4 >0) call assign_sgl_col(temp, i_he4, he4_mass_frac,n)
 !            if (i_c12 >0) call assign_sgl_col(temp, i_c12,c12_mass_frac,n)

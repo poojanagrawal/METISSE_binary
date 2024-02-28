@@ -585,9 +585,8 @@
         return
     end function
 
-
     subroutine calculate_rc(t, tscls,zpars,rc)
-     ! Calculate the core radius 
+     ! Calculate the core radius
      implicit none
      type(track), pointer, intent(in) :: t
      real(dp) :: tscls(20), zpars(20)
@@ -641,8 +640,141 @@
              endif
          end select
         rc = MIN(rc,t% pars% radius)
-    end subroutine
+    end subroutine calculate_rc
 
+    subroutine calculate_rg(t,rg)
+    !  rg = giant branch or Hayashi track radius, appropiate for the type.
+    !       For kw=1 or 2 this is radius at BGB, and for kw=4 either GB or
+    !       AGB radius at present luminosity.
+    implicit none
+    type(track), pointer, intent(in) :: t
+    real(dp), intent(out):: rg
+    real(dp) :: Rbgb, Rbagb, Lbgb, Lbagb, L, alfa
+    integer :: j
+    logical :: debug
+    
+        debug = .false.
+        select case(t% pars% phase)
+            case(low_mass_MS: HG)
+                if (identified(BGB_EEP)) then
+                    j = min(BGB_EEP,t% ntrack)
+                    rg = t% tr(i_logR,j)   !TODO: check BGB  (or lums(3))
+                else
+                    j = min(cHeIgnition_EEP,t% ntrack)
+                    rg = t% tr(i_logR,j)
+                endif
+                rg = 10.d0**rg
+            case(RGB)
+                rg = t% pars% radius
+            case(HeBurn)
+                !Linear interpolation between r(bgb) and r(bagb)
+                !wrt luminosity l(bgb) and l(bagb) and L
+
+                j = min(cHeIgnition_EEP,t% ntrack)
+                Rbgb = t% tr(i_logR,j)
+                Lbgb = t% tr(i_logL,j)
+                j = min(TA_cHeB_EEP,t% ntrack)
+                Rbagb = t% tr(i_logR,j)
+                Lbagb = t% tr(i_logL,j)
+                L = log10(t% pars% luminosity)
+                alfa = (L - Lbgb)/(Lbagb-Lbgb)
+                rg = (alfa*Rbagb)+((1d0 - alfa)*Rbgb)
+                rg = 10**rg
+                
+                if (rg .lt. t% pars% radius) then
+                    write(UNIT=err_unit,fmt=*)'Error in calculate_rg: Rg, R',rg,t% pars% radius,Rbgb, Rbagb
+                    write(UNIT=err_unit,fmt=*) t% pars% age, alfa, L, Lbgb, Lbagb
+                endif
+                    
+            case(EAGB:TPAGB)
+                rg = t% pars% radius
+            case(He_MS:He_GB)
+                IF (use_sse_NHe) THEN
+                    if (t% pars% phase==He_MS) then
+                        rg = radius_He_ZAMS(t% pars% mass)
+                    else
+                        rg = radius_He_GB(t% pars% luminosity)
+                    endif
+                ELSE
+                    if (t% pars% phase==He_GB) then
+                        rg = t% pars% radius
+                    elseif (t% initial_mass > Mcrit_he(4)% mass .and. &
+                            t% initial_mass< Mcrit_he(5)% mass .and. &
+                            identified(GB_HE_EEP)) then
+                        j = min(GB_HE_EEP,t% ntrack)
+                        rg = t% tr(i_logR,j)
+                        rg = 10.d0**rg
+                    else
+                        rg = maxval(t% tr(i_logR,:))
+                        rg = 10.d0**rg
+                    endif
+                    
+                ENDIF
+        end select
+    end subroutine calculate_rg
+    
+    subroutine get_mcrenv_from_cols(t,lums,menv,renv,k2)
+    
+        type(track),pointer, intent(in) :: t
+          real(dp), intent (in) :: lums(10)
+        real(dp), intent(out) :: menv,renv,k2
+        integer :: rcenv_col, mcenv_col, moi_col
+        real(dp) :: rc, rg,rzams,rtms
+    
+        if (t% is_he_track) then
+            mcenv_col = i_he_mcenv
+            rcenv_col = i_he_rcenv
+            moi_col = i_he_MoI
+
+            rzams = 10.d0**t% tr(i_logR, ZAMS_HE_EEP)
+            rtms = 10.d0**t% tr(i_logR, TAMS_HE_EEP)
+        else
+            mcenv_col = i_mcenv
+            rcenv_col = i_rcenv
+            moi_col = i_MoI
+            rzams = 10.d0**t% tr(i_logR, ZAMS_EEP)
+            rtms = 10.d0**t% tr(i_logR, TAMS_EEP)
+        endif
+
+        !rc, menv, renv and moi (moment of inertia) are calculated during age interpolation
+        !if neccessary columns are present,
+        !revert to SSE method if those columns are not present
+        
+        rc = t% pars% core_radius  ! it's calculated in hrdiag
+        
+        if ((.not. identified(mcenv_col)) .or. (.not. identified(rcenv_col)) .or. (.not. identified(moi_col))) then
+            CALL calculate_rg(t,rg)
+            CALL mrenv(t% pars% phase,t% zams_mass,t% pars% mass,t% pars% core_mass, &
+            t% pars% luminosity,t% pars% radius,rc,t% pars% age,t% MS_time,lums(2),lums(3),&
+            lums(4),rzams,rtms,rg,menv,renv,k2)
+        endif
+        
+        if (mcenv_col>0) then
+            !mass of convective envelope
+            menv = t% pars% mcenv
+            menv = min(menv,t% pars% mass-t% pars% core_mass)  ! limit it to the total envelope mass
+            menv = MAX(menv,1.0d-10)
+        endif
+        
+        if (rcenv_col>0) then
+            renv = t% pars% rcenv
+            renv = min(renv,t% pars% radius-rc)! limit it to the total envelope radius
+        else
+            if((t% pars% mass - t% pars% core_mass)>0) then
+                renv = (t% pars% radius - rc)*menv/(t% pars% mass - t% pars% core_mass)
+            else
+                renv = 0.d0
+            endif
+        endif
+        renv = MAX(renv,1.0d-10)
+        ! radius of gyration, k2 given by sqrt(I/M*R*R)
+!        if (moi_col>0) k2 = sqrt((t% pars% moi)/(t% pars% mass*t% pars% radius*t% pars% radius))
+        k2 = 0.21d0
+    
+    end subroutine
+    
+
+    
 !    subroutine cutoffs_for_Belzynski_methods(ns_flag,mc1,mc2)
 !        use track_support
 !        use z_support, only : Mcrit

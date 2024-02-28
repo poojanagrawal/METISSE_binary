@@ -355,7 +355,7 @@
 *
 * Obtain a new age for the giant.
 *
-            if (dbg) print*,'getting new age giant following merger',kw1,kw2,kw
+      if(dbg)print*,'getting new gntage following merger',kw1,kw2,kw
 ! PA: kw can change in gntage
             CALL gntage(MC1,M1,KW,ZPARS,M01,AJ1,J1)
             CALL star(KW,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)

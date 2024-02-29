@@ -12,10 +12,10 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
 !    real(dp), allocatable:: hecorelist(:),ccorelist(:),Lum_list(:),age_list(:)
     real(dp), allocatable:: rlist(:)
 
-    real(dp) :: times_old(11), nuc_old, delta,dtm, delta1,delta_wind, quant
+    real(dp) :: times_old(11), delta,dtm, delta1,delta_wind, quant
 
     integer :: idd, ierr,  age_col,eep_m
-    logical :: debug, exclude_core,consvR
+    logical :: debug, exclude_core,consvR, mass_check
     type(track), pointer :: t
 
     idd = 1
@@ -25,10 +25,10 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr = 0
     
     debug = .false.
-!    if ((id == 1) .and. (kw>=7))debug = .true.
+!    if ((id == 1) )debug = .true.
 !if (t% is_he_track) debug = .true.
     if (debug) print*, '-----------STAR---------------'
-    if (debug) print*,"in star", mass,mt,kw,id,t% pars% phase, t% star_type
+    if (debug) print*,"in star", mass,mt,kw,t% pars% phase, id,t% star_type,t% pars% age
 
     consvR = .false.
     exclude_core = .false.
@@ -80,6 +80,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     case(rejuvenated:switch) !gntage
 !        print*,'reju',kw, t% pars% phase,t% star_type
 
+        if (t% pars% phase>=10 .and. kw<10) t% post_agb = .false.
         t% pars% mass = mt
         t% pars% delta = 0.d0
         t% pars% phase = kw
@@ -112,6 +113,8 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         if (t% pars% core_mass.ge.mt) then
             !Check whether star lost its envelope during binary interaction
             if (debug) print*,'star has lost envelope',t% pars% core_mass,mt,kw
+        elseif(t% post_agb) then
+            if (debug) print*, 'postagb star, do nothing'
         else
             ! Check if mass has changed since last time star was called.
             ! For tracks that already have wind mass loss,
@@ -126,33 +129,36 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             delta = (t% pars% mass-mt) - delta_wind
     !       if (id==1)print*, 'delta org', delta,t% pars% mass,mt,delta_wind
             t% pars% delta = t% pars% delta+ delta
-            delta1 = 1.0d-04*mt
-            
+            delta1 = 2.0d-04*mt
             if (debug) print*, 'delta is', delta,t% pars% delta,delta1,t% pars% mass
             if (delta.ge.0.2*mt) then
                 write(UNIT=err_unit,fmt=*)'large delta',delta,t% pars% mass,id
     !           call stop_code
             endif
             
-            if ((abs(t% pars% delta).ge.delta1).and.(t% post_agb.eqv..false.)) then
+    !       if (dtm<0.d0) print*,'dtm<0',t% pars% age,dtm
+            mass_check = .false.
+            quant = (t% pars% age*t% MS_old/t% ms_time)+dtm
+!            if (id ==1)print*, 'quant', quant, t% pars% age_old
+            if (dtm<0.d0 .and. (quant .le.t% pars% age_old).and. kw<=MS) then
+                t% initial_mass = t% initial_mass_old
+                mass_check = .true.
+                if (debug)print*,'rev to old initial_mass',quant,t% pars% age_old
+
+            elseif ((abs(t% pars% delta).ge.delta1)) then
                 if(debug)print*,"mass loss in interpolate mass called for",t% initial_mass,mt,t% pars% mass,id
+
+                t% ms_old = t% times(MS)
+                t% pars% age_old = t% pars% age
+                t% initial_mass_old = t% initial_mass
+                call get_initial_mass_for_new_track(t,idd,eep_m)
+                mass_check = .true.
+                if (debug)print*, 'new initial mass',t% initial_mass
+            endif
+            
+            if (mass_check) then
                     
                 if (kw>MS .and. kw /=He_MS) exclude_core = .true.
-
-    !           if (dtm<0.d0) print*,'dtm<0',t% pars% age,dtm
-
-                quant = (t% pars% age*t% MS_old/t% ms_time)+dtm
-                if (dtm<0.d0 .and. (quant .le.t% pars% age_old).and. kw<=MS) then
-                    if (debug)print*,'reverse intp',quant,t% pars% age_old
-                    t% initial_mass = t% initial_mass_old
-                else
-                    t% ms_old = t% times(MS)
-                    t% pars% age_old = t% pars% age
-                    t% initial_mass_old = t% initial_mass
-                    call get_initial_mass_for_new_track(t,idd,eep_m)
-                endif
-                    
-                if (debug)print*, 'initial mass for the new track',t% initial_mass
                 
                 ! reset delta
                 t% pars% delta = 0.d0
@@ -163,7 +169,6 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     if (debug) print*,'post-main-sequence star'
 
                     times_old = t% times
-                    nuc_old = t% nuc_time
                     
                     if ((t% pars% mcenv/t% pars% mass).ge.0.2d0) then
 !                     .and.(t% pars% env_frac.ge.0.2)
@@ -179,7 +184,9 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     call calculate_timescales(t)
                     t% times_new = t% times
                     t% times = times_old
-                    t% nuc_time = nuc_old
+                    t% nuc_time = t% times(11)
+                    t% ms_time = t% times(MS)
+                    if (t% is_he_track) t% ms_time = t% times(He_MS)
 
                     !TEST: R remains unchanged if Mcenv is significant
                     if (consvR) then
@@ -217,7 +224,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     t% MS_time = tm
     t% nuc_time = tn
 
-!    if (debug) print*, "in star end", mt,delta,kw,tm,tscls(1),tn,t%initial_mass
+    if (debug) print*, "in star end", mt,delta,kw,tm!,tscls(1),tn,t%initial_mass
     nullify(t)
     return
 end subroutine METISSE_star

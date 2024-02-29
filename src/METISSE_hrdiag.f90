@@ -14,7 +14,7 @@
     real(dp) :: mass,aj,mt,tm,tn,tscls(20),lums(10),GB(10),zpars(20)
     real(dp) :: r,lum,mc,rc,menv,renv,k2,mcx
     
-    integer :: kw,i,idd,j_bagb,k, old_phase
+    integer :: kw,i,idd,j_bagb,old_phase
     real(dp) :: rg,rzams,rtms
     real(dp) :: Mcbagb, mc_max,HeI_time
     real(dp) :: bhspin ! only for cosmic
@@ -33,7 +33,7 @@
     t => tarr(idd)
     
 !    if ((id == 1) .and. kw>=3)debug = .true.
-!if (t% is_he_track) debug = .true.
+!if(id ==2 .and. t% is_he_track)debug = .true.
     if (debug) print*, '-----------HRDIAG-------------'
     if (debug) print*,"started hrdiag",mt,mc,aj,kw,tn,id
 
@@ -54,13 +54,15 @@
     t% irecord = irecord
     t% pars% core_mass = mc
     if (aj/=aj) aj = t% pars% age
+!    if (aj<0.d0) aj = 0.d0
     t% pars% age = aj
 
     IF (t% pars% phase<=TPAGB) THEN
         if (t% post_agb) then
             ! contruct an artficial track until WD cooling phase is reached
             call evolve_after_agb(t)
-        elseif (check_ge(t% pars% age,t% tr(i_age,t% ntrack))) then
+!        elseif (check_ge(t% pars% age,t% tr(i_age,t% ntrack))) then
+        elseif (check_ge(t% pars% age,t% times(11)) ) then
             !have reached the end of the eep track; self explanatory
             if (debug) print*,"end of file:aj,tn ",t% pars% age,t% tr(i_age,t% ntrack),t% times(kw)
             if (kw<5 .and. t% ierr==0) then
@@ -78,22 +80,18 @@
             if (check_remnant_phase(t% pars, mc_max)) has_become_remnant = .true.
         else
             !check if phase/type/kw of the star has changed
-            if (t% initial_mass<very_low_mass_limit .and. kw<2) t% pars% phase =0
-            do i = t% pars% phase,5
-                k = i
-                if (i==0) k=1 !treat low_mass MS stars as regular MS stars
-                if (.not. defined(t% times(k+1))) exit
-                
-                if (check_ge(t% pars% age,t% times(k))) then
-                    t% pars% phase = k+1
-                    if (debug) print*,"phase change",t% pars% age,t% times(k),k+1
-                endif
-            end do
+
+            old_phase = t% pars% phase
+                do i = 6,1,-1
+                    if (.not. defined(t% times(i))) cycle
+                    if (t% pars% age .lt. t% times(i)) then
+                        t% pars% phase = i
+                    endif
+                enddo
+                if (t% initial_mass<very_low_mass_limit .and. t% pars% phase==1) t% pars% phase =0
+
+                if (debug .and. t% pars% phase /= old_phase) print*,"phase change",t% pars% age,t% times(i),i
             
-            !interpolate in age
-            call interpolate_age(t,t% pars% age)
-            if (debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
-            t% pars% mass = mt
             !check if envelope has been lost
             
             IF ((t% pars% core_mass.ge.t% pars% mass) .or. &
@@ -120,11 +118,15 @@
                         t% star_type = switch
                         j_bagb = min(t% ntrack, TA_cHeB_EEP)
                         if (t% pars% phase >= He_HG) t% zams_mass = t% tr(i_mass, j_bagb)
-                        call star(t% pars% phase,t% zams_mass,t% pars% mass,t% MS_time,t% nuc_time,tscls,lums,GB,zpars,0.d0,id)
+                        call star(t% pars% phase,t% zams_mass,t% pars% mass,tm,tn,tscls,lums,GB,zpars,0.d0,id)
 !                        print*, 'lost envelope', t% pars% phase, t% pars% age,t% MS_time,t% nuc_time,id
                     endif
                 endif
             ELSE
+                 !interpolate in age
+                call interpolate_age(t,t% pars% age)
+                if (debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
+                t% pars% mass = mt
                 if (t% pars% core_radius<0) CALL calculate_rc(t,tscls,zpars,t% pars% core_radius)
                 call get_mcrenv_from_cols(t,lums,menv,renv,k2)
             ENDIF
@@ -241,7 +243,7 @@
         t% post_agb = post_agb
         !tm and tn get calculated in star.f90
     endif
-    if (irecord>0 .and. debug) print*,"finished hrdiag",mt,mc,aj,kw,id
+!    if (irecord>0 .and. debug) print*,"finished hrdiag",mt,mc,aj,kw,id,tm,tn
 !    if(id==1)print*,"finished hrdiag",t% pars% mass, t% pars% core_mass,t% pars% age,t% pars% radius
 
     nullify(t)

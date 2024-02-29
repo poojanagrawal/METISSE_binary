@@ -95,12 +95,13 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
                     if (debug) WRITE(*,*)'TPAGB'
 
         if (t% is_he_track) then
-            t% pars% age = (t% times(He_HG))
+            t% pars% age = t% times(He_HG)
             t% star_type = switch
         else
             t% pars% age = t% times(EAGB)
+            if (t% pars% age<0.d0) t% pars% age = maxval(t% times(1:5))
+            
         endif
-
         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         aj = tscls(13)
     case(5)
@@ -112,6 +113,8 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
             t% star_type = switch
         else
             t% pars% age = t% times(HeBurn)
+            if (t% pars% age<0.d0) t% pars% age = maxval(t% times(1:4))
+
         endif
 
         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
@@ -168,6 +171,6 @@ subroutine set_star_type(id)
     use track_support
         implicit none
         integer, intent(in) :: id
-!            print*, 'setting star to reju'
+!        print*, 'setting star to reju',tarr(id)% pars% age,id
         tarr(id)% star_type = rejuvenated
     end subroutine

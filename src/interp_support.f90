@@ -954,9 +954,8 @@ module interp_support
 
         age => t% tr(i_age2,:)
         
-        t% times = undefined
+        t% times(He_MS:) = undefined
 
-        t% MS_time = age(TAMS_HE_EEP) - age(ZAMS_HE_EEP)
         do i = 1, t% neep
             if (t% eep(i) == TAMS_HE_EEP) then    !MS
                 t% times(He_MS) = age(TAMS_HE_EEP)
@@ -979,7 +978,8 @@ module interp_support
         t% times(11) = age(min(Final_EEP_HE,t% ntrack))
         
         t% nuc_time = t% times(11)
-        
+        t% MS_time = age(TAMS_HE_EEP) - age(ZAMS_HE_EEP)
+
         if (t% initial_mass > Mcrit_he(4)% mass .and. t% initial_mass< Mcrit_he(5)% mass) then
             if (identified(GB_HE_EEP)) then
                 t% times(HE_HG) = age(GB_HE_EEP)
@@ -1070,13 +1070,12 @@ module interp_support
         logical :: debug
 
         debug = .false.
-!        if(t% is_he_track) debug = .true.
+!        if(id ==2 .and. t% is_he_track) debug = .true.
 !        if (id ==1) debug = .true.
 !        if (t% star_type==rejuvenated) debug = .true.
         
         !using the original age of the star to keep core properties comparable
         !using other (secondary)age doesn't matches well with detailed models either
-
         if (t% pars% age<0.d0) return
         
         age = t% pars% age

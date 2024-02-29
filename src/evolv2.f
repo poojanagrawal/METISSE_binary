@@ -395,7 +395,8 @@
       kw2 = kstar(2)
 *
       dt = 1.0d+06*dtm
-      if (dbg) print*,'dt at 5 = ', dt
+      if (dbg) print*,'dt at 5 = ', tphys,dtm,kw1,kw2,
+     & mass(1),mass(2),intpol,iter
 *      print*,'r at 5 = ', rad(1),rad(2)
 
       eqspin = 0.d0
@@ -468,6 +469,9 @@
      &           sep*sep*sqome2*oorb/(mass(1)+mass(2))**2
          delet = ecc*(dmt(1)*(0.5d0/mass(1) + 1.d0/(mass(1)+mass(2))) +
      &                dmt(2)*(0.5d0/mass(2) + 1.d0/(mass(1)+mass(2))))
+     
+        if (dbg) print*, "dtm33=",djtt,djorb,dt,dtm,sep
+
 *
 * For very close systems include angular momentum loss owing to 
 * gravitational radiation. 
@@ -594,15 +598,16 @@
 * Limit to 2% orbital angular momentum change.
 *
 *        if (kstar(1)==4) print*,k2str(1),k3,radc(1),dspint(1)
-*        if (kstar(1)==4) print*, "dtm55=",dtm,djtt,djorb
-         djtt = djtt + djorb 
+         djtt = djtt + djorb
+        if (dbg) print*, "dtm55=",djtt,djorb,dtm,dt,jorb,tb
+
          if(ABS(djtt).gt.tiny)then
             dtj = 0.02d0*jorb/ABS(djtt)
             dt = MIN(dt,dtj)
          endif
          dtm = dt/1.0d+06
-*         if (kstar(1)>=1) print*, "dtm7=",dtm,jorb,djtt
-*        if (dtm<=9d-6)stop
+         if (dbg) print*, "dtm7=",dtm,jorb,dtj
+*        if (dtm<=9d-10)stop
 
 *
       elseif(ABS(dtm).gt.tiny.and.sgl)then
@@ -633,7 +638,7 @@
 *
          dms(k) = (dmr(k) - dmt(k))*dt
 *         print*,'dmr,dmt,dms,dt=',dmr(k),dmt(k),dms(k),dt
-        if (dbg)print*, 'dms=', dms,dtm
+        if (dbg)print*, 'dms=', dms,dtm,k
          if(kstar(k).lt.10)then
             dml = mass(k) - massc(k)
 *            print*, 'test dml',dml
@@ -708,7 +713,7 @@
                m0 = mass0(k)
                mass0(k) = mass(k)
 * PA: detached phase call for adjusting epoch
-        if(dbg)print*,'detached phase call for adjusting epoch',k,tphys
+            if(dbg) print*,'detached call for epoch',k,tphys,epoch(k)
                CALL star(kstar(k),mass0(k),mass(k),tm,tn,
      &                   tscls,lums,GB,zpars,dtm,k)
 *                print*,'star_ep_dt', mass0(k),mass(k),kstar(k),k
@@ -763,7 +768,7 @@
 * Acquire stellar parameters (M, R, L, Mc & K*) at apparent evolution age.
 *
          age = tphys - epoch(k)
-*         print*,'aj detached',age,tphys,epoch(k),dtm
+*         if (k==2)print*,'aj detached',age,tphys,epoch(k),dtm
 *         if (dtm>0 .and. age<aj(k)) stop
          aj0(k) = age
          kw = kstar(k)

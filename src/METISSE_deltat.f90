@@ -60,7 +60,7 @@
 
                 dt = pts1* t% times(7)
                 dtr = t% times(7) - age
-!                if (id==1)print*, 'deltat',t% times(7), age
+!                if (id==2)print*, 'deltat',t% times(7), age,dt,dtr
 
             case(He_HG:He_GB)
                 if (t% star_type == sse_he_star) then

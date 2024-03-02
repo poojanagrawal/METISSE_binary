@@ -69,11 +69,12 @@ OBJT_SSE = $(SRCE_SSE:.f=.o)
 SRCE_METISSE = \
 track_support.f90 z_support.f90 sse_support.f90 \
 remnant_support.f90 interp_support.f90 \
-alloc_track.f90 dealloc_track.f90 assign_commons_bse.f90 \
+assign_commons_BSE.f90 assign_commons_main.f90 \
+alloc_track.f90 dealloc_track.f90 \
 comenv_lambda.f90 initialize_front_end.f90 \
-METISSE_zcnsts.f90 metisse_star.f90 metisse_hrdiag.f90 \
-metisse_deltat.f90 metisse_mlwind.f90 assign_commons_main.f90\
-metisse_gntage.f90
+METISSE_zcnsts.f90 METISSE_star.f90 METISSE_hrdiag.f90 \
+METISSE_deltat.f90 METISSE_mlwind.f90 \
+METISSE_gntage.f90
  
 OBJT_METISSE = $(SRCE_METISSE:.f90=.o)
 

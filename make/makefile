@@ -78,25 +78,26 @@ metisse_gntage.f90
 OBJT_METISSE = $(SRCE_METISSE:.f90=.o)
 
 
-track_support.o: $(SRC_DIR)/track_support.f90
-z_support.o: $(SRC_DIR)/z_support.f90 track_support.o
-interp_support.o: $(SRC_DIR)/interp_support.f90 track_support.o z_support.o
-sse_support.o: $(SRC_DIR)/sse_support.f90 track_support.o
-remnant_support.o: $(SRC_DIR)/remnant_support.f90 track_support.o interp_support.o sse_support.o
+track_support.o: $(METISSE_DIR)/track_support.f90
+z_support.o: $(METISSE_DIR)/z_support.f90 track_support.o
+interp_support.o: $(METISSE_DIR)/interp_support.f90 track_support.o
+sse_support.o: $(METISSE_DIR)/sse_support.f90 track_support.o
+remnant_support.o: $(METISSE_DIR)/remnant_support.f90 track_support.o sse_support.o
 
-initialize_front_end.o: $(SRC_DIR)/initialize_front_end.f90 track_support.o
-alloc_track.o: $(SRC_DIR)/alloc_track.f90 track_support.o
-dealloc_track.o: $(SRC_DIR)/dealloc_track.f90 track_support.o
-assign_commons_main.o: $(SRC_DIR)/assign_commons_main.f90 track_support.o remnant_support.o
-metisse_mlwind.o: $(SRC_DIR)/metisse_mlwind.f90 track_support.o
-metisse_deltat.o: $(SRC_DIR)/metisse_deltat.f90 track_support.o
-metisse_zcnsts.o: $(SRC_DIR)/metisse_zcnsts.f90 z_support.o track_support.o
-metisse_star.o: $(SRC_DIR)/metisse_star.f90 track_support.o interp_support.o sse_support.o
-metisse_hrdiag.o: $(SRC_DIR)/metisse_hrdiag.f90 track_support.o interp_support.o remnant_support.o sse_support.o
-metisse_gntage.o: $(SRC_DIR)/metisse_gntage.f90 track_support.o interp_support.o z_support.o
-comenv_lambda.o: $(SRC_DIR)/comenv_lambda.f90 track_support.o
+initialize_front_end.o: $(METISSE_DIR)/initialize_front_end.f90 track_support.o
+alloc_track.o: $(METISSE_DIR)/alloc_track.f90 track_support.o
+dealloc_track.o: $(METISSE_DIR)/dealloc_track.f90 track_support.o
+assign_commons_main.o: $(METISSE_DIR)/assign_commons_main.f90 track_support.o remnant_support.o
+metisse_mlwind.o: $(METISSE_DIR)/metisse_mlwind.f90 track_support.o
+metisse_deltat.o: $(METISSE_DIR)/metisse_deltat.f90 track_support.o
+metisse_zcnsts.o: $(METISSE_DIR)/metisse_zcnsts.f90 z_support.o track_support.o
+metisse_star.o: $(METISSE_DIR)/metisse_star.f90 track_support.o interp_support.o sse_support.o
+metisse_hrdiag.o: $(METISSE_DIR)/metisse_hrdiag.f90 track_support.o interp_support.o sse_support.o remnant_support.o
+metisse_gntage.o: $(METISSE_DIR)/metisse_gntage.f90 track_support.o interp_support.o
 
-assign_commons.o: $(SRC_DIR)/assign_commons_bse.f90 track_support.o remnant_support.o
+comenv_lambda.o: $(METISSE_DIR)/comenv_lambda.f90 track_support.o
+
+assign_commons.o: $(METISSE_DIR)/assign_commons_bse.f90 track_support.o remnant_support.o
 
 
 

@@ -1264,7 +1264,7 @@ module z_support
 
     subroutine set_zparameters_he()
         real(dp) :: smass,frac_mcenv
-        integer :: len_track, i, j,min_index, start,jstart,jend
+        integer :: len_track, i, min_index, start!,j,jstart,jend
         real(dp), allocatable :: mass_list(:)
 
         logical:: debug

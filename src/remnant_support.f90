@@ -1,9 +1,6 @@
  module remnant_support
     use track_support
     use sse_support
-    use interp_support, only: new_age
-
-!    use z_support, only: Mup_core, Mec_core
     implicit none
     
     logical :: end_of_file, debug_rem

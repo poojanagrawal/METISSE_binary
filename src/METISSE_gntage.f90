@@ -2,7 +2,6 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
 
     use track_support
     use interp_support
-    use z_support, only: Mcrit
     
     implicit none
     integer, intent(in), optional :: id

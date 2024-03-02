@@ -213,7 +213,7 @@
             call hrdiag_remnant(zpars,t% pars% mass,t% pars% core_mass,t% pars% luminosity,&
                             t% pars% radius,t% pars% age,t% pars% phase)
         endif
-        rc = r
+        rc = t% pars% radius
         menv = 1.0d-10
         renv = 1.0d-10
         k2 = 0.21d0

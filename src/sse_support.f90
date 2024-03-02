@@ -1,7 +1,6 @@
 module sse_support
 !module to help interface metisse with sse
     use track_support
-    use z_support, only: Mcrit
     implicit none
     
  !SSE parameters required if envelope is lost
@@ -10,7 +9,6 @@ module sse_support
     real(dp) :: p = 5.0
     real(dp) :: q = 3.0
     real(dp), parameter :: pow = 2.d0/3.d0
-    real(dp), parameter :: M_ch = 1.44d0
 
 !
 !    some of these needs recalculation at every step and others need to be a part of t
@@ -18,77 +16,6 @@ module sse_support
 !    real(dp) :: Tinf1,Tinf2,Tx
 
 contains
-
-    subroutine calculate_timescales(t)
-        !subroutine to assign sse phases to the interpolated track
-        !also calculate timescales associated with different phases
-        implicit none
-        
-        type(track), pointer,intent(inout) :: t
-        integer :: i,j_bgb
-        real(dp) :: mass
-        real(dp), pointer :: age(:)=> NULL()
-        logical :: debug
-        debug = .false.
-
-        age => t% tr(i_age2,:)
-        mass = t% initial_mass
-
-        t% MS_time = age(TAMS_EEP) - age(ZAMS_EEP)
-        do i = 1, t% neep
-            if (t% eep(i) == TAMS_EEP) then    !MS
-                t% times(MS) = age(TAMS_EEP)
-
-            elseif (t% eep(i) == cHeIgnition_EEP) then
-                !Herztsprung gap
-                t% times(HG) = age(cHeIgnition_EEP)
-                !t% times(HG) gets modified to t(BGB)
-                ! if RGB phase is present
-                t% times(RGB) = t% times(HG)
-
-            elseif (t% eep(i) == TA_cHeB_EEP) then
-                !red_HB_clump /core He Burning
-                t% times(HeBurn) = age(TA_cHeB_EEP)
-
-            elseif (t% eep(i) == cCBurn_EEP) then
-                !EAGB/ core C burning
-                t% times(EAGB) = age(cCBurn_EEP)
-                
-            elseif (t% eep(i) == TPAGB_EEP) then
-                !AGB
-                t% times(EAGB) = age(TPAGB_EEP)
-                
-            elseif (t% eep(i) == post_AGB_EEP) then
-                !TP-AGB :only for low_inter mass stars
-                t% times(TPAGB) = age(post_AGB_EEP)
-            endif
-        enddo
-        !print*,"bgb",BGB_EEP,identified(BGB_EEP)
-
-        t% times(11) = age(min(Final_EEP,t% ntrack))
-        !Todo: nuc_time should be for WR phase
-        t% nuc_time = t% times(11)
-        !determine the base of the giant branch times, if present
-        if (mass > Mcrit(2)% mass .and. mass< Mcrit(5)% mass) then
-            if (identified(BGB_EEP)) then
-                !Red giant Branch
-                t% times(HG) = age(BGB_EEP)
-            elseif (t% ntrack >TAMS_EEP) then
-                j_bgb =  base_GB(t)
-                if (j_bgb>0) then
-                    j_bgb = j_bgb+TAMS_EEP-1
-                    !Red giant Branch
-                    t% times(HG) = age(j_bgb)
-                elseif (debug) then
-                    print*, "Unable to locate BGB ", j_bgb
-!                    STOP
-                end if
-            endif
-        endif
-
-        nullify(age)
-    end subroutine calculate_timescales
-
 
     subroutine calculate_SSE_parameters(t,zpars,tscls,lums,GB,tm,tn)
         type(track), pointer, intent(in) :: t
@@ -156,11 +83,11 @@ contains
     
     integer :: i,j_bgb
     real(dp) :: lums(10), mass
-    real(dp), pointer :: Lumt(:) 
+    real(dp), allocatable :: Lumt(:)
     
     logical :: debug
     debug = .false.
-    Lumt => t% tr(i_lum,:)
+    Lumt = 10**(t% tr(i_logL,:))
     mass = t% initial_mass
             
     do i = 1, t% neep
@@ -181,7 +108,7 @@ contains
             lums(3) = lums(4)
     endif
     
-    nullify(Lumt)
+    deallocate(Lumt)
     end subroutine
 
     ! GB = giant branch parameters
@@ -237,7 +164,7 @@ contains
     end subroutine
 
 !     subroutine calculate_he_timescales(t,t% He_pars% LtMS, Mx, Tinf1, Tx, Tinf2)
-     subroutine calculate_He_timescales(t)
+     subroutine calculate_SSE_He_timescales(t)
       !only for phases 7 to 9
             type(track), pointer, intent(inout) :: t
             real(dp) :: Tinf1, Tx, Tinf2
@@ -301,17 +228,18 @@ contains
             t% times(10) = Tx
             if(debug) print*,"He timescales", tinf1, tx, tinf2, tmax,t% MS_time,t% nuc_time
         return
-        end subroutine calculate_He_timescales
+        end subroutine calculate_SSE_He_timescales
 
     subroutine calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
             type(track), pointer, intent(in) :: t
             real(dp) :: tscls(20),lums(10),GB(10),tm,tn
 
                 GB(3) = 4.1d+04
-                GB(4) = t% He_pars% D
+                GB(4) = 5.5d+04/(1.d0+0.4d0* t% zams_mass**4)
+
                 GB(5) = 5.d0
                 GB(6) = 3.d0
-                GB(7) = t% He_pars% Mx
+                GB(7) = (GB(3)/GB(4))**(1.d0/(GB(5)-GB(6)))
                 GB(8) = 8.0d-05
                 
                 lums(1) = t% He_pars% Lzams
@@ -474,76 +402,5 @@ contains
         endif
       return
     end
-
-!    subroutine calculate_mchei(zpars)
-!        real(dp) :: zpars(20),GB(10)
-!
-!      lums(6) = GB(4)*GB(7)**GB(5)
-!
-!              zpars(10) = mcgbf(lums(4),GB,lums(6))
-!
-!
-!          lums(4) = lHeIf(mass,zpars(2))
-!
-!
-!    end
-
-
-    subroutine calculate_rg(t,rg)
-    !  rg = giant branch or Hayashi track radius, appropiate for the type.
-    !       For kw=1 or 2 this is radius at BGB, and for kw=4 either GB or
-    !       AGB radius at present luminosity.
-    implicit none
-    type(track), pointer, intent(in) :: t
-    real(dp), intent(out):: rg
-    real(dp) :: Rbgb, Rbagb, Lbgb, Lbagb, L, alfa
-    integer :: j
-    logical :: debug
     
-        debug = .false.
-        select case(t% pars% phase)
-            case(low_mass_MS: HG)
-                if (identified(BGB_EEP)) then
-                    j = min(BGB_EEP,t% ntrack)
-                    rg = t% tr(i_logR,j)   !TODO: check BGB  (or lums(3))
-                else
-                    j = min(cHeIgnition_EEP,t% ntrack)
-                    rg = t% tr(i_logR,j)
-                endif
-                rg = 10.d0**rg
-            case(RGB)
-                rg = t% pars% radius
-            case(HeBurn)
-                !Linear interpolation between r(bgb) and r(bagb)
-                !wrt luminosity l(bgb) and l(bagb) and L
-!                if (identified(BGB_EEP)) then
-!                    j = min(BGB_EEP,t% ntrack)
-!                else
-!                    j = min(cHeIgnition_EEP,t% ntrack)
-!                endif
-                j = min(cHeIgnition_EEP,t% ntrack)
-                Rbgb = t% tr(i_logR,j)
-                Lbgb = t% tr(i_logL,j)
-                j = min(TA_cHeB_EEP,t% ntrack)
-                Rbagb = t% tr(i_logR,j)
-                Lbagb = t% tr(i_logL,j)
-                L = log10(t% pars% luminosity)
-                alfa = (L - Lbgb)/(Lbagb-Lbgb)
-                rg = (alfa*Rbagb)+((1d0 - alfa)*Rbgb)
-                rg = 10**rg
-                
-                if (rg .lt. t% pars% radius) then
-                    write(UNIT=err_unit,fmt=*)'Error in calculate_rg: Rg, R',rg,t% pars% radius,Rbgb, Rbagb
-                    write(UNIT=err_unit,fmt=*) t% pars% age, alfa, L, Lbgb, Lbagb
-                endif
-                    
-            case(EAGB:TPAGB)
-                rg = t% pars% radius
-            case(He_MS)
-                rg = radius_He_ZAMS(t% pars% mass)
-            case(He_HG: He_GB)
-                rg = radius_He_GB(t% pars% luminosity)
-        end select
-    end subroutine
-
 end module sse_support

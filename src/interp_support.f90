@@ -1,7 +1,6 @@
 module interp_support
 
     use track_support
-    use z_support, only: Mcrit, m_cutoff
     implicit none
 
     integer, parameter :: no_interpolation = 0
@@ -13,67 +12,91 @@ module interp_support
     contains
 
     !   interpolates a new track given initial mass
-    subroutine interpolate_mass(mass,id)
+    subroutine interpolate_mass(id, exclude_core)
         implicit none
-        real(dp), intent(in) :: mass
-        type(track), pointer :: t
+        
+        logical, intent(in) :: exclude_core
         integer, intent(in) :: id
-        
-        integer :: iseg, keyword,min_index
-        type(eep_track), pointer :: a(:)
-        real(dp) :: f(3), dx, x(4), y(4), alfa, beta
-        integer :: i, j, k, mlo, mhi,ierr
-        integer, allocatable :: min_eeps(:)
-        
-    
-        a => NULL()
-        t => tarr(id)
-    
-        debug_mass = .false.
-        ierr=0
 
-        ! this line is to avoid array length problem while multiple calls to fix-track
-        if (allocated(t% tr)) call deallocate_arrays(t)
+        real(dp) :: mass
+        type(track), pointer :: t
+
+        integer :: iseg, keyword,min_index
+        type(eep_track), pointer :: a(:), s(:)
+        real(dp) :: f(3), dx, x(4), y(4), alfa, beta
+        integer :: i, j, k, mlo, mhi,nt,age_col,start
+        integer, allocatable :: eeps(:), excl_cols(:)
         
-        ! takes a set of EEP-defined tracks and find tracks for interpolation (a)
-        call findtracks_for_interpolation(mass,t% bounds,min_index,keyword,iseg)
+        debug_mass = .false.
+!        if (id ==1)debug_mass = .true.
+        
+        t => tarr(id)
+        mass = t% initial_mass
+        dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
+
+        ! this line is to avoid array length problem with multiple calls to fix-track
+        if (allocated(t% tr) .and. (.not.exclude_core)) call deallocate_arrays(t)
+        if (allocated(t% bounds)) deallocate(t% bounds)
+
+        
+        ! takes a set of EEP-tracks and find tracks for interpolation (a)
+        call findtracks_for_interpolation(mass,t% is_he_track,t% bounds,min_index,keyword,iseg)
         
         mlo = 1
         mhi = size(t% bounds)
         
-        a => s(t% bounds(mlo):t% bounds(mhi))
+        if(t% is_he_track) then
+            a => sa_he(t% bounds(mlo):t% bounds(mhi))
+            s => sa_he
+            excl_cols = core_cols_he
+            age_col = i_he_age
+            start = ZAMS_HE_EEP
+            eeps = key_eeps_he
+!            print*, 'using he tracks'
+            ! mcutoff
+            !min, max array
+            !zpars
+        else
+            a => sa(t% bounds(mlo):t% bounds(mhi))
+            s => sa
+            excl_cols = core_cols
+            age_col = i_age
+            start = ZAMS_EEP
+            eeps = key_eeps
+        endif
+
+        
+        k = minloc(a(mlo:mhi)% ntrack,dim=1)
         t% min_index = min_index
         
         if (debug_mass) print*,"mass, keyword", mass,keyword
         if (debug_mass) print*,"interpolate mass" , a% initial_mass
         if (debug_mass) print*,"interpolate ntrack" , a% ntrack
-
-
-        ! interpolate the new track for given initial mass
-        dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
         
-
-        k = minloc(a(mlo:mhi)% ntrack,dim=1)
-        
-        if (s(min_index)% initial_mass .ge. Mcrit(2)% mass) then
-            t% ntrack = min(Final_eep, a(k)% ntrack)
+        if (exclude_core) then
+            nt = t% ntrack
+            t% ntrack = min(nt,a(k)% ntrack)
         else
-            t% ntrack = min(TAMS_EEP, a(k)% ntrack)
+            t% ntrack = a(k)% ntrack
+            call write_header(t,s(min_index))
         endif
         
-        call write_header(t,s(min_index))
-
-        !	doing interpolation based on keyword
+        ! interpolate the new track for given initial mass
+        ! based on keyword
         select case(keyword)
         case(no_interpolation)
-            t% tr(1:t% ncol,1:t% ntrack) = s(min_index)% tr(1:t% ncol,1:t% ntrack)
-            ! t has an extra age column (i_age), so cannot use assumed shape arrays in the above
+            do j=1,t% ncol
+                if (exclude_core .and. any(j .eq. excl_cols,1)) cycle
+                t% tr(j,1:t% ntrack) = a(1)% tr(j,1:t% ntrack)
+            end do
+            
         case(linear)
             !print*, "case1: mlo mhi", mlo, mhi
             alfa = (t% initial_mass - a(mlo)% initial_mass)/(a(mhi)% initial_mass - a(mlo)% initial_mass)
             beta = 1d0 - alfa
             do i=1,t% ntrack
                 do j=1,t% ncol
+                    if (exclude_core .and. any(j .eq. excl_cols,1)) cycle
                     t% tr(j,i) = alfa*a(mhi)% tr(j,i) + beta*a(mlo)% tr(j,i)
                 enddo
             enddo
@@ -81,9 +104,10 @@ module interp_support
         case(Steffen1990)
             x = a(mlo:mhi)% initial_mass
             dx = t% initial_mass - x(2)
-            if (ZAMS_EEP>1) t% tr(:,1:ZAMS_EEP-1) =-1
-            do i=ZAMS_EEP,t% ntrack
+            if (start>1) t% tr(:,1:start-1) =-1
+            do i=start,t% ntrack
                 do j=1,t% ncol
+                    if (exclude_core .and. any(j .eq. excl_cols,1)) cycle
                     do k=1,4
                         y(k) = a(k)% tr(j,i)
                     enddo
@@ -94,58 +118,63 @@ module interp_support
             
         end select
         
-        if (fix_track) call check_length(iseg,t,min_index)
+        if (fix_track) call check_length(iseg,t,min_index,exclude_core)
 
-        ! get eeps
-        
-        allocate(min_eeps(size(key_eeps)))
-        min_eeps= -1
-        do i = 1, size(key_eeps)
-            if (key_eeps(i)<= t% ntrack) min_eeps(i) = key_eeps(i)
-!            if (identified(BGB_EEP) .and. key_eeps(i)= BGB_EEP) then
-!                if (t% initial_mass >= Mcrit(5)% mass) min_eeps(i)-1
-!            endif
-        end do
-
-        t% neep = count(min_eeps>0,1)
-
-        allocate(t% eep(t% neep))
-        t% eep = pack(min_eeps, min_eeps>0)
-        if (debug_mass) print*, 'eeps',t% neep,t% eep(t% neep), key_eeps(size(key_eeps))
-        
         ! check if mass and age are monotonic
         call smooth_track(t)
 
-        ! allocate timescales
-!        allocate(t% times(11), t% times_new(11))
-        t% times = undefined
         
         ! recalibrate age from ZAMS
-        t% tr(i_age2,:) = t% tr(i_age2,:)- t% tr(i_age2,ZAMS_EEP)
+        
+        t% tr(i_age2,:) = t% tr(i_age2,:)- t% tr(i_age2,start)
         t% tr(i_age2,:) = t% tr(i_age2,:)*1E-6          !Myrs
-        if(ierr/=0) write(0,*) 'interpolate_track: interpolation failed for ', mass
-        deallocate(min_eeps)
-        nullify(a,t)
+        
+        
+        if (exclude_core) then
+            if (t% ntrack/=nt) write(UNIT=err_unit,fmt=*)'WARNING: track length changed',t% initial_mass,nt,t% ntrack
+            t% ntrack = nt
+
+        else
+            ! get eeps
+            t% neep = count(eeps<= t% ntrack,1)
+            allocate(t% eep(t% neep))
+            t% eep = pack(eeps, eeps<= t% ntrack)
+            if (debug_mass) print*, 'eeps',t% neep,t% eep(t% neep), eeps(size(eeps))
+            
+        endif
+        
+        nullify(t, a ,s)
     end subroutine interpolate_mass
 
-    subroutine findtracks_for_interpolation(mass,bounds,min_index,keyword,iseg)
+    subroutine findtracks_for_interpolation(mass,is_he_track,bounds,min_index,keyword,iseg)
         ! takes a set of EEP-defined tracks and find tracks for interpolation
         real(dp), intent(in) :: mass
+        logical, intent(in) :: is_he_track
         integer, intent(out) :: iseg,min_index,keyword
-        integer :: m_low,m_high,num_list,min_index1,j
+        
+        type(eep_track), pointer :: s(:)
         real(dp), allocatable :: mass_list(:)
-        integer, allocatable :: bounds(:)
+        integer, allocatable :: bounds(:), cutoff(:)
+        integer :: m_low,m_high,num_list,min_index1,j
 
         m_low = 0
         num_list = 0
         min_index = -1
         
+        if (is_he_track) then
+            cutoff = m_cutoff_he
+            s => sa_he
+        else
+            cutoff = m_cutoff
+            s => sa
+        endif
+        
         ! we don't want to search the whole list, only between the mass cutoffs
         ! therefore we create smaller lst of initial_masses
         ! mcutoff array is defined in the z_support module
-        do iseg = 1,size(m_cutoff)
-            m_low = m_cutoff(iseg)
-            m_high = m_cutoff(iseg+1)-1
+        do iseg = 1,size(cutoff)
+            m_low = cutoff(iseg)
+            m_high = cutoff(iseg+1)-1
             ! to avoid using m_low twice- can cause error!!
             ! if it does, change the upper limit to size(m_cutoff)-1
 
@@ -199,7 +228,8 @@ module interp_support
         
         if (debug_mass .and. mass < mass_list(1)) print*, "doing extrapolation",mass , mass_list(1)
 
-		deallocate(mass_list)
+		deallocate(mass_list,cutoff)
+        nullify(s)
     end subroutine findtracks_for_interpolation
 
     subroutine write_header(b,a)
@@ -228,14 +258,15 @@ module interp_support
         b% tr = 0d0
         b% complete = .true.
         b% has_mass_loss = a% has_mass_loss
-
+        b% is_he_track = a% is_he_track
     end subroutine
 
-    subroutine check_length(iseg,t,min_index)
+    subroutine check_length(iseg,t,min_index,exclude_core)
         type(track) :: t
         integer :: min_index,iseg
-
-        type(eep_track), pointer :: sa(:)
+        logical, intent(in) :: exclude_core
+        
+        type(eep_track), pointer :: s(:)
         real(dp), allocatable :: mass_list(:)
         integer :: m_low,m_high,num_list
         integer :: i, m1, up_count,low_count,temp(4)
@@ -243,24 +274,34 @@ module interp_support
         real(dp) :: upper_tol, lower_tol
         type(eep_track) :: a(2)
         
-        min_ntrack = get_min_ntrack(t% initial_mass, t% star_type)
+        
+        min_ntrack = get_min_ntrack(t% star_type, t% is_he_track)
         !check length
         if (debug_mass) print*,"checking length now"
         if ((t% ntrack >= min_ntrack) ) then
-          if (debug_mass) print*,"length ok", t% initial_mass, t% ntrack
-          return
+            if (debug_mass) print*,"length ok", t% initial_mass, t% ntrack
+            return
         else
             if (debug_mass) print*,"not complete", t% initial_mass, t% ntrack, min_ntrack
             
-            m_low = m_cutoff(iseg)
-            m_high = m_cutoff(iseg+1)-1
-            num_list = m_high-m_low+1      !to include count for m_low point
-            sa => s(m_low:m_high)
-            allocate(mass_list(num_list))
-            mass_list = s(m_low:m_high)% initial_mass
+            
+            if (t% is_he_track) then
+                m_low = m_cutoff_he(iseg)
+                m_high = m_cutoff_he(iseg+1)-1
+                num_list = m_high-m_low+1      !to include count for m_low point
+                s => sa_he(m_low:m_high)
+                allocate(mass_list(num_list))
+                mass_list = sa_he(m_low:m_high)% initial_mass
+            else
+                m_low = m_cutoff(iseg)
+                m_high = m_cutoff(iseg+1)-1
+                num_list = m_high-m_low+1      !to include count for m_low point
+                s => sa(m_low:m_high)
+                allocate(mass_list(num_list))
+                mass_list = sa(m_low:m_high)% initial_mass
+            endif
             ! rescale min_index for the smaller list
             min_index = min_index-m_low+1
-
 
             temp = 0
             up_count = 0; low_count = 0
@@ -273,23 +314,23 @@ module interp_support
             call index_search(num_list,mass_list,lower_tol,low_lim)
             low_lim = max(1,low_lim)
 
-            if (sa(min_index)% initial_mass> t% initial_mass) then
-            m1 = min_index
+            if (s(min_index)% initial_mass> t% initial_mass) then
+                m1 = min_index
             else
-            m1 = min_index+1
+                m1 = min_index+1
             end if
 
             do i= m1-1, low_lim,-1
-                if (sa(i)% ntrack >= min_ntrack) then
+                if (s(i)% ntrack >= min_ntrack) then
                     low_count = low_count+1
-                    temp(low_count)=i        !new_a(count) = sa(i)
+                    temp(low_count)=i        !new_a(count) = s(i)
                 if (low_count == 2) exit
                 endif
             end do
             do i= m1, upp_lim
-                if (sa(i)% ntrack >= min_ntrack) then
+                if (s(i)% ntrack >= min_ntrack) then
                     up_count = up_count+1
-                    temp(low_count+up_count)=i        !new_a(count) = sa(i)
+                    temp(low_count+up_count)=i        !new_a(count) = s(i)
                     if (up_count == 2) exit
                 endif
             end do
@@ -298,7 +339,7 @@ module interp_support
             case(0)
                 if (up_count==2) then  !extrapolate
                     !m =1
-                    a = sa(pack(temp,mask = temp .ne. 0))
+                    a = s(pack(temp,mask = temp .ne. 0))
                     if (debug_mass) print*,"0,2"
                 else
                     t% complete = .false.
@@ -307,7 +348,7 @@ module interp_support
             case(1)
                 if(up_count>0) then !interpolate
                     temp(3) = 0       !if already not so
-                    a = sa(pack(temp,mask = temp .ne. 0))
+                    a = s(pack(temp,mask = temp .ne. 0))
                     if (debug_mass) print*,"1,1"
                 else
                     t% complete = .false.
@@ -317,72 +358,102 @@ module interp_support
                 if(up_count>0) then !interpolate
                     temp(2) = 0  !low_count =2 and we don't want to use more distant track
                     temp(4) = 0 !if already not so
-                    a = sa(pack(temp,mask = temp .ne. 0))
+                    a = s(pack(temp,mask = temp .ne. 0))
                     if (debug_mass) print*,"2,1"
                 else  !extrapolate
                     !m=1
                     temp(3) = temp(1) !linearly increasing order
                     temp(1) = 0
-                    a = sa(pack(temp,mask = temp .ne. 0))
+                    a = s(pack(temp,mask = temp .ne. 0))
                     if (debug_mass) print*,"2,0"
                 endif
             end select
             
-            call fix_incomplete_tracks(a,t,min_ntrack)
-                
-                deallocate(mass_list)
-                nullify(sa)
+            call fix_incomplete_tracks(a,t,min_ntrack,exclude_core)
+            if (debug_mass) print*, "new length", t% ntrack
 
-                if (debug_mass) print*, "new length", t% ntrack
+            deallocate(mass_list)
+            nullify(s)
             
         endif
+        
     end subroutine check_length
     
     
-    integer function get_min_ntrack(initial_mass, star_type)
-    real(dp) :: initial_mass
-    integer:: star_type
+    integer function get_min_ntrack(star_type,is_he_track)
+    integer, intent(in):: star_type
+    logical, intent(in):: is_he_track
+    
         get_min_ntrack = 0
         !calculating min required length to the new track
-        if (initial_mass <= Mcrit(2)% mass .or. star_type == star_low_mass) then     !use Mec here?
-            get_min_ntrack = min(low_mass_final_eep,final_eep)
-        else if (star_type == star_high_mass)then
-            get_min_ntrack = min(high_mass_final_eep,final_eep)
+        !use Mec here?
+        
+        if (is_he_track) then
+            if (star_type == star_high_mass) then
+                get_min_ntrack = high_mass_eep_he
+            else
+                get_min_ntrack = low_mass_eep_he
+            endif
+        else
+            if (star_type == star_high_mass) then
+                get_min_ntrack = high_mass_final_eep
+            else
+                get_min_ntrack = low_mass_final_eep
+            endif
         endif
         
     end function
     
     
-    subroutine fix_incomplete_tracks(a,t,min_ntrack)
-    !this has been modified for use with fix_icomplete_tracks only
+    subroutine fix_incomplete_tracks(a,t,min_ntrack,exclude_core)
+    !this has been modified for use with fix_incomplete_tracks only
         implicit none
         type(eep_track), intent(in) :: a(:)
         type(track), intent(inout) :: t
         integer, intent(in) :: min_ntrack
-        real(dp) :: alfa,beta,bprime(t% ncol)
-        integer :: i,j,n,temp_ntrack
+        logical, intent(in) :: exclude_core
+        real(dp) :: alfa,beta,bprime
+        integer :: i,j,n
+        integer, allocatable :: excl_cols(:)
+
         real(dp), allocatable :: c(:,:)
-
-
         
-        if (debug_mass) print*, "new masses for interpolate", a% initial_mass
-            
-        ! store orginal track tr in c
-!                print*, t% ntrack, size(t% tr, dim=2),t% initial_mass
-        allocate(c(t% ncol, t% ntrack))
-        c(:,:) = t% tr(1: t% ncol,:)
-
-        !reallocate tr for rewriting with new length
-        deallocate(t% tr)
-        temp_ntrack = t% ntrack
+        n = t% ntrack
         t% ntrack = min_ntrack
-        n = temp_ntrack
-        allocate(t% tr(t% ncol+1, t% ntrack))
+        
+        if(t% is_he_track) then
+            excl_cols = core_cols_he
+        else
+            excl_cols = core_cols
+        endif
+        
+        if (.not. exclude_core) then
+            !store orginal track tr in c
+!            print*, t% ntrack, size(t% tr, dim=2),t% initial_mass
+            allocate(c(t% ncol, n))
+            c(:,:) = t% tr(1: t% ncol,:)
 
-        t% tr = 0d0
-        t% tr(1: t% ncol,1: temp_ntrack) = c(:,1:temp_ntrack)
+            !reallocate tr for rewriting with new length
+            deallocate(t% tr)
+
+            allocate(t% tr(t% ncol+1, t% ntrack))
+
+            t% tr = 0d0
+            t% tr(1: t% ncol,1:n) = c(:,1:n)
+            deallocate (c)
+        endif
+            
+        
+        do i= n+1, t% ntrack
+            do j=1,t% ncol
+                if (exclude_core .and. any(j .eq. excl_cols,1)) cycle
+                t% tr(j,i) = t% tr(j,n)
+            end do
+        end do
+        
         
         if (t% complete) then
+            if (debug_mass) print*, "new masses for interpolate", a% initial_mass
             !complete the track between temp_ntrack and t% ntrack
 !                    call linear_interp(a,t,temp_ntrack)
             alfa=0d0; beta=0d0
@@ -390,33 +461,33 @@ module interp_support
             alfa = (t% initial_mass - a(1)% initial_mass)/(a(2)% initial_mass - a(1)% initial_mass)
             beta = 1d0 - alfa
 
-            !determining the offest from previously calculated value
-            do j=1,t% ncol
-                bprime(j) = t% tr(j,n)-(alfa*a(2)% tr(j,n) + beta*a(1)% tr(j,n))
-            enddo
+            !bprime: the offest from previously calculated value
 
-            do i= n, t% ntrack
+            do i = n, t% ntrack
                 do j=1,t% ncol
-                    t% tr(j,i) = alfa*a(2)% tr(j,i) + beta*a(1)% tr(j,i) +bprime(j)
+                    if (exclude_core .and. any(j .eq. excl_cols,1)) cycle
+                    bprime = t% tr(j,n)-(alfa*a(2)% tr(j,n) + beta*a(1)% tr(j,n))
+                    t% tr(j,i) = alfa*a(2)% tr(j,i) + beta*a(1)% tr(j,i) +bprime
                 enddo
             enddo
-        
-        else
-        do i= temp_ntrack+1, t% ntrack
-
-            t% tr(1: t% ncol,i) = c(:,temp_ntrack)
-        end do
+            
         end if
-        deallocate(c)
+        deallocate(excl_cols)
                 
     end subroutine fix_incomplete_tracks
 
     subroutine smooth_track(t)
     implicit none
     type(track), intent(inout) :: t
-    integer :: i
-        call mod_PAV(t% tr(i_age2,ZAMS_EEP:))
-        do i = ZAMS_EEP+1,t% ntrack
+    integer :: i, start
+        if (t% is_he_track) then
+            start = ZAMS_HE_EEP
+        else
+            start = ZAMS_EEP
+        endif
+        
+        call mod_PAV(t% tr(i_age2,start:))
+        do i = start+1,t% ntrack
             t% tr(i_mass,i) = min(t% tr(i_mass,i), t% tr(i_mass,i-1))
         end do
     end subroutine smooth_track
@@ -509,8 +580,9 @@ module interp_support
         type(track), pointer :: t
 
         debug = .false.
-
-        if (debug) print*,"in interpolate age"
+!         if (t% is_he_track) debug = .true.
+         
+        if (debug) print*,"in interpolate age",t% pars% phase
         frac = 0.d0
         them = 0.d0; them_new = 0.d0
         dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
@@ -527,13 +599,13 @@ module interp_support
 
         kw = t% pars% phase
         
-        if (kw<=1) then
+        if (kw<=1 .or. kw ==7) then
             age2 = input_age
             n_pass = 1
             call find_nearest_eeps(t,min_eeps2, age2, i_age2)
 !            if (kw <=1) age2= input_age*(t% MS_time/t% ms_old)
-        elseif (kw>1 .and. kw<=6) then
-        
+        elseif (kw>1 .and. kw<=9) then
+
             !TODO: this is temporary until gntage is modified
             ! to avoid NaN during interpolation
             if ((kw<5) .and.(t% times(kw)-t% times(kw-1)<1d-12)) kw = kw+1
@@ -550,9 +622,13 @@ module interp_support
 !            print*, "in interp2", age2, input_age,frac,kw
 !            if (kw==2)print*,'times',t% times_new(kw-1),them_new,t% pars% mass
             !t% times(kw)-t% times(kw-1),kw!,t% times_new(kw),t% times_new(kw-1)
-            
-            call find_nearest_eeps(t,min_eeps1, input_age, i_age)
             call find_nearest_eeps(t,min_eeps2, age2, i_age2)
+
+            if (t% is_he_track) then
+                call find_nearest_eeps(t,min_eeps1, input_age, i_he_age)
+            else
+                call find_nearest_eeps(t,min_eeps1, input_age, i_age)
+            endif
         endif
 
         do pass = 1, n_pass
@@ -565,6 +641,7 @@ module interp_support
                 !core values post main-sequence
                 age = input_age
                 age_col = i_age     !i_age = old age, stored at t% ncol+1
+                if (t% is_he_track) age_col = i_he_age
                 min_eeps = min_eeps1
             endif
             
@@ -590,11 +667,14 @@ module interp_support
                     interpolate = check_core_quant(j,n_pass, pass)
                     if (interpolate) then
                         new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
-                        if (new_line(j,1)/= new_line(j,1)) then
+                        if (new_line(j,1)/= new_line(j,1) .and. t% ierr==0) then
                         write(UNIT=err_unit,fmt=*) 'Warning: NaN encountered during interpolation age',&
-                                        t% initial_mass,input_age,j,mhi,mlo
-                        call stop_code()
+                                        t% initial_mass,input_age,j,mhi,mlo,kw
+                        t% ierr = -1
+!                        call stop_code
+                        return
                         endif
+                        
                     endif
                 end do
                 if (debug) print*, "ending linear interp in age"
@@ -641,24 +721,11 @@ module interp_support
         if (allocated(min_eeps)) deallocate(min_eeps)
 
         deallocate(new_line)
-        
          
         if (debug) print*, 'exiting interpolate_age'
     end subroutine interpolate_age
     
-    real(dp) function new_age(tc,tprev,tnew,tnew_prev,age)
-        real(dp), intent(in) :: tc,tprev,tnew,tnew_prev,age
-        real(dp) ::  frac
     
-        !tc = t% times(kw)
-        !tprev = t% times(kw-1)
-        !tnew = t% times_new(kw)
-        !tnew_prev = t% times_new(kw-1)
-
-        frac = (age-tprev)/(tc-tprev)
-        new_age = tnew_prev+(frac*(tnew-tnew_prev))
-        
-    end function
             
     
     logical function check_core_quant(j,n_pass, pass)
@@ -681,13 +748,14 @@ module interp_support
         type(track), pointer :: t
         integer, allocatable, intent(out) :: min_eeps(:)
         real(dp), intent(in) :: age
-        integer :: i, j, len_eep, min_index, age_col
+        integer :: i, j, len_eep, min_index,age_col,initial_eep
         real(dp), allocatable :: age_list(:)
         real(dp) :: last_age
         logical :: debug
         
         debug =  .false.
         !Todo: min_eeps-> nbr_eeps
+!         if (t% is_he_track) debug = .true.
 
         ! sometimes mergers can age issues, so we reassign negative timesteps in deltat to something large and make code exit, i.e., stop evolving the system.
         !Todo: temporary
@@ -697,6 +765,8 @@ module interp_support
         endif
         
         last_age = 0.d0
+        initial_eep = ZAMS_EEP
+        if (t% is_he_track) initial_eep = ZAMS_HE_EEP
         do i = 1,t% neep-1
             if (debug) print*,"loc_low", t% eep(i), t% eep(i+1),t%neep
 
@@ -755,8 +825,181 @@ module interp_support
             write(UNIT=err_unit,fmt=*)'Error finding nearest eeps for age:',age,age_col
 
     end subroutine find_nearest_eeps
+    
+    subroutine save_values(new_line,pars)
+        type(star_parameters) :: pars
+        real(dp),intent (in) :: new_line(:,:)
+        real(dp) :: lim_R
+        
+        pars% mass = new_line(i_mass,1)
+        pars% McHe = new_line(i_he_core,1)
+        pars% McCO = new_line(i_co_core,1)
+        pars% log_L = new_line(i_logL,1)
+        pars% luminosity = 10**pars% log_L
+        pars% log_Teff = new_line(i_logTe,1)
+        pars% Teff = 10**(pars% log_Teff)
+        pars% log_R = new_line(i_logR,1)
+    !        pars% log_R = 2*(3.762+(0.25*pars% log_L)-pars% log_Teff )
+    
+        !restrict radius from going beyond the hayashi
+        !limit during extrapolation
+        lim_R = 2*(3.762+(0.25*pars% log_L)-3.555 )
+        if (pars% log_R>lim_R) pars% log_R = lim_R
 
+        pars% radius = 10**pars% log_R
+        pars% core_radius = -1.0
+        
+        if (pars% phase <= TPAGB) then
+            if (pars% phase == TPAGB ) then
+                pars% core_mass = pars% McCO
+                if (i_RCO_core>0) pars% core_radius = new_line(i_RCO_core,1)
+            else
+                pars% core_mass = pars% McHe
+                if (i_RHe_core>0) pars% core_radius = new_line(i_RHe_core,1)
+            endif
+            if (i_mcenv>0) pars% mcenv = new_line(i_mcenv,1)
+            if (i_rcenv>0) pars% rcenv = new_line(i_rcenv,1)
+            if (i_MoI>0) pars% moi = new_line(i_MoI,1)
+        elseif(pars% phase >= He_MS) then
+            pars% core_mass = pars% McCO
+            if (i_he_RCO>0) pars% core_radius = new_line(i_he_RCO,1)
+            if (i_he_mcenv>0) pars% mcenv = new_line(i_he_mcenv,1)
+            if (i_he_rcenv>0) pars% rcenv = new_line(i_he_rcenv,1)
+            if (i_he_MoI>0) pars% moi = new_line(i_he_MoI,1)
+        endif
+            
+    end subroutine
+    
+    subroutine calculate_timescales(t)
+        !calculate timescales associated with different phases (0-6)
+        implicit none
+        
+        type(track), pointer,intent(inout) :: t
+        integer :: i,j_bgb
+        real(dp), pointer :: age(:)=> NULL()
+        logical :: debug
+        debug = .false.
 
+        if (t% is_he_track) then
+            call calculate_he_timescales(t)
+            return
+        endif
+        
+        age => t% tr(i_age2,:)
+        t% times = undefined
+
+        do i = 1, t% neep
+            if (t% eep(i) == TAMS_EEP) then    !MS
+                t% times(MS) = age(TAMS_EEP)
+
+            elseif (t% eep(i) == cHeIgnition_EEP) then
+                !Herztsprung gap
+                t% times(HG) = age(cHeIgnition_EEP)
+                !t% times(HG) gets modified to t(BGB)
+                ! if RGB phase is present
+                t% times(RGB) = t% times(HG)
+
+            elseif (t% eep(i) == TA_cHeB_EEP) then
+                !red_HB_clump /core He Burning
+                t% times(HeBurn) = age(TA_cHeB_EEP)
+
+            elseif (t% eep(i) == cCBurn_EEP) then
+                !EAGB/ core C burning
+                t% times(EAGB) = age(cCBurn_EEP)
+                
+            elseif (t% eep(i) == TPAGB_EEP) then
+                !AGB
+                t% times(EAGB) = age(TPAGB_EEP)
+                
+            elseif (t% eep(i) == post_AGB_EEP) then
+                !TP-AGB :only for low_inter mass stars
+                t% times(TPAGB) = age(post_AGB_EEP)
+            endif
+        enddo
+        !print*,"bgb",BGB_EEP,identified(BGB_EEP)
+
+        t% times(11) = age(min(Final_EEP,t% ntrack))
+        t% MS_time = t% times(MS)
+        !Todo: nuc_time should be for WR phase
+        t% nuc_time = t% times(11)
+        
+        !determine the base of the giant branch times, if present
+        if (t% initial_mass > Mcrit(2)% mass .and. t% initial_mass< Mcrit(5)% mass) then
+            if (identified(BGB_EEP)) then
+                !Red giant Branch
+                t% times(HG) = age(BGB_EEP)
+            elseif (t% ntrack >TAMS_EEP) then
+                j_bgb =  base_GB(t)
+                if (j_bgb>0) then
+                    j_bgb = j_bgb+TAMS_EEP-1
+                    !Red giant Branch
+                    t% times(HG) = age(j_bgb)
+                elseif (debug) then
+                    print*, "Unable to locate BGB ", j_bgb
+!                    STOP
+                end if
+            endif
+        endif
+
+        nullify(age)
+    end subroutine calculate_timescales
+    
+    subroutine calculate_he_timescales(t)
+        !calculate timescales associated with different he star phases (7,8,9)
+        implicit none
+        
+        type(track), pointer,intent(inout) :: t
+        integer :: i
+        real(dp), pointer :: age(:)=> NULL()
+
+        age => t% tr(i_age2,:)
+        
+        t% times(He_MS:) = undefined
+
+        do i = 1, t% neep
+            if (t% eep(i) == TAMS_HE_EEP) then    !MS
+                t% times(He_MS) = age(TAMS_HE_EEP)
+
+            elseif (t% eep(i) == TPAGB_HE_EEP) then
+                !helium Herztsprung gap
+                t% times(HE_HG) = age(TPAGB_HE_EEP)
+
+            elseif (t% eep(i) == cCBurn_HE_EEP) then
+                !EAGB/ core C burning
+                t% times(HE_HG) = age(cCBurn_HE_EEP)
+                
+!            elseif (t% eep(i) == post_AGB_HE_EEP) then
+!                !TP-AGB :only for low_inter mass stars
+!                t% times(10) = age(post_AGB_HE_EEP)
+            endif
+        enddo
+        t% times(HE_GB) = t% times(HE_HG)
+
+        t% times(11) = age(min(Final_EEP_HE,t% ntrack))
+        
+        t% nuc_time = t% times(11)
+        t% MS_time = age(TAMS_HE_EEP) - age(ZAMS_HE_EEP)
+
+        if (t% initial_mass > Mcrit_he(4)% mass .and. t% initial_mass< Mcrit_he(5)% mass) then
+            if (identified(GB_HE_EEP)) then
+                t% times(HE_HG) = age(GB_HE_EEP)
+            ! TODO: this needs to be written
+!            elseif (t% ntrack >TAMS_EEP) then
+!                j_bgb =  base_GB(t)
+!                if (j_bgb>0) then
+!                    j_bgb = j_bgb+TAMS_EEP-1
+!                    !Red giant Branch
+!                    t% times(HG) = age(j_bgb)
+!                elseif (debug) then
+!                    print*, "Unable to locate BGB ", j_bgb
+!!                    STOP
+!                end if
+            endif
+        endif
+        
+        nullify(age)
+    end subroutine calculate_he_timescales
+    
     !from MESA-r7503/1d_interp/
     subroutine interp_4pt_pm(x, y, a)
         ! returns coefficients for monotonic cubic interpolation from x(2) to x(3)
@@ -786,62 +1029,140 @@ module interp_support
         a(3) = (yp2+yp3-2*s2)/(h2*h2)
     end subroutine interp_4pt_pm
     
+    real(dp) function new_age(tc,tc_prev,tprime,tprime_prev,age)
+        real(dp), intent(in) :: tc,tc_prev,tprime,tprime_prev,age
+        real(dp) ::  frac
+    
+        !tc = t% times(kw)
+        !tc_prev = t% times(kw-1)
+        !tprime = t% times_new(kw)
+        !tprime_prev = t% times_new(kw-1)
 
-    subroutine get_initial_mass_for_new_track(t,id)
+        frac = (age-tc_prev)/(tc-tc_prev)
+        new_age = tprime_prev+(frac*(tprime-tprime_prev))
+        
+    end function
+    
+    integer function eqv_eep(EEP2,EEP1,EEP_OLD2,EEP_OLD1,m)
+        integer, intent(in) :: EEP2,EEP1,EEP_OLD2,EEP_OLD1,m
+        real(dp) ::  frac
+
+        frac = (M-EEP1)* 1.0_dp /(EEP2-EEP1)
+        eqv_eep = nint(EEP_OLD1+(frac* 1.0_dp *(EEP_OLD2-EEP_OLD1)))
+
+        
+    end function
+    
+    subroutine get_initial_mass_for_new_track(t,id, eep_m)
 
 !        real(dp), intent(in) :: delta
+        type(eep_track), pointer :: s(:)
         type(track), pointer :: t
 
-        integer :: min_index,num_list,Mupp,Mlow,i,j,k,nt,id
+        integer :: num_list,Mupp,Mlow,i,j,k,nt,id
         real(dp), pointer :: age_list(:)
-        real(dp), allocatable:: mlist(:)
+
+        real(dp), allocatable:: mlist(:), Mmax(:), Mmin(:)
 
         real(dp) :: Mnew,alfa,beta,age
-        integer :: eep_m, eep_n, eep_core
+        integer :: eep_m, eep_n
 
         logical :: debug
 
         debug = .false.
+!        if(id ==2 .and. t% is_he_track) debug = .true.
 !        if (id ==1) debug = .true.
-        
+!        if (t% star_type==rejuvenated) debug = .true.
         
         !using the original age of the star to keep core properties comparable
         !using other (secondary)age doesn't matches well with detailed models either
+        if (t% pars% age<0.d0) return
         
         age = t% pars% age
         
-        if (age<1d-6) return
         !nt is the length of the track before new interpolation
+        nt = t% ntrack
+        
         eep_m = -1
         eep_n = -1
-        nt = t% ntrack
-
-        age_list => t% tr(i_age,1:nt)
         Mlow = -1
         Mupp = -1
-        min_index = t% min_index
         Mnew = t% pars% mass-t% pars% delta
-
+    
+        ! create appropiate age pointers
+        
+        if (t% is_he_track .and. t% star_type /= switch) then
+            if (debug) print*, 'switching from h to he star'
+            age_list => t% tr(i_he_age,1:nt)
+        elseif (t% star_type == switch .and. (.not. t% is_he_track)) then
+            if (debug) print*, 'switching from he to h star- rejuvenataion'
+            age_list => t% tr(i_he_age,1:nt)
+        else
+            if (debug) print*, 'business as usual'
+            age_list => t% tr(i_age,1:nt)
+        endif
 
         if (debug) print*,"getting new initial mass mnew at age and phase: ",mnew,age,t% pars% phase,id
         
         call index_search(nt,age_list,age,eep_m)
     !    if (age_list(eep_m)<age) eep_m = eep_m+1
         if (eep_m > nt) eep_m = nt
-        if (debug) print*,"nearest index eep_m, ntrack : ",eep_m,nt
+        if (debug) print*,"nearest index eep_m, ntrack : ",eep_m,nt, age, age_list(nt)
+        
         nullify(age_list)
         
+        if (t% star_type == switch) then
+            if (t% is_he_track)then
+                if (eep_m <= cHeIgnition_EEP) then
+                    eep_m = 1
+                elseif (eep_m <= TA_cHeB_EEP) then
+                    eep_m = eqv_eep(TA_cHeB_EEP,cHeIgnition_EEP,TAMS_HE_EEP,ZAMS_HE_EEP,eep_m)
+                elseif (eep_m<=TPAGB_EEP) then
+                    eep_m = eqv_eep(TPAGB_EEP,TA_cHeB_EEP,TPAGB_HE_EEP,TAMS_HE_EEP,eep_m)
+                elseif (eep_m<=cCBurn_EEP) then
+                    eep_m = eqv_eep(cCBurn_EEP,TA_cHeB_EEP,cCBurn_HE_EEP,TAMS_HE_EEP,eep_m)
+                elseif (eep_m >cCBurn_EEP) then
+                    eep_m  = cCBurn_HE_EEP
+                 elseif (eep_m >TPAGB_EEP) then
+                    eep_m  = TPAGB_HE_EEP
+                endif
+            else
+                if (eep_m<=TAMS_HE_EEP)then
+                    eep_m = eqv_eep(TAMS_HE_EEP,ZAMS_HE_EEP,TA_cHeB_EEP,cHeIgnition_EEP,eep_m)
+                elseif (eep_m<=TPAGB_HE_EEP) then
+                    eep_m = eqv_eep(TPAGB_HE_EEP,TAMS_HE_EEP,TPAGB_EEP,TA_cHeB_EEP,eep_m)
+                elseif (eep_m<=cCBurn_HE_EEP) then
+                    eep_m = eqv_eep(cCBurn_HE_EEP,TAMS_HE_EEP,cCBurn_EEP,TA_cHeB_EEP,eep_m)
+                endif
+                
+             endif
+             ! get correct t% min_index
+!            call findtracks_for_interpolation(t% zams_mass,t% is_he_track,t% bounds,t% min_index,keyword,iseg)
+            t% min_index = 1
+            
+            if (debug) print*, 'new eep_m for switch', eep_m,t% is_he_track
+        endif
+        
+        if (t% is_he_track) then
+            s => sa_he
+            Mmin = Mmin_he_array
+            Mmax = Mmax_he_array
+        else
+            s => sa
+            Mmin = Mmin_array
+            Mmax = Mmax_array
+        endif
+        eep_m = min(eep_m, size(Mmin))
         ! It's crucial to avoid extrapolation here as it results in serious issues
         ! Mmax_array is the maximum mass at given eep amongst all input tracks, similarily Mmin_array has minimum
         ! first check if mass bounds exist at eep_m,
         ! if not check higher eeps (older age) in case of mass loss, and lower eeps for mass gain
         
-        
         if (t% pars% delta>0.d0) then
         ! mass loss
             do j = 0,nt
                 if (eep_m+j<= nt) then
-                    if (Mnew>= Mmin_array(eep_m+j).and.Mnew<=Mmax_array(eep_m+j)) then
+                    if (Mnew>= Mmin(eep_m+j).and.Mnew<=Mmax(eep_m+j)) then
                         eep_n = eep_m+j
                         exit
                     endif
@@ -851,7 +1172,7 @@ module interp_support
         ! mass gain
             do j = 0,nt
                 if (eep_m-j>=1) then
-                    if (Mnew>= Mmin_array(eep_m-j).and.Mnew<=Mmax_array(eep_m-j)) then
+                    if (Mnew>= Mmin(eep_m-j).and.Mnew<=Mmax(eep_m-j)) then
                         eep_n = eep_m-j
                         exit
                     endif
@@ -876,31 +1197,36 @@ module interp_support
             
             !find lower bound, start at Min_index
             do i = 0, num_list
-                k = min_index+i
+                k = t% min_index+i
+!                if (debug) print*,'check0',k,i,mlow
+
                 if (k <= num_list) then
     !                print*, 'low',k,mlist(k),mnew
-                    if (mlist(k) >0 .and. mlist(k)<Mnew) then
+
+                    if (mlist(k) >0 .and. mlist(k).le.Mnew) then
                         Mlow = k
                         exit
                     endif
                 endif
                 ! search the other side now
-                k = min_index-i
+                k = t% min_index-i
+!                if (debug) print*,'check2',k,i,mlow
+
                 if (k >=1 .and. i>0) then
-    !                print*, 'low',k,mlist(k),mnew
-                    if (mlist(k) >0 .and. mlist(k)<Mnew) then
+
+                    if (mlist(k) >0 .and. mlist(k).le.Mnew) then
                         Mlow = k
                         exit
                     endif
                 endif
             end do
-                        
+!            if (debug) print*,'check00000',k,i,mlow,t% min_index
+
             
             ! find upper bound, start at tracks neighbouring Mlow
             do i = 1, size(s)
                 k = Mlow+i
                 if (k <= num_list) then
-    !            print*,'high', k,mlist(k),mnew
                     if (mlist(k) >0 .and. mlist(k)>Mnew) then
                         Mupp = k
                         exit
@@ -918,7 +1244,7 @@ module interp_support
             end do
          endif
         
-        if (debug)  print*, "Mup", Mupp, "mlow",Mlow,"min_index",min_index
+        if (debug)  print*, "Mup", Mupp, "mlow",Mlow,"min_index",t% min_index
         ! if no solution is found, we keep using the old tracks for interpolation
 
         if(Mlow < 0 .or. Mupp <0) then
@@ -927,22 +1253,23 @@ module interp_support
                     Mlow,Mupp,num_list,mnew,eep_n
             if (Mlow<1) Mlow = 1
             if (Mupp> num_list) Mupp = num_list
-            if (allocated(mlist)) deallocate(mlist)
+        else
+            if (debug) print*,"mnew =",mnew,"masses at Mup =",mlist(Mupp),"mlow = ",mlist(Mlow)
             
-            return
+            !intrepolate the bounds and their initial masses to get the initial mass for the new track
+            alfa = (Mnew - mlist(Mlow))/(mlist(Mupp) - mlist(Mlow))
+            beta = 1d0 - alfa
+            t% initial_mass = alfa*s(Mupp)% initial_mass + beta*s(Mlow)% initial_mass
+            
+            if (debug) print*, "new ini mass",t% initial_mass, s(Mupp)% initial_mass, s(Mlow)% initial_mass
         endif
         
-        if (debug) print*,"mnew =",mnew,"masses at Mup =",mlist(Mupp),"mlow = ",mlist(Mlow)
-        
-        !intrepolate the bounds and their initial masses to get the initial mass for the new track
-        alfa = (Mnew - mlist(Mlow))/(mlist(Mupp) - mlist(Mlow))
-        beta = 1d0 - alfa
-        t% initial_mass = alfa*s(Mupp)% initial_mass + beta*s(Mlow)% initial_mass
-        
-        if (debug) print*, "new ini mass",t% initial_mass, s(Mupp)% initial_mass, s(Mlow)% initial_mass
-
-        deallocate(mlist)
-
+        !eep_m not needed except for switch cases
+        ! sending out a dummy value to avoid segmentation faults
+        if (t% star_type/= switch) eep_m =1
+        nullify(s)
+        deallocate(Mmax,Mmin)
+        if (allocated(mlist)) deallocate(mlist)
     end subroutine get_initial_mass_for_new_track
     
   end module interp_support

@@ -18,10 +18,10 @@ module track_support
     real(dp), parameter :: ln10 = log(1.0d1)
     real(sp), parameter :: ln10_sp = log(10.0)
     real(dp), parameter :: tiny = 1.0d-6
-    real(dp), parameter :: undefined  =  -1.0
+    real(dp), parameter :: undefined  =  -1.d0
     integer, parameter :: undefined_i = -1
     
-    logical :: verbose
+    logical :: verbose, use_sse_NHe
     logical :: write_track_to_file, write_eep_file, write_error_to_file
     integer :: err_unit
 
@@ -30,9 +30,7 @@ module track_support
     integer, parameter :: BSE = 1
     integer, parameter :: COSMIC = 2
 
-    character(len=strlen) :: METISSE_DIR,TRACKS_DIR
-    integer :: low_mass_final_eep, high_mass_final_eep
-    integer, allocatable :: key_eeps(:)
+    character(len=strlen) :: METISSE_DIR,TRACKS_DIR,TRACKS_DIR_HE
 
     ! for use when constructing EEP distance
     logical :: weight_center_rho_T_by_Xc
@@ -45,14 +43,21 @@ module track_support
     !stellar types for handling primary eeps
     integer, parameter :: unknown           =  1 !for initialization only
     integer, parameter :: sub_stellar       =  2 !no fusion = brown dwarf
-    integer, parameter :: star_low_mass     =  3 !ends as a WD
-    integer, parameter :: star_high_mass    =  4 !does not end as a WD
-
+    integer, parameter :: star_low_mass     =  3 !ends as a WD  (applies to both H and He tracks)
+    integer, parameter :: star_high_mass    =  4 !does not end as a WD (applies to both H and He tracks)
+!    integer, parameter :: post_agb          =  5
+    integer, parameter :: remnant           =  6
+    integer, parameter :: sse_he_star       =  7    ! special type for He star evolved using sse formulae
+    integer, parameter :: rejuvenated       =  8
+    integer, parameter :: switch            =  9     ! temporary type when switching from hydrogen to helium stars
+                                                    
+    
+    
     character(len=10) :: star_label(4) = ['   unknown', 'substellar', '  low-mass', ' high-mass']
     character(len=5) :: phase_label(16) = ['lm_MS','   MS','   HG','  FGB',' CHeB',' EAGB',&
     'TPAGB','He_MS', 'He_HG','He_GB','He_WD','CO_WD','ONeWD','   NS','   BH','   MR']
     
-    real(dp) :: T_bgb_limit = 3.8
+    real(dp) :: T_bgb_limit = 3.85
     real(dp) :: very_low_mass_limit = 0.75d0 !Msun
 
     !sse phases
@@ -88,32 +93,46 @@ module track_support
     integer :: cCBurn_EEP
     integer :: TPAGB_EEP
     integer :: post_AGB_EEP
-    integer :: WD_EEP
 
-    integer :: Initial_EEP        !files will be read from this line number
-    integer :: Final_EEP         !to this line
+    
     integer :: Extra_EEP1
     integer :: Extra_EEP2
     integer :: Extra_EEP3
 
+    ! for he stars
+    
+    integer :: ZAMS_HE_EEP
+    integer :: TAMS_HE_EEP
+    integer :: GB_HE_EEP
+    integer :: TPAGB_HE_EEP
+    integer :: cCBurn_HE_EEP
+    integer :: post_AGB_HE_EEP
+    
+    integer :: Initial_EEP, Initial_EEP_HE
+    integer :: Final_EEP, Final_EEP_HE
+    integer :: low_mass_final_eep, high_mass_final_eep
+    integer :: low_mass_eep_he, high_mass_eep_he
 
+    integer, allocatable :: key_eeps(:),key_eeps_he(:)
+    
     !quantities from history file that are needed directly in the code
 
     character(len=col_width) :: age_colname, mass_colname, log_L_colname,log_T_colname, &
-                                log_R_colname, log_mdot_colname,he_core_mass,c_core_mass, &
+                                log_R_colname, he_core_mass,co_core_mass, &
                                 log_Tc,c12_mass_frac,o16_mass_frac, he4_mass_frac, &
-                                Lum_colname,Teff_colname,Radius_colname, mdot_colname, &
+                                Lum_colname,Teff_colname,Radius_colname, &
                                 he_core_radius, co_core_radius, mass_conv_envelope, &
                                 radius_conv_envelope, moment_of_inertia
 
-    integer :: i_age, i_mass, i_logTe, i_logL, i_logR, i_he_core, i_co_core
-    integer :: i_age2, i_RHe_core,i_RCO_core,i_mcenv, i_Rcenv,i_MoI
+    integer :: i_age, i_age2, i_mass, i_logTe, i_logL, i_logR, i_he_core, i_co_core
+    integer :: i_RHe_core,i_RCO_core,i_mcenv, i_Rcenv,i_MoI
+    integer :: i_he_RCO,i_he_mcenv, i_he_Rcenv,i_he_MoI,i_he_age
 
-    integer :: i_logg, i_Tc, i_Rhoc, i_logLH, i_logLHe, i_gamma, i_surfH
-    integer :: i_Xc, i_Yc, i_Cc, i_he4, i_c12,i_o16, i_lum, i_rad, i_mdot
+    integer :: i_Tc, i_he4, i_c12,i_o16
+    integer :: i_Xc, i_Yc, i_Cc,i_Rhoc, i_gamma, i_surfH
 
     integer :: number_of_core_columns
-    integer, allocatable :: core_cols(:)!, surface_cols(:)
+    integer, allocatable :: core_cols(:), core_cols_he(:)
     !for columns
     integer, parameter :: max_col = 180
     integer, parameter :: column_int=0
@@ -133,6 +152,7 @@ module track_support
 
     real(dp), allocatable :: t_incomplete(:), t_notfound(:)
     real(dp), allocatable :: Mmax_array(:), Mmin_array(:)
+    real(dp), allocatable :: Mmax_he_array(:), Mmin_he_array(:)
 
   !holds an evolutionary track for input, use an array of these for multiple tracks
 
@@ -141,7 +161,7 @@ module track_support
         type(column), allocatable :: cols(:)
 
         logical :: has_phase = .false., ignore=.false.
-        logical :: has_mass_loss
+        logical :: has_mass_loss, is_he_track
         integer :: ncol, ntrack, neep
         integer :: star_type = unknown
 
@@ -158,7 +178,7 @@ module track_support
         real(dp) :: luminosity,Teff,radius
         real(dp) :: log_L,log_Teff,log_R                !log values
         real(dp) :: epoch, age, age_old,age2
-        real(dp) :: delta, dt, dms, mcenv, rcenv,bhspin
+        real(dp) :: delta, dt, dms, mcenv, rcenv,moi,bhspin
     end type star_parameters
     
 
@@ -179,7 +199,9 @@ module track_support
     type track
         type(column), allocatable :: cols(:)
         logical :: has_RGB =.false., complete=.true.
-        logical :: has_mass_loss
+        logical :: has_mass_loss,is_he_track
+        logical :: post_agb = .false.
+
         integer :: ncol, ntrack, neep,min_index
         integer :: star_type = unknown, irecord,ierr
         
@@ -192,15 +214,13 @@ module track_support
         integer, allocatable :: eep(:), bounds(:)
 
         type(star_parameters) :: pars    ! parameters at any instant
-        logical :: post_agb = .false.
         type(agb_parameters) :: agb
         type(sse_parameters) :: He_pars
     end type track
     
     !defining array for input tracks
-    type(eep_track), allocatable,target :: s(:)
-    type(track), allocatable,target :: tarr(:)
-    integer :: num_tracks
+    type(eep_track), allocatable, target :: sa(:), sa_he(:)
+    type(track), allocatable, target :: tarr(:)
     real(dp) :: initial_Z
 
     !variable declaration-- for main
@@ -211,12 +231,23 @@ module track_support
     !for z_support
     real(dp) :: Mhook, Mhef,Mfgb, Mup, Mec, Mextra,Mup_core,Mec_core
     real(dp) :: Z04, Z_H, Z_He
+    integer, allocatable :: m_cutoff(:), m_cutoff_he(:)
+
+    type critical_mass
+        integer :: loc
+        real(dp) :: mass
+    end type critical_mass
+
+    type(critical_mass) :: Mcrit(9), Mcrit_he(9)
     
     !for interp_support
     logical :: fix_track
     real(dp) :: lookup_index, mass_accuracy_limit
     
-    !for remnant support in case of direct call
+    !for remnant support
+    real(dp), parameter :: M_ch = 1.44d0
+
+    !in case of direct call
     real(dp) :: max_NS_mass         !maximum NS mass
     logical :: construct_wd_track, allow_electron_capture, use_Initial_final_mass_relation
     character (len=strlen) :: BHNS_mass_scheme, WD_mass_scheme
@@ -332,41 +363,6 @@ module track_support
      end if
 
     end function binary_search
-
-    subroutine save_values(new_line,pars)
-        type(star_parameters) :: pars
-        real(dp),intent (in) :: new_line(:,:)
-        real(dp) :: lim_R
-        
-        pars% mass = new_line(i_mass,1)
-        pars% McHe = new_line(i_he_core,1)
-        pars% McCO = new_line(i_co_core,1)
-        pars% log_L = new_line(i_logL,1)
-        pars% luminosity = 10**pars% log_L
-        pars% log_Teff = new_line(i_logTe,1)
-        pars% Teff = 10**(pars% log_Teff)
-        pars% log_R = new_line(i_logR,1)
-    !        pars% log_R = 2*(3.762+(0.25*pars% log_L)-pars% log_Teff )
-    
-        !restrict radius from going beyond the hayashi
-        !limit during extrapolation
-        lim_R = 2*(3.762+(0.25*pars% log_L)-3.555 )
-        if (pars% log_R>lim_R) pars% log_R = lim_R
-
-        pars% radius = 10**pars% log_R
-        if (pars% phase <= EAGB) then
-            pars% core_mass = pars% McHe
-            if (i_RHe_core>0) pars% core_radius = new_line(i_RHe_core,1)
-        else
-            pars% core_mass = pars% McCO
-            if (i_RCO_core>0) pars% core_radius = new_line(i_RCO_core,1)
-        endif
-        
-        if (i_mcenv>0) pars% mcenv = new_line(i_mcenv,1)
-        if (i_rcenv>0) pars% rcenv = new_line(i_rcenv,1)
-            
-    !        if (pars% phase>=5) print*, "mass",pars% McHe,pars% McCO,pars% phase
-    end subroutine
     
     subroutine stop_code()
         print*, 'Error encountered; stopping METISSE'
@@ -485,8 +481,8 @@ module track_support
                 if (j_bgb>0) then
                     j_bgb = j_bgb+TAMS_EEP-1
                     phase(j_bgb: cHeIgnition_EEP) = RGB           !Red giant Branch
-                elseif (debug) then
-                    write(UNIT=err_unit,fmt=*) "Unable to locate BGB ", j_bgb
+                else
+                    write(UNIT=err_unit,fmt=*) "Unable to locate BGB ", j_bgb, t% initial_mass
                 end if
             endif
         endif
@@ -715,7 +711,7 @@ module track_support
     ! used for checking if locations are identified
     logical function identified(x) result(y)
         integer, intent(in) :: x
-        if (abs(x-undefined_i)<=tiny) then
+        if (abs(x-undefined_i)<=0) then
             y = .false.
         else
             y = .true.
@@ -769,6 +765,5 @@ module track_support
 !        deallocate(t% times)
         deallocate(t% cols)
 
-        deallocate(t% bounds)
     end subroutine deallocate_arrays
 end module track_support

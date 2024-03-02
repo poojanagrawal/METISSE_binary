@@ -6,20 +6,28 @@ METISSE_DIR=$(BSE_DIR)/src
 
 #com
 FC=gfortran
-DEBUG=-g3 -fbacktrace -fcheck=all -fbounds-check
-WARN=-Wall -pedantic -Wno-tabs -Wno-maybe-uninitialized 
+#DEBUG=-g3 -fbacktrace -fcheck=all -fbounds-check
+#WARN=-Wall -pedantic -Wno-tabs -Wno-maybe-uninitialized
 # -Wconversion -Wextra
 
 #Optimization flag
-OPT=-O3
+#OPT=-O3
 
 #NOT USED
 #Tells gfortran to compile using OpenMP
-OMP=-fopenmp
+#OMP=-fopenmp
+
+WARN=-Wall -Wno-tabs -Wno-maybe-uninitialized -fimplicit-none  -Wsurprising  -Waliasing
+DEBUG=-g3 -O0 -fbacktrace -fcheck=all -fbounds-check
 
 
-FFLAGS1= -ffree-form -fimplicit-none $(OPT) $(WARN) $(DEBUG)
-FFLAGS2= -ffixed-form -fimplicit-none
+#-O2    -Wall  -Wline-truncation  -Wcharacter-truncation   -Wimplicit-interface  -Wunused-parameter   -fcheck=all  -std=f2008    -fbacktrace
+
+
+
+
+FFLAGS1= -ffree-form -fimplicit-none $(WARN) $(DEBUG)
+FFLAGS2= -ffixed-form -fimplicit-none $(DEBUG)
 
 POPBIN =popbin
 
@@ -72,9 +80,9 @@ OBJT_METISSE = $(SRCE_METISSE:.f90=.o)
 
 track_support.o: $(SRC_DIR)/track_support.f90
 z_support.o: $(SRC_DIR)/z_support.f90 track_support.o
-sse_support.o: $(SRC_DIR)/sse_support.f90 track_support.o z_support.o
-remnant_support.o: $(SRC_DIR)/remnant_support.f90 track_support.o sse_support.o
-interp_support.o: $(SRC_DIR)/interp_support.f90 track_support.o z_support.o sse_support.o
+interp_support.o: $(SRC_DIR)/interp_support.f90 track_support.o z_support.o
+sse_support.o: $(SRC_DIR)/sse_support.f90 track_support.o
+remnant_support.o: $(SRC_DIR)/remnant_support.f90 track_support.o interp_support.o sse_support.o
 
 initialize_front_end.o: $(SRC_DIR)/initialize_front_end.f90 track_support.o
 alloc_track.o: $(SRC_DIR)/alloc_track.f90 track_support.o

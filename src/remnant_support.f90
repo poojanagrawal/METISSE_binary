@@ -1,6 +1,8 @@
  module remnant_support
     use track_support
     use sse_support
+    use interp_support, only: new_age
+
 !    use z_support, only: Mup_core, Mec_core
     implicit none
     
@@ -30,31 +32,21 @@
     contains
     
 
-    logical function check_remnant_phase(pars,mcbagb)
-        implicit none
-        
+    logical function check_remnant_phase(pars,mc_max)
         type(star_parameters) :: pars
-        real(dp) :: Mcbagb
-
-        real(dp) :: mc_max,mc_threshold,Mc11
-
+        real(dp) :: mc_max,mc_threshold
 
         debug_rem = .false.
         check_remnant_phase = .false.
-        mc_max= 0.d0
-        Mc11 = 0.d0
         !mcmax1 = 0.d0
     
-
-        if (pars% phase>1 .and.pars% phase <=6) then       !without envelope loss
-            Mc11 = 0.773* Mcbagb-0.35
-            mc_max = MAX(M_ch,Mc11)
+        mc_threshold = pars% core_mass
+        
+        if (pars% phase <= TPAGB) then       !without envelope loss
             !mc = MAX(mc_max,mc_threshold)
             !mc_max = MIN(pars% mass,mc_max)
             mc_threshold = pars% McCO
         elseif (pars% phase ==8 .or. pars% phase ==9) then
-            mc_max = max_core_mass_he(pars% mass, mcbagb)
-            ! Mcbagb = t% zams_mass for naked helium/stripped stars
             mc_threshold = pars% core_mass
         else
             return
@@ -71,9 +63,9 @@
             pars% age_old = pars% age
             check_remnant_phase = .true.
             if (debug_rem) then
-                print*, "In check_remnant_phase"
-                print*, "mass, core_mass, McCO, mc_max, 0.773*mcbagb-0.35,mcbagb"
-                print*, pars% mass, pars% core_mass, pars% McCO, mc_max, Mc11, Mcbagb
+                print*, "check_remnant_phase is true"
+                print*, "mass, core_mass, McCO, mc_max"
+                print*, pars% mass, pars% core_mass, pars% McCO, mc_max
             end if
         endif
         
@@ -463,12 +455,15 @@
         pars% radius= 1.4E-05
     end subroutine
     
-    subroutine assign_stripped_star_phase(t)
-        type(track), pointer, intent(inout) :: t
-        real(dp) :: HeI_time, HeB_time
+    subroutine assign_stripped_star_phase(t,HeI_time)
+    
+        type(track), pointer :: t
+        real(dp) :: HeI_time
         logical :: debug
 
         debug = .false.
+        
+        HeI_time = 0.d0
         if (debug) print*,"Lost envelope at phase", t% pars% phase
         if (debug) print*,"age, core mass, mass", t% pars% age, t% pars% core_mass, t% pars% mass
 
@@ -482,16 +477,13 @@
                     t% pars% phase = HeWD      !Zero-age helium white dwarf
                     t% pars% core_mass = t% pars% mass
                     t% zams_mass = t% pars% mass
-!                    call initialize_white_dwarf(t% pars)
                 else
                     t% pars% phase = He_MS       !Zero-age helium star
-                    t% pars% age = 0.d0
                     t% zams_mass = t% pars% mass
                     t% pars% core_mass = 0.d0
                     t% pars% McCO = 0.d0
                     t% pars% McHe = 0.d0
-
-                    call calculate_he_timescales(t)
+                    HeI_time = t% pars% age
                 endif
 
             case(HeBurn)  !core he Burning
@@ -500,23 +492,35 @@
                 t% pars% core_mass = 0.d0
                 t% pars% McCO = 0.d0
                 t% pars% McHe = 0.d0
-                call calculate_he_timescales(t)
                 HeI_time = t% times(3)
-                HeB_time = t% times(4)-t% times(3)
-                t% pars% age = t% MS_time*((t% pars% age- HeI_time)/HeB_time)
 
             case(EAGB) !eAGB
-                t% pars% phase = He_GB       !Evolved naked He star
+                t% pars% phase = He_HG       !Evolved naked He star
                 t% pars% mass = t% pars% core_mass
-                t% zams_mass = t% pars% mass
                 t% pars% McHe = t% pars% mass
                 t% pars% core_mass = t% pars% McCO
-                call calculate_he_timescales(t)
-                t% pars% age = He_GB_age(t% pars% core_mass,t% times(8), &
-                                t% times(9),t% He_pars% D, t% He_pars% Mx)
-                t% pars% age = MAX(t% pars% age,t% MS_time)
-                
+                t% zams_mass = t% pars% mass
+                                
         end select
+        
+    end subroutine
+    
+    
+    subroutine initialize_SSE_helium_star(t,HeI_time)
+        type(track), pointer, intent(inout) :: t
+        real(dp) :: HeI_time, HeB_time
+
+        call calculate_SSE_He_timescales(t)
+        
+        if (t% pars% phase == He_MS) then
+            HeB_time = t% times(4)-t% times(3)
+            t% pars% age = t% MS_time*((t% pars% age- HeI_time)/HeB_time)
+        else
+            t% pars% age = He_GB_age(t% pars% core_mass,t% times(8), &
+                            t% times(9),t% He_pars% D, t% He_pars% Mx)
+            t% pars% age = MAX(t% pars% age,t% MS_time)
+        endif
+        
     end subroutine
 
     subroutine evolve_after_envelope_loss(t,McHeI)
@@ -566,7 +570,6 @@
         t% pars% McHe = t% pars% mass
         t% pars% McCO = t% pars% core_mass
     endif
-!    if (t% pars% phase>=He_HG) call check_remnant_phase(t)
 
     if (debug) print*,"End: Phase",t% pars% phase ," core mass",t% pars% core_mass
 !        print*,"lum", t% pars% luminosity, "rad", t% pars% radius
@@ -582,9 +585,8 @@
         return
     end function
 
-
     subroutine calculate_rc(t, tscls,zpars,rc)
-     ! Calculate the core radius 
+     ! Calculate the core radius
      implicit none
      type(track), pointer, intent(in) :: t
      real(dp) :: tscls(20), zpars(20)
@@ -638,8 +640,141 @@
              endif
          end select
         rc = MIN(rc,t% pars% radius)
-    end subroutine
+    end subroutine calculate_rc
 
+    subroutine calculate_rg(t,rg)
+    !  rg = giant branch or Hayashi track radius, appropiate for the type.
+    !       For kw=1 or 2 this is radius at BGB, and for kw=4 either GB or
+    !       AGB radius at present luminosity.
+    implicit none
+    type(track), pointer, intent(in) :: t
+    real(dp), intent(out):: rg
+    real(dp) :: Rbgb, Rbagb, Lbgb, Lbagb, L, alfa
+    integer :: j
+    logical :: debug
+    
+        debug = .false.
+        select case(t% pars% phase)
+            case(low_mass_MS: HG)
+                if (identified(BGB_EEP)) then
+                    j = min(BGB_EEP,t% ntrack)
+                    rg = t% tr(i_logR,j)   !TODO: check BGB  (or lums(3))
+                else
+                    j = min(cHeIgnition_EEP,t% ntrack)
+                    rg = t% tr(i_logR,j)
+                endif
+                rg = 10.d0**rg
+            case(RGB)
+                rg = t% pars% radius
+            case(HeBurn)
+                !Linear interpolation between r(bgb) and r(bagb)
+                !wrt luminosity l(bgb) and l(bagb) and L
+
+                j = min(cHeIgnition_EEP,t% ntrack)
+                Rbgb = t% tr(i_logR,j)
+                Lbgb = t% tr(i_logL,j)
+                j = min(TA_cHeB_EEP,t% ntrack)
+                Rbagb = t% tr(i_logR,j)
+                Lbagb = t% tr(i_logL,j)
+                L = log10(t% pars% luminosity)
+                alfa = (L - Lbgb)/(Lbagb-Lbgb)
+                rg = (alfa*Rbagb)+((1d0 - alfa)*Rbgb)
+                rg = 10**rg
+                
+                if (rg .lt. t% pars% radius) then
+                    write(UNIT=err_unit,fmt=*)'Error in calculate_rg: Rg, R',rg,t% pars% radius,Rbgb, Rbagb
+                    write(UNIT=err_unit,fmt=*) t% pars% age, alfa, L, Lbgb, Lbagb
+                endif
+                    
+            case(EAGB:TPAGB)
+                rg = t% pars% radius
+            case(He_MS:He_GB)
+                IF (use_sse_NHe) THEN
+                    if (t% pars% phase==He_MS) then
+                        rg = radius_He_ZAMS(t% pars% mass)
+                    else
+                        rg = radius_He_GB(t% pars% luminosity)
+                    endif
+                ELSE
+                    if (t% pars% phase==He_GB) then
+                        rg = t% pars% radius
+                    elseif (t% initial_mass > Mcrit_he(4)% mass .and. &
+                            t% initial_mass< Mcrit_he(5)% mass .and. &
+                            identified(GB_HE_EEP)) then
+                        j = min(GB_HE_EEP,t% ntrack)
+                        rg = t% tr(i_logR,j)
+                        rg = 10.d0**rg
+                    else
+                        rg = maxval(t% tr(i_logR,:))
+                        rg = 10.d0**rg
+                    endif
+                    
+                ENDIF
+        end select
+    end subroutine calculate_rg
+    
+    subroutine get_mcrenv_from_cols(t,lums,menv,renv,k2)
+    
+        type(track),pointer, intent(in) :: t
+          real(dp), intent (in) :: lums(10)
+        real(dp), intent(out) :: menv,renv,k2
+        integer :: rcenv_col, mcenv_col, moi_col
+        real(dp) :: rc, rg,rzams,rtms
+    
+        if (t% is_he_track) then
+            mcenv_col = i_he_mcenv
+            rcenv_col = i_he_rcenv
+            moi_col = i_he_MoI
+
+            rzams = 10.d0**t% tr(i_logR, ZAMS_HE_EEP)
+            rtms = 10.d0**t% tr(i_logR, TAMS_HE_EEP)
+        else
+            mcenv_col = i_mcenv
+            rcenv_col = i_rcenv
+            moi_col = i_MoI
+            rzams = 10.d0**t% tr(i_logR, ZAMS_EEP)
+            rtms = 10.d0**t% tr(i_logR, TAMS_EEP)
+        endif
+
+        !rc, menv, renv and moi (moment of inertia) are calculated during age interpolation
+        !if neccessary columns are present,
+        !revert to SSE method if those columns are not present
+        
+        rc = t% pars% core_radius  ! it's calculated in hrdiag
+        
+        if ((.not. identified(mcenv_col)) .or. (.not. identified(rcenv_col)) .or. (.not. identified(moi_col))) then
+            CALL calculate_rg(t,rg)
+            CALL mrenv(t% pars% phase,t% zams_mass,t% pars% mass,t% pars% core_mass, &
+            t% pars% luminosity,t% pars% radius,rc,t% pars% age,t% MS_time,lums(2),lums(3),&
+            lums(4),rzams,rtms,rg,menv,renv,k2)
+        endif
+        
+        if (mcenv_col>0) then
+            !mass of convective envelope
+            menv = t% pars% mcenv
+            menv = min(menv,t% pars% mass-t% pars% core_mass)  ! limit it to the total envelope mass
+            menv = MAX(menv,1.0d-10)
+        endif
+        
+        if (rcenv_col>0) then
+            renv = t% pars% rcenv
+            renv = min(renv,t% pars% radius-rc)! limit it to the total envelope radius
+        else
+            if((t% pars% mass - t% pars% core_mass)>0) then
+                renv = (t% pars% radius - rc)*menv/(t% pars% mass - t% pars% core_mass)
+            else
+                renv = 0.d0
+            endif
+        endif
+        renv = MAX(renv,1.0d-10)
+        ! radius of gyration, k2 given by sqrt(I/M*R*R)
+!        if (moi_col>0) k2 = sqrt((t% pars% moi)/(t% pars% mass*t% pars% radius*t% pars% radius))
+        k2 = 0.21d0
+    
+    end subroutine
+    
+
+    
 !    subroutine cutoffs_for_Belzynski_methods(ns_flag,mc1,mc2)
 !        use track_support
 !        use z_support, only : Mcrit

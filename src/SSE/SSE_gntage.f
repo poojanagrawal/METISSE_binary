@@ -35,9 +35,9 @@
 *
 * First we check that we don't have a CheB star 
 * with too small a core mass.
-      dbg = .false.
+      dbg = .true.
 
-      if (dbg) print*, 'in gntage',kw,mt,mc
+      if (dbg) write(UNIT=99,fmt=*) 'in sse gntage',kw,mt,mc
       
       if(kw.eq.4)then
 * Set the minimum CHeB core mass using M = Mflash
@@ -304,7 +304,7 @@
          aj = tscls(2) + aj*tscls(3)
       endif
 *
-      if (dbg) print*,'exiting gntage: aj', aj
+      if (dbg) write(UNIT=99,fmt=*)'exiting gntage: aj', aj
       RETURN
       END
 ***

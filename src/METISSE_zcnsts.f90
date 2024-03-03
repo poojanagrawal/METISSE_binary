@@ -10,7 +10,7 @@ subroutine METISSE_zcnsts(z,zpars)
     logical :: debug, res
     logical :: read_inputs = .true.
     character(LEN=strlen), allocatable :: track_list(:)
-    
+    character(LEN=strlen) :: USE_DIR
 
     debug = .false.
     
@@ -107,18 +107,20 @@ subroutine METISSE_zcnsts(z,zpars)
                 print*, "Switching to SSE formulae for helium stars "
                 cycle
             endif
+            USE_DIR = TRACKS_DIR_HE
         else
             if (verbose) print*, 'Reading main (hydrogen star) tracks'
             call get_metallcity_file_from_Z(initial_Z,metallicity_file_list,ierr)
             if (ierr/=0) STOP
+            USE_DIR = TRACKS_DIR
         endif
         
         
         inquire(file=trim(format_file), exist=res)
         
         if ((res .eqv. .False.) .and. (front_end == COSMIC)) then
-            if (debug) print*, trim(format_file), 'not found; appending ',trim(TRACKS_DIR)
-            format_file = trim(TRACKS_DIR)//'/'//trim(format_file)
+            if (debug) print*, trim(format_file), 'not found; appending ',trim(USE_DIR)
+            format_file = trim(USE_DIR)//'/'//trim(format_file)
         endif
     
         !read file-format
@@ -136,8 +138,8 @@ subroutine METISSE_zcnsts(z,zpars)
         call get_files_from_path(INPUT_FILES_DIR,file_extension,track_list,ierr)
         
         if (ierr/=0 .and. front_end == COSMIC) then
-            if (debug) print*, trim(INPUT_FILES_DIR), 'not found; appending ',trim(TRACKS_DIR)
-            INPUT_FILES_DIR = trim(TRACKS_DIR)//'/'//trim(INPUT_FILES_DIR)
+            if (debug) print*, trim(INPUT_FILES_DIR), 'not found; appending ',trim(USE_DIR)
+            INPUT_FILES_DIR = trim(USE_DIR)//'/'//trim(INPUT_FILES_DIR)
             call get_files_from_path(INPUT_FILES_DIR,file_extension,track_list,ierr)
         endif
         

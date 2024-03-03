@@ -1269,7 +1269,7 @@ module z_support
 
         logical:: debug
 
-        debug = .true.
+        debug = .false.
 
         Mcrit_he% mass= -1.d0
         Mcrit_he% loc = 0

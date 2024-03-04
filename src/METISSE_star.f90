@@ -100,6 +100,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         t% pars% age_old = t% pars% age
         t% tr(age_col,:) = t% tr(i_age2,:)
         t% pars% age = min(t% tr(age_col,eep_m), t% times(11)-1d-6)
+!        if(kw== He_MS) t% pars% age= t% tr(i_age2,ZAMS_HE_EEP)
     case(remnant)
         tm = 1.0d+10
         tscls(1) = t% MS_time

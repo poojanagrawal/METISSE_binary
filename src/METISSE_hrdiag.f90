@@ -82,16 +82,21 @@
             !check if phase/type/kw of the star has changed
 
             old_phase = t% pars% phase
-                do i = 6,1,-1
-                    if (.not. defined(t% times(i))) cycle
-                    if (t% pars% age .lt. t% times(i)) then
-                        t% pars% phase = i
-                    endif
-                enddo
-                if (t% initial_mass<very_low_mass_limit .and. t% pars% phase==1) t% pars% phase =0
+            do i = 6,1,-1
+                if (.not. defined(t% times(i))) cycle
+                if (t% pars% age .lt. t% times(i)) then
+                    t% pars% phase = i
+                endif
+            enddo
+            if (debug .and. t% pars% phase /= old_phase .and.t% pars% phase>0) &
+                    print*,"phase change",t% pars% age,t% times(t% pars% phase),t% pars% phase
 
-                if (debug .and. t% pars% phase /= old_phase) print*,"phase change",t% pars% age,t% times(i),i
-            
+            if (t% initial_mass<very_low_mass_limit .and. t% pars% phase==1) t% pars% phase =0
+
+             !interpolate in age
+            call interpolate_age(t,t% pars% age)
+            if (debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
+            t% pars% mass = mt
             !check if envelope has been lost
             
             IF ((t% pars% core_mass.ge.t% pars% mass) .or. &
@@ -123,10 +128,6 @@
                     endif
                 endif
             ELSE
-                 !interpolate in age
-                call interpolate_age(t,t% pars% age)
-                if (debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
-                t% pars% mass = mt
                 if (t% pars% core_radius<0) CALL calculate_rc(t,tscls,zpars,t% pars% core_radius)
                 call get_mcrenv_from_cols(t,lums,menv,renv,k2)
             ENDIF

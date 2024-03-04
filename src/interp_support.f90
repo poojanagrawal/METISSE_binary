@@ -779,10 +779,8 @@ module interp_support
 
             if (debug) print*,"len_eep:",len_eep,"bounds:",age_list(1),age_list(len_eep)
 
-            call index_search(len_eep,age_list,age,min_index)
-            !min_index = binary_search(len_eep,age_list,age)
-!                    if (debug) print*,"in interp_support, age, min_index, age at min index"
-!                    if (debug) print*,t% pars% age, min_index,age_list(min_index)
+!            call index_search(len_eep,age_list,age,min_index)
+            min_index = binary_search(len_eep,age_list,age)
 
             if(abs(age_list(min_index)-age)< tiny) then        !less than a year
                     if (debug) print*,"no interpolation, min_index", age_list(min_index)

@@ -15,7 +15,7 @@ subroutine METISSE_zcnsts(z,zpars)
     debug = .false.
     
     
-    if (initial_Z >0 .and.(relative_diff(initial_Z,z) < Z_accuracy_limit)) then
+    if (initial_Z >0 .and.(relative_diff(initial_Z,z) < Z_accuracy_limit) .and. zpars(14).gt.0.d0) then
         if (debug) print*, '**** No change in metallicity, exiting METISSE_zcnsts ****'
         return
     endif

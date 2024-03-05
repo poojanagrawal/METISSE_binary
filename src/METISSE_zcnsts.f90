@@ -6,14 +6,13 @@ subroutine METISSE_zcnsts(z,zpars)
     real(dp), intent(in) :: z
     real(dp), intent(out) :: zpars(20)
 
-    integer :: i,ierr,j,nloop
+    integer :: i,ierr,j,nloop,jerr
     logical :: debug, res
     logical :: read_inputs = .true.
     character(LEN=strlen), allocatable :: track_list(:)
-    character(LEN=strlen) :: USE_DIR
+    character(LEN=strlen) :: USE_DIR, find_cmd,rnd
 
     debug = .false.
-    
     
     if (initial_Z >0 .and.(relative_diff(initial_Z,z) < Z_accuracy_limit) .and. zpars(14).gt.0.d0) then
         if (debug) print*, '**** No change in metallicity, exiting METISSE_zcnsts ****'
@@ -115,7 +114,7 @@ subroutine METISSE_zcnsts(z,zpars)
             USE_DIR = TRACKS_DIR
         endif
         
-        
+        ! check if the format file exists
         inquire(file=trim(format_file), exist=res)
         
         if ((res .eqv. .False.) .and. (front_end == COSMIC)) then
@@ -134,14 +133,19 @@ subroutine METISSE_zcnsts(z,zpars)
         endif
         
         if (verbose) print*,"Reading input files from: ", trim(INPUT_FILES_DIR)
+
+        if (front_end == COSMIC) then
+            find_cmd = 'find '//trim(INPUT_FILES_DIR)//'/*'//trim(file_extension)//' -maxdepth 1 > .file_name.txt'
+
+            call execute_command_line(find_cmd,exitstat=ierr,cmdstat=jerr,cmdmsg=rnd)
+            if (ierr/=0) then
+            if (debug)print*, trim(find_cmd), 'not found; appending ',trim(USE_DIR)
+            INPUT_FILES_DIR = trim(USE_DIR)//'/'//trim(INPUT_FILES_DIR)
+            ierr =0
+            endif
+        endif
         
         call get_files_from_path(INPUT_FILES_DIR,file_extension,track_list,ierr)
-        
-        if (ierr/=0 .and. front_end == COSMIC) then
-            if (debug) print*, trim(INPUT_FILES_DIR), 'not found; appending ',trim(USE_DIR)
-            INPUT_FILES_DIR = trim(USE_DIR)//'/'//trim(INPUT_FILES_DIR)
-            call get_files_from_path(INPUT_FILES_DIR,file_extension,track_list,ierr)
-        endif
         
         if (ierr/=0) then
             print*,'Error: failed to read input files.'

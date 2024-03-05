@@ -4,7 +4,6 @@ subroutine allocate_track(n,mass)
 
     integer, intent(in):: n
     real(dp), intent(in), optional :: mass(n)
-    integer :: i
         
 !    n= 1
 !    n = size(mass)

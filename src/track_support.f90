@@ -275,7 +275,7 @@ module track_support
         if (value < list(1)) then             !from num_binary_search.inc
             min_index = 1; return
         elseif (check_equal(value, list(size_list)))then
-            min_index = size_list
+            min_index = size_list; return
         else if (value > list(size_list)) then
             min_index = size_list+1; return
         end if
@@ -284,7 +284,7 @@ module track_support
     end subroutine index_search
 
 
-    ! from ISO (Dotter et al. 2016), adapted from MESA
+    ! from ISO (Dotter et al. 2016), adapted from MESA; modified by PA to avoid 0 loc
 
     ! if vec contains decreasing values,
     ! returns 1 if val > vec(1); returns n if val <= vec(n)
@@ -310,9 +310,11 @@ module track_support
      if (vec(n) < vec(1)) then ! decreasing values
 
         if (val > vec(1)) then
-           loc = 0; return
+           loc = 1; return
         else if (abs(val - vec(1)) < tiny ) then
            loc = 1; return
+        else if (check_equal(val,vec(n))) then
+            loc = n; return
         else if (val <= vec(n)) then
            loc = n; return
         end if
@@ -335,11 +337,13 @@ module track_support
         end do
 
      else ! increasing values
-
+     
         if (val < vec(1)) then
-           loc = 0; return
+           loc = 1; return
         else if (abs(val - vec(1)) < tiny) then
            loc = 1; return
+        else if (check_equal(val,vec(n))) then
+            loc = n; return
         else if (val >= vec(n)) then
            loc = n; return
         end if

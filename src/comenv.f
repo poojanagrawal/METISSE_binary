@@ -46,7 +46,7 @@
 *
 * For simplicity energies are divided by -G.
 *
-      dbg = .true.
+      dbg = .false.
       if (dbg) print*, 'begin comenv',kw1,kw2,j1,j2
       if (dbg) print*, M01,M1,MC1,AJ1,M02,M2,MC2,AJ2,SEP
       TWOPI = 2.D0*ACOS(-1.D0)

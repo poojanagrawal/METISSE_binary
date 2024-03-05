@@ -25,7 +25,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr = 0
     
     debug = .false.
-!    if ((id == 1) )debug = .true.
+!    if ((id == 1) .and. kw>=7)debug = .true.
 !if (t% is_he_track) debug = .true.
     if (debug) print*, '-----------STAR---------------'
     if (debug) print*,"in star", mass,mt,kw,t% pars% phase, id,t% star_type,t% pars% age
@@ -52,8 +52,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         age_col = i_age
         if (t% pars% phase>= He_MS .and. t% pars% phase<=He_GB) t% star_type = switch
     endif
-            
-    
+                
     select case(t% star_type)
     case(unknown)
         ! Initial call- just do normal interpolation
@@ -78,8 +77,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         !call write_eep_track(t,t% initial_mass)
 
     case(rejuvenated:switch) !gntage
-!        print*,'reju',kw, t% pars% phase,t% star_type
-
+    
         if (t% pars% phase>=10 .and. kw<10) t% post_agb = .false.
         t% pars% mass = mt
         t% pars% delta = 0.d0
@@ -99,8 +97,8 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         t% ms_old = t% MS_time
         t% pars% age_old = t% pars% age
         t% tr(age_col,:) = t% tr(i_age2,:)
-        t% pars% age = min(t% tr(age_col,eep_m), t% times(11)-1d-6)
-!        if(kw== He_MS) t% pars% age= t% tr(i_age2,ZAMS_HE_EEP)
+        
+        if (eep_m>0 .and. eep_m<=t% ntrack) t% pars% age = min(t% tr(age_col,eep_m), t% times(11)-1d-6)
     case(remnant)
         tm = 1.0d+10
         tscls(1) = t% MS_time

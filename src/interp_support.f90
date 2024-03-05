@@ -1263,7 +1263,6 @@ module interp_support
         
         !eep_m not needed except for switch cases
         ! sending out a dummy value to avoid segmentation faults
-        if (t% star_type/= switch) eep_m =1
         nullify(s)
         deallocate(Mmax,Mmin)
         if (allocated(mlist)) deallocate(mlist)

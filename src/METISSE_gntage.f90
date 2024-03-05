@@ -88,7 +88,7 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
     case (7)
         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         if (debug)write(UNIT=err_unit,fmt=*) '7 in gntage',kw,m0,mt,mc,aj,id
-
+        aj = t% pars% age
     case(6)
         ! We try to start the star from the start of the SAGB.
                     if (debug) WRITE(*,*)'TPAGB'
@@ -171,5 +171,6 @@ subroutine set_star_type(id)
         implicit none
         integer, intent(in) :: id
 !        print*, 'setting star to reju',tarr(id)% pars% age,id
+
         tarr(id)% star_type = rejuvenated
     end subroutine

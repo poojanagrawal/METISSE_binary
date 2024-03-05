@@ -43,7 +43,7 @@
             !mc = MAX(mc_max,mc_threshold)
             !mc_max = MIN(pars% mass,mc_max)
             mc_threshold = pars% McCO
-        elseif (pars% phase ==8 .or. pars% phase ==9) then
+        elseif (pars% phase >= He_MS) then
             mc_threshold = pars% core_mass
         else
             return

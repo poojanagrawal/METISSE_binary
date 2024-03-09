@@ -15,7 +15,7 @@
     real(dp) :: r,lum,mc,rc,menv,renv,k2,mcx
     
     integer :: kw,i,idd,j_bagb,old_phase
-    real(dp) :: rg,rzams,rtms
+    real(dp) :: rg,rzams,rtms,mt0
     real(dp) :: Mcbagb, mc_max,HeI_time
     real(dp) :: bhspin ! only for cosmic
     type(star_parameters) :: old_pars
@@ -32,15 +32,14 @@
     if(present(id)) idd = id
     t => tarr(idd)
     
-!    if ((id == 1) .and. kw>=7)debug = .true.
+!    if ((id == 1) .and. kw>=3)debug = .true.
 !if(id ==2 .and. t% is_he_track)debug = .true.
     if (debug) print*, '-----------HRDIAG-------------'
-    if (debug) print*,"started hrdiag",mt,mc,aj,kw,tn,id
+    if (debug) print*,"started hrdiag",mt,mc,aj,tn,kw,id
 
     end_of_file = .false. !this is just the end of eep track
     has_become_remnant = .false.
     mc_max= 0.d0
-
 
     if (irecord<=0) then
         !save input state
@@ -49,6 +48,8 @@
         ! is_he_track etc.
     endif
   
+    if (t% star_type==rejuvenated) call star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,0.d0,id)
+      
     t% pars% mass = mt
     t% pars% phase = kw
     t% irecord = irecord
@@ -64,7 +65,7 @@
 !        elseif (check_ge(t% pars% age,t% tr(i_age,t% ntrack))) then
         elseif (check_ge(t% pars% age,t% times(11)) ) then
             !have reached the end of the eep track; self explanatory
-            if (debug) print*,"end of file:aj,tn ",t% pars% age,t% tr(i_age,t% ntrack),t% times(kw)
+            if (debug) print*,"end of file:aj,tn ",t% pars% age,t% times(11),t% times(kw)
             if (kw<5 .and. t% ierr==0) then
                 write(UNIT=err_unit,fmt=*) 'WARNING: Early end of file due to incomplete track beyond phase, mass and id',&
                 kw,t% initial_mass,id
@@ -86,6 +87,7 @@
                 if (.not. defined(t% times(i))) cycle
                 if (t% pars% age .lt. t% times(i)) then
                     t% pars% phase = i
+                    if (debug)print*,"phase",t% pars% age,t% times(t% pars% phase)
                 endif
             enddo
             if (debug .and. t% pars% phase /= old_phase .and.t% pars% phase>0) &
@@ -94,15 +96,17 @@
             if (t% initial_mass<very_low_mass_limit .and. t% pars% phase==1) t% pars% phase =0
 
              !interpolate in age
+             mt0 = t% pars% mass
             call interpolate_age(t,t% pars% age)
             if (debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
             t% pars% mass = mt
+
             !check if envelope has been lost
             
             IF ((t% pars% core_mass.ge.t% pars% mass) .or. &
                 (t% initial_mass>=10.0 .and. abs(t% pars% core_mass-t% pars% mass)<0.01)) THEN
                     
-                if (debug) print*, "envelope lost at", t% pars% mass, t% pars% age,t% pars% phase
+                if (debug) print*, "envelope lost at",t% pars% mass, t% pars% age,t% pars% phase
                 
                 if (t% pars% phase == TPAGB) then
                     ! TPAGB star becomes a CO-WD/ONe WD upon losing envelope
@@ -111,7 +115,11 @@
                     has_become_remnant = .true.
                     !TODO: add a check if it's not a white dwarf
                 else
+                    t% pars% mass = mt0
                     call assign_stripped_star_phase(t, HeI_time)
+                    ! some checks in assigning stripped star phase are based on total mass
+                    ! if called through comenv, mt==mc anyway
+                    t% pars% mass = mt
                     if(t% pars% phase == HeWD) then
                         has_become_remnant = .true.
                     elseif (use_sse_NHe) then
@@ -129,6 +137,7 @@
                 endif
             ELSE
                 if (t% pars% core_radius<0) CALL calculate_rc(t,tscls,zpars,t% pars% core_radius)
+                rc = t% pars% core_radius
                 call get_mcrenv_from_cols(t,lums,menv,renv,k2)
             ENDIF
         endif
@@ -146,8 +155,10 @@
                 rzams = t% He_pars% Rzams
 
                 CALL calculate_rc(t,tscls,zpars,rc)
+                t% pars% core_radius = rc
                 CALL calculate_rg(t,rg)
-                CALL mrenv(kw,mass,mt,mc,lum,r,rc,aj,tm,lums(2),lums(3),&
+                CALL mrenv(t% pars% phase,t% zams_mass,t% pars% mass,t% pars% core_mass, &
+                    t% pars% luminosity,t% pars% radius,rc,t% pars% age,t% MS_time,lums(2),lums(3),&
                     lums(4),rzams,rtms,rg,menv,renv,k2)
             endif
         else
@@ -172,15 +183,16 @@
                 if (debug .and. t% pars% phase /= old_phase) print*,"phase change",t% pars% age,t% times(i),i
                 !interpolate in age
                 call interpolate_age(t,t% pars% age)
-                if (debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
+                if(debug)print*,"mt difference",t% pars% mass,mt,mt-t% pars% mass,t% pars% phase
                 t% pars% mass = mt
                 if (t% pars% core_radius<0) CALL calculate_rc(t,tscls,zpars,t% pars% core_radius)
-                
+                rc = t% pars% core_radius
                 call get_mcrenv_from_cols(t,lums,menv,renv,k2)
             endif
         endif
     ENDIF
       
+    kw = t% pars% phase
     ! remnants phases 10:15
     IF(has_become_remnant) THEN
 !        print*, 'star',id,'is remnant',t% pars% mass,mcbagb,t% pars% core_mass
@@ -188,6 +200,8 @@
         if (front_end == main .or. front_end == BSE) then
             if(t% pars% phase /= HeWD) then
                 call assign_remnant_METISSE(t% pars, mcbagb)
+                ! kw at this point contains old phase of the star,
+                ! before the star became a remnant or lost its envelope
                 call post_agb_parameters(t,kw)
             endif
         elseif (front_end == COSMIC) then
@@ -245,7 +259,7 @@
         !tm and tn get calculated in star.f90
     endif
 !    if (irecord>0 .and. debug) print*,"finished hrdiag",mt,mc,aj,kw,id,tm,tn
-!    if(id==1)print*,"finished hrdiag",t% pars% mass, t% pars% core_mass,t% pars% age,t% pars% radius
+!    print*,"finished hrdiag",t% pars% mass, t% pars% core_mass,t% pars% age,t% pars% radius,id
 
     nullify(t)
     end subroutine METISSE_hrdiag

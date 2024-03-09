@@ -637,7 +637,7 @@
       do 504 , k = kmin,kmax
 *
          dms(k) = (dmr(k) - dmt(k))*dt
-*         print*,'dmr,dmt,dms,dt=',dmr(k),dmt(k),dms(k),dt
+*         if (k==2)print*,'dmr,dmt,dms,dt=',dmr(k)*dt,dmt(k)*dt
         if (dbg)print*, 'dms=', dms,dtm,k
          if(kstar(k).lt.10)then
             dml = mass(k) - massc(k)
@@ -730,6 +730,7 @@
                   ! METISSE adjusts the age differently for HG stars
                else
                   epoch(k) = tphys - aj(k)*tm/tms(k)
+*                  if (k==2) print*, 'epoch', aj(k), tms(k),tm, epoch(k)
                endif
             endif
          endif
@@ -1024,9 +1025,7 @@
       if(rad(j1).gt.rol(j1))then
 *
 * Interpolate back until the primary is just filling its Roche lobe.
-         if (dbg) print*, "dtm b4 RLOF=", dtm
-
-*        print*, 'test RLOF',j1,rad(j1),rol(j1),dtm,tphys
+         if(dbg)print*,'b4 RLOF',j1,rad(j1),rol(j1),dtm,tphys
 
          if(rad(j1).ge.1.002d0*rol(j1))then
          
@@ -1062,7 +1061,7 @@
 *
 * Enter Roche lobe overflow
 *
-*            if (dbg) print*, "Enter RLOF=",tphys,dtm
+            if(dbg)print*,"Enter RLOF=",j1,rad(j1),rol(j1),dtm,tphys
             if(tphys.ge.tphysf) goto 140
             goto 7
          endif
@@ -1110,9 +1109,7 @@
 * Go back for the next step or interpolation.
 *
  98   continue
-*      if (dbg) print*, "tphysf2=",tphys,tphysf, tsave,intpol
       if(tphys.ge.tphysf.and.intpol.eq.0) goto 140
-*      if (dbg) print*, "tphysf34",tphys
       if(change)then
          change = .false.
          jp = MIN(80,jp + 1)
@@ -1168,8 +1165,6 @@
       bpp(jp,8) = rad(1)/rol(1)
       bpp(jp,9) = rad(2)/rol(2)
       bpp(jp,10) = 3.0
-      if (dbg) print*, 'BEG RCHE'
-*      print*, 'beg RLOF',j1,rad(j1),rol(j1),dtm,tphys
 
 *
       if(iplot.and.tphys.gt.tiny)then
@@ -1297,7 +1292,7 @@
             mass(j2) = mass(j2) + dm2
             if(kstar(j2).eq.2)then
                mass0(j2) = mass(j2)
-                if (dbg)print*,'RLOF secondary giant,calling star',j2
+               if(dbg)print*,'RLOF secondary giant,calling star',j2
                CALL star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,
      &                   tscls,lums,GB,zpars,dtm,j2)
                if (SSE_FLAG .eqv. .true.) then
@@ -2251,7 +2246,7 @@
          iter = iter + 1
          goto 8
       else
-*         print*, 'end RLOF', rad(j1),rol(j1)
+         if(dbg)print*,'end RLOF',rad(j1),rol(j1),dtm,tphys
 
          jp = MIN(80,jp + 1)
          bpp(jp,1) = tphys
@@ -2264,7 +2259,6 @@
          bpp(jp,8) = rad(1)/rol(1)
          bpp(jp,9) = rad(2)/rol(2)
          bpp(jp,10) = 4.0
-         if (dbg) print*, 'END RCHE'
          dtm = 0.d0
          goto 4
       endif

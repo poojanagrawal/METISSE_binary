@@ -18,10 +18,10 @@ FC=gfortran
 #OMP=-fopenmp
 
 WARN=-Wall -Wno-tabs -Wno-maybe-uninitialized -fimplicit-none  -Wsurprising  -Waliasing
-DEBUG=-g3 -O0 -fbacktrace -fcheck=all -fbounds-check
+DEBUG=-g3 -O2 -fbacktrace -fcheck=all -fbounds-check 
 
 
-#-O2    -Wall  -Wline-truncation  -Wcharacter-truncation   -Wimplicit-interface  -Wunused-parameter   -fcheck=all  -std=f2008    -fbacktrace
+#-O2    -Wall  -Wline-truncation  -Wcharacter-truncation   -Wimplicit-interface  -Wunused-parameter   -fcheck=all      -fbacktrace
 
 
 

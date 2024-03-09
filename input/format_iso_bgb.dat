@@ -66,7 +66,7 @@
     
     mass_conv_envelope = 'mass_conv_envelope'    !in solar units
     radius_conv_envelope = 'rad_conv_envelope'    !in solar units
-    moment_of_inertia = 'moment_of_inertia'
+    moment_of_inertia = ''
     
     
     log_Tc = 'log_center_T'                      !central temperature in log units

@@ -94,7 +94,7 @@
                 dt = 10.d0
                 dtr = dt
         end select
-!err_unit=6
+
             t% pars% dt = min(dt,dtr)
             if (t% pars% dt<=0.0 .and. t% ierr==0) then
                 write(UNIT=err_unit,fmt=*)"fatal error: invalid timestep", t% pars% dt ,"for phase and id", t% pars% phase,id

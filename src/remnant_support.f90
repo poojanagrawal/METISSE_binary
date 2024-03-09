@@ -124,8 +124,7 @@
         ! However naked helium stars don't go through this process
         ! and should directly jump to WD cooling track.
         ! So we use kw/old_phase as a check.
-        ! kw at this point contains old phase of the star,
-        ! the phase upon entering hrdiag, before the star became a remnant or lost its envelope
+        
         !first check if the remnant is a WD
         if (t% pars% phase>HeWD .and. t% pars% phase<=ONeWD) then
             if (old_phase <=TPAGB .and. construct_wd_track) then
@@ -582,7 +581,7 @@
         return
     end function
 
-    subroutine calculate_rc(t, tscls,zpars,rc)
+    subroutine calculate_rc(t,tscls,zpars,rc)
      ! Calculate the core radius
      implicit none
      type(track), pointer, intent(in) :: t
@@ -678,10 +677,11 @@
                 rg = (alfa*Rbagb)+((1d0 - alfa)*Rbgb)
                 rg = 10**rg
                 
-                if (rg .lt. t% pars% radius) then
-                    write(UNIT=err_unit,fmt=*)'Error in calculate_rg: Rg, R',rg,t% pars% radius,Rbgb, Rbagb
-                    write(UNIT=err_unit,fmt=*) t% pars% age, alfa, L, Lbgb, Lbagb
-                endif
+                rg = max(rg, t% pars% radius )
+!                if (rg .lt. t% pars% radius) then
+!                    write(UNIT=err_unit,fmt=*)'Error in calculate_rg: Rg, R',rg,t% pars% radius,Rbgb, Rbagb
+!                    write(UNIT=err_unit,fmt=*) t% pars% age, alfa, L, Lbgb, Lbagb
+!                endif
                     
             case(EAGB:TPAGB)
                 rg = t% pars% radius
@@ -766,12 +766,11 @@
         renv = MAX(renv,1.0d-10)
         ! radius of gyration, k2 given by sqrt(I/M*R*R)
 !        if (moi_col>0) k2 = sqrt((t% pars% moi)/(t% pars% mass*t% pars% radius*t% pars% radius))
-        k2 = 0.21d0
+!        k2 = 0.21d0
     
     end subroutine
-    
 
-    
+
 !    subroutine cutoffs_for_Belzynski_methods(ns_flag,mc1,mc2)
 !        use track_support
 !        use z_support, only : Mcrit

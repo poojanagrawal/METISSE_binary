@@ -11,6 +11,7 @@ subroutine METISSE_zcnsts(z,zpars)
     logical :: read_inputs = .true.
     character(LEN=strlen), allocatable :: track_list(:)
     character(LEN=strlen) :: USE_DIR, find_cmd,rnd
+    integer :: num_tracks
 
     debug = .false.
     
@@ -26,6 +27,8 @@ subroutine METISSE_zcnsts(z,zpars)
     use_sse_NHe = .true.
     
     if (allocated(core_cols)) deallocate(core_cols)
+    if (allocated(core_cols_he)) deallocate(core_cols_he)
+
     if (allocated(m_cutoff)) deallocate(m_cutoff)
     if (allocated(Mmax_array)) deallocate(Mmax_array, Mmin_array)
     

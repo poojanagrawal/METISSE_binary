@@ -132,6 +132,8 @@
                SEPL = R2/RL2
             ENDIF
          ENDIF
+         
+         
          IF(COEL)THEN
 *
             if (dbg) print*, 'coel ',kw1,kw2
@@ -335,6 +337,7 @@
 *
 * Combine the core masses.
 *
+         if (SSE_FLAG .eqv. .false.) call set_star_type(J1)
          IF(KW.EQ.2)THEN
             CALL star(KW,M1,M1,TM2,TN,TSCLS2,LUMS,GB,ZPARS,DTM
      &                          ,J1)
@@ -356,7 +359,6 @@
 * Obtain a new age for the giant.
 *
       if(dbg)print*,'getting new gntage following merger',kw1,kw2,kw
-! PA: kw can change in gntage
             CALL gntage(MC1,M1,KW,ZPARS,M01,AJ1,J1)
             CALL star(KW,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
          ENDIF

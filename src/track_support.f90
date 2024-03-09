@@ -272,6 +272,7 @@ module track_support
             endif
         endif
         
+        if (size(list)<1) print*, 'error in list size',size(list),size_list
         if (value < list(1)) then             !from num_binary_search.inc
             min_index = 1; return
         elseif (check_equal(value, list(size_list)))then

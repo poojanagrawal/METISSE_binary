@@ -25,11 +25,11 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr = 0
     
     debug = .false.
-!    if ((id == 1) .and. kw>=7)debug = .true.
+!    if ((id == 1) .and. kw>=3)debug = .true.
 !if (t% is_he_track) debug = .true.
     if (debug) print*, '-----------STAR---------------'
-    if (debug) print*,"in star", mass,mt,kw,t% pars% phase, id,t% star_type,t% pars% age
-
+    if (debug) print*,"in star",mass,mt,kw,t% pars% phase,id,t% star_type
+if (debug) print*,t% pars% age,dtm*1.0d+06
     consvR = .false.
     exclude_core = .false.
     delta = 0.d0
@@ -119,20 +119,20 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             ! For tracks that already have wind mass loss,
             ! exclude mass loss due to winds
             
-            if (t% has_mass_loss .and. (abs(mt-t% pars% mass))>1.0d-06) then
+            if (t% has_mass_loss .and. (abs(mt-t% pars% mass))>1.0d-08) then
                 delta_wind = (t% pars% dms*dtm*1.0d+06)
             else
                 delta_wind = 0.d0
             endif
 
-            delta = (t% pars% mass-mt) - delta_wind
-    !       if (id==1)print*, 'delta org', delta,t% pars% mass,mt,delta_wind
+            delta = (mt-t% pars% mass) + delta_wind
+           if (debug)print*, 'delta org', delta,t% pars% mass,mt,delta_wind
             t% pars% delta = t% pars% delta+ delta
             delta1 = 2.0d-04*mt
             if (debug) print*, 'delta is', delta,t% pars% delta,delta1,t% pars% mass
             if (delta.ge.0.2*mt) then
                 write(UNIT=err_unit,fmt=*)'large delta',delta,t% pars% mass,id
-    !           call stop_code
+!               call stop_code
             endif
             
     !       if (dtm<0.d0) print*,'dtm<0',t% pars% age,dtm
@@ -223,7 +223,8 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     t% MS_time = tm
     t% nuc_time = tn
 
-    if (debug) print*, "in star end", mt,delta,kw,tm!,tscls(1),tn,t%initial_mass
+!    if (debug)
+!    if ((id == 1) .and. kw>=3)print*, "in star end", mt,delta,kw,tm,tn,t%initial_mass
     nullify(t)
     return
 end subroutine METISSE_star

@@ -45,6 +45,7 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
                 !Forward finite difference
                 if (debug) print*, 'calling interpolate age for ini', tnext
                 call interpolate_age(t, tnext, i_mass, mnext)
+                !Using 'abs' as sometime dms is negative due to rounding errors
                 if (t% pars% dt>0.d0) dms = abs(mt-mnext)/(t% pars% dt*1E+6)
 
             elseif (tnext>= t% nuc_time) then
@@ -63,8 +64,7 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
         endif
         t% pars% dms = dms
 
-        !Using 'abs' as sometime dms is negative due to rounding errors
-        if (debug) print*, 'track has mass loss',t% initial_mass,dms,kw,mt,t% pars% mass
+        if (debug) print*, 'track has mass loss',dms,kw,mt,t% pars% mass,t% initial_mass
     else
         if (add_mass_loss) dms = SSE_mlwind(kw,lum,r,mt,mc,rl,z)
 !        if (kw<=9) print*,"mlwind function",dms,mt,mc,kw,id

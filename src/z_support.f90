@@ -22,7 +22,6 @@ module z_support
     character:: extra_char
 
     type(eep_track), allocatable :: xa(:)
-    integer :: num_tracks
 
     real(dp) :: mass, max_age, min_mass, max_mass
     !used to set star_type_from_history
@@ -450,7 +449,7 @@ module z_support
 
     subroutine copy_and_deallocatex(y)
         type(eep_track), allocatable :: y(:)
-        integer :: i, n
+        integer :: i, n, start
         logical :: debug
 
         debug = .false.
@@ -503,6 +502,17 @@ module z_support
             endif
             ! check for mass loss
             y(n)% has_mass_loss = check_mass_loss(y(n))
+            
+            ! recalibrate age from ZAMS
+!            if (y(n)% is_he_track) then
+!                y(n)% tr(i_he_age,:) = y(n)% tr(i_he_age,:)- y(n)% tr(i_he_age,ZAMS_HE_EEP)
+!            else
+!                y(n)% tr(i_age,:) = y(n)% tr(i_age,:)- y(n)% tr(i_age,ZAMS_EEP)
+!            endif
+                start = ZAMS_EEP
+if (y(n)% is_he_track)start = ZAMS_HE_EEP
+            y(n)% tr(i_age2,:) = y(n)% tr(i_age2,:)- y(n)% tr(i_age2,start)
+
         end do
         
         !Now deallocate xa
@@ -1048,6 +1058,7 @@ module z_support
         integer :: len_track, i, min_index
         integer:: j_bagb, j_tagb, start
         real(dp), allocatable :: mass_list(:)
+    integer :: num_tracks
 
         logical:: debug
 
@@ -1056,7 +1067,7 @@ module z_support
         old_co_frac = 0.d0
         Mup_core = 0.d0
         Mec_core = 0.d0
-
+        num_tracks = size(xa)
 !        allocate(Mcrit(9))
         Mcrit% mass= -1.d0
         Mcrit% loc = 0
@@ -1249,7 +1260,6 @@ module z_support
         Mup = zpars(4)
         Mec = zpars(5)
     
-    
         if (defined(Z_H)) zpars(11) = Z_H
         if (defined(Z_He)) zpars(12) = Z_He
         Z04 = zpars(14)
@@ -1260,12 +1270,11 @@ module z_support
 !        call sort(Mcrit% loc, m_cutoff)
     end subroutine set_zparameters
 
-
-
     subroutine set_zparameters_he()
         real(dp) :: smass,frac_mcenv
         integer :: len_track, i, min_index, start!,j,jstart,jend
         real(dp), allocatable :: mass_list(:)
+    integer :: num_tracks
 
         logical:: debug
 
@@ -1287,7 +1296,8 @@ module z_support
         Mcrit_he(7)% mass = Mec
         Mcrit_he(8)% mass = Mextra
         
-        
+        num_tracks = size(xa)
+
         Mcrit_he(9)% mass = xa(num_tracks)% initial_mass
         Mcrit_he(9)% loc = num_tracks+1
 
@@ -1372,9 +1382,6 @@ module z_support
                 if (debug) print*,"Mec",smass,i
                 endif
             endif
-            
-            
-
         end do
 
         !If the tracks are beyond the zpars limits, above procedure
@@ -1394,7 +1401,7 @@ module z_support
         allocate (m_cutoff_he(size(Mcrit_he)))
         m_cutoff_he = Mcrit_he% loc
         call sort_mcutoff(m_cutoff_he)
-        if (debug) print*, "m_cutoffs: ", m_cutoff_he
+        if (debug) print*, "m_cutoffs he : ", m_cutoff_he
 
         deallocate(mass_list)
     end subroutine set_zparameters_he

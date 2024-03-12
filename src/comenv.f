@@ -338,11 +338,7 @@
 * Combine the core masses.
 *
          IF(KW.EQ.2)THEN
-            if (SSE_FLAG .eqv. .false.) then
-            call set_star_type(J1)
-            CALL star(KW,M1,M1,TM2,TN,TSCLS2,LUMS,GB,ZPARS,DTM
-     &                          ,J1)
-            else
+            if (SSE_FLAG .eqv. .false.) call set_star_type(J1)
             CALL star(KW,M1,M1,TM2,TN,TSCLS2,LUMS,GB,ZPARS,DTM
      &                          ,J1)
             IF(GB(9).GE.MC1)THEN
@@ -351,7 +347,6 @@
                CALL star(KW,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
      &                                DTM,J1)
             ENDIF
-            endif
          ELSEIF(KW.EQ.7)THEN
             M01 = M1
             if (SSE_FLAG .eqv. .false.) call set_star_type(J1)

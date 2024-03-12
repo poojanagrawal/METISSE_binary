@@ -45,12 +45,12 @@ if (debug) print*,t% pars% age,dtm*1.0d+06
         else
             t% is_he_track = .true.
             age_col = i_he_age
-!            write(UNIT=*,fmt=*) 'switching to he tracks'
         endif
-    else
+    elseif(kw>= low_mass_MS) then
         t% is_he_track = .false.
         age_col = i_age
-        if (t% pars% phase>= He_MS .and. t% pars% phase<=He_GB) t% star_type = switch
+!        if (t% pars% phase>= He_MS .and. t% pars% phase<=He_GB) t% star_type = switch
+        ! above line causes random segfaults if activated
     endif
                 
     select case(t% star_type)
@@ -74,17 +74,18 @@ if (debug) print*,t% pars% age,dtm*1.0d+06
         t% pars% extra = 0
         t% pars% bhspin = 0.d0
         t% ierr = 0
+        t% pars% phase = kw
         !call write_eep_track(t,t% initial_mass)
 
     case(rejuvenated:switch) !gntage
-    
+
+        if(debug.and.t% star_type==rejuvenated)print*,'rejuvenated giant, rewrite with new track'
+        if(debug.and.t% star_type==switch)print*, 'switching from', t% pars% phase,'to',kw
+
         if (t% pars% phase>=10 .and. kw<10) t% post_agb = .false.
         t% pars% mass = mt
         t% pars% delta = 0.d0
         t% pars% phase = kw
-        
-        if(debug.and.t% star_type==rejuvenated)print*,'rejuvenated giant, rewrite with new track'
-        if(debug.and.t% star_type==switch)print*,'switching to/from he track',t% pars% mass
 
         call get_initial_mass_for_new_track(t,idd,eep_m)
         call interpolate_mass(t,exclude_core)

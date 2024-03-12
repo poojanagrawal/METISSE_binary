@@ -11,11 +11,6 @@
     column_name_file = ''
     
     total_cols = -1 !number of columns
-    
-    !for M<Mec
-    low_mass_final_eep = 808
-    !for stars M>=Mec
-    high_mass_final_eep = 253
 
     !name of essential columns
 
@@ -65,4 +60,9 @@
     Initial_EEP_HE = 1
     
     Final_EEP_HE = 253
+    
+    !for M<Mec
+    low_mass_final_eep = 253
+    !for stars M>=Mec
+    high_mass_final_eep = 253
 /

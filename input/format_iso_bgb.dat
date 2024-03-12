@@ -26,7 +26,7 @@
 
     TPAGB_EEP = 808
     cCBurn_EEP = 808
-    post_AGB_EEP = -1
+    post_AGB_EEP = 1409
 
     Initial_EEP = 202       !files will be read from this line number
     Final_EEP = 808        !to this line

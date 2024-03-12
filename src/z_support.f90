@@ -503,16 +503,12 @@ module z_support
             ! check for mass loss
             y(n)% has_mass_loss = check_mass_loss(y(n))
             
-            ! recalibrate age from ZAMS
-!            if (y(n)% is_he_track) then
-!                y(n)% tr(i_he_age,:) = y(n)% tr(i_he_age,:)- y(n)% tr(i_he_age,ZAMS_HE_EEP)
-!            else
-!                y(n)% tr(i_age,:) = y(n)% tr(i_age,:)- y(n)% tr(i_age,ZAMS_EEP)
-!            endif
-                start = ZAMS_EEP
-if (y(n)% is_he_track)start = ZAMS_HE_EEP
+!             recalibrate age from ZAMS
+            start = ZAMS_EEP
+            if (y(n)% is_he_track)start = ZAMS_HE_EEP
             y(n)% tr(i_age2,:) = y(n)% tr(i_age2,:)- y(n)% tr(i_age2,start)
-
+!            
+!            print*,'test input', y(n)% initial_mass,y(n)% ntrack
         end do
         
         !Now deallocate xa
@@ -1058,7 +1054,7 @@ if (y(n)% is_he_track)start = ZAMS_HE_EEP
         integer :: len_track, i, min_index
         integer:: j_bagb, j_tagb, start
         real(dp), allocatable :: mass_list(:)
-    integer :: num_tracks
+        integer :: num_tracks
 
         logical:: debug
 
@@ -1274,7 +1270,7 @@ if (y(n)% is_he_track)start = ZAMS_HE_EEP
         real(dp) :: smass,frac_mcenv
         integer :: len_track, i, min_index, start!,j,jstart,jend
         real(dp), allocatable :: mass_list(:)
-    integer :: num_tracks
+        integer :: num_tracks
 
         logical:: debug
 

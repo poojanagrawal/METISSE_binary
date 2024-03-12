@@ -78,7 +78,6 @@ METISSE_gntage.f90
  
 OBJT_METISSE = $(SRCE_METISSE:.f90=.o)
 
-
 track_support.o: $(METISSE_DIR)/track_support.f90
 z_support.o: $(METISSE_DIR)/z_support.f90 track_support.o
 interp_support.o: $(METISSE_DIR)/interp_support.f90 track_support.o
@@ -91,7 +90,7 @@ dealloc_track.o: $(METISSE_DIR)/dealloc_track.f90 track_support.o
 assign_commons_main.o: $(METISSE_DIR)/assign_commons_main.f90 track_support.o remnant_support.o
 metisse_mlwind.o: $(METISSE_DIR)/metisse_mlwind.f90 track_support.o
 metisse_deltat.o: $(METISSE_DIR)/metisse_deltat.f90 track_support.o
-metisse_zcnsts.o: $(METISSE_DIR)/metisse_zcnsts.f90 z_support.o track_support.o
+metisse_zcnsts.o: $(METISSE_DIR)/metisse_zcnsts.f90 track_support.o z_support.o 
 metisse_star.o: $(METISSE_DIR)/metisse_star.f90 track_support.o interp_support.o sse_support.o
 metisse_hrdiag.o: $(METISSE_DIR)/metisse_hrdiag.f90 track_support.o interp_support.o sse_support.o remnant_support.o
 metisse_gntage.o: $(METISSE_DIR)/metisse_gntage.f90 track_support.o interp_support.o

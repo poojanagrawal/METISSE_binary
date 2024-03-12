@@ -61,7 +61,7 @@ if (debug) print*,t% pars% age,dtm*1.0d+06
         t% is_he_track = .false.
 
         if (debug)print*, "initial interpolate mass", t% initial_mass,t% zams_mass,t% pars% mass,mt,kw
-        call interpolate_mass(id,exclude_core)
+        call interpolate_mass(t,exclude_core)
         mt = t% tr(i_mass,ZAMS_EEP)
         call calculate_timescales(t)
         !Todo: explain what age 2 and Times_new are
@@ -87,7 +87,7 @@ if (debug) print*,t% pars% age,dtm*1.0d+06
         if(debug.and.t% star_type==switch)print*,'switching to/from he track',t% pars% mass
 
         call get_initial_mass_for_new_track(t,idd,eep_m)
-        call interpolate_mass(id,exclude_core)
+        call interpolate_mass(t,exclude_core)
         
         t% initial_mass_old = t% initial_mass
         mass = t% initial_mass
@@ -176,7 +176,7 @@ if (debug) print*,t% pars% age,dtm*1.0d+06
                         consvR= .true.
                     endif
     !
-                    call interpolate_mass(id,exclude_core)
+                    call interpolate_mass(t,exclude_core)
                    !write the mass interpolated track if write_eep_file is true
                     if (kw>=1 .and. kw<=4 .and. .false.) call write_eep_track(t,mt)
                     
@@ -195,7 +195,7 @@ if (debug) print*,t% pars% age,dtm*1.0d+06
                 else
                     ! kw=0,1,7: main-sequence star, rewrite all columns with new track
                     if (debug)print*, 'main-sequence star, rewrite with new track'
-                    call interpolate_mass(id,exclude_core)
+                    call interpolate_mass(t,exclude_core)
                     
                     call calculate_timescales(t)
                     t% times_new = t% times

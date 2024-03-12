@@ -1,7 +1,6 @@
 subroutine METISSE_zcnsts(z,zpars)
     use track_support
     use z_support
-    use remnant_support
 
     real(dp), intent(in) :: z
     real(dp), intent(out) :: zpars(20)
@@ -161,7 +160,6 @@ subroutine METISSE_zcnsts(z,zpars)
         allocate(xa(num_tracks))
         xa% filename = track_list
         set_cols = .true.
-        
         
         if (i == 2) then
             xa% is_he_track = .true.

@@ -337,8 +337,12 @@
 *
 * Combine the core masses.
 *
-         if (SSE_FLAG .eqv. .false.) call set_star_type(J1)
          IF(KW.EQ.2)THEN
+            if (SSE_FLAG .eqv. .false.) then
+            call set_star_type(J1)
+            CALL star(KW,M1,M1,TM2,TN,TSCLS2,LUMS,GB,ZPARS,DTM
+     &                          ,J1)
+            else
             CALL star(KW,M1,M1,TM2,TN,TSCLS2,LUMS,GB,ZPARS,DTM
      &                          ,J1)
             IF(GB(9).GE.MC1)THEN
@@ -347,8 +351,10 @@
                CALL star(KW,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
      &                                DTM,J1)
             ENDIF
+            endif
          ELSEIF(KW.EQ.7)THEN
             M01 = M1
+            if (SSE_FLAG .eqv. .false.) call set_star_type(J1)
             CALL star(KW,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
             AJ1 = TM1*(FAGE1*MC1 + FAGE2*MC22)/(MC1 + MC22)
          ELSEIF(KW.EQ.4.OR.MC2.GT.0.D0.OR.KW.NE.KW1)THEN
@@ -358,7 +364,7 @@
 *
 * Obtain a new age for the giant.
 *
-      if(dbg)print*,'getting new gntage following merger',kw1,kw2,kw
+            if(dbg)print*,'gntage call after merger',kw1,kw2,kw
             CALL gntage(MC1,M1,KW,ZPARS,M01,AJ1,J1)
             CALL star(KW,M01,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,DTM,J1)
          ENDIF

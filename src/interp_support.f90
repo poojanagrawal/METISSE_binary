@@ -11,11 +11,10 @@ module interp_support
     contains
 
     !   interpolates a new track given initial mass
-    subroutine interpolate_mass(id, exclude_core)
+    subroutine interpolate_mass(t, exclude_core)
         implicit none
-        
+
         logical, intent(in) :: exclude_core
-        integer, intent(in) :: id
 
         real(dp) :: mass
         type(track), pointer :: t
@@ -27,9 +26,7 @@ module interp_support
         integer, allocatable :: eeps(:), excl_cols(:)
         
         debug_mass = .false.
-!        if (id ==1)debug_mass = .true.
         
-        t => tarr(id)
         mass = t% initial_mass
         dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
 
@@ -62,7 +59,7 @@ module interp_support
         k = minloc(a(mlo:mhi)% ntrack,dim=1)
         t% min_index = min_index
         
-        if (debug_mass) print*,"mass, keyword", mass,keyword
+        if (debug_mass) print*,"mass, keyword", mass,keyword,t% is_he_track
         if (debug_mass) print*,"interpolate mass" , a% initial_mass
         if (debug_mass) print*,"interpolate ntrack" , a% ntrack
         
@@ -70,24 +67,29 @@ module interp_support
             nt = t% ntrack
             t% ntrack = min(nt,a(k)% ntrack)
         else
-            t% ntrack = a(k)% ntrack
             call write_header(t,s(min_index))
+            !t% ntrack = min(a(k)% ntrack,get_min_ntrack(t% star_type, t% is_he_track))
+            t% ntrack = a(k)% ntrack
+            allocate(t% tr(t% ncol+1, t% ntrack))
+            t% tr = 0d0
         endif
+        
         
         ! interpolate the new track for given initial mass
         ! based on keyword
+        if (start>1) t% tr(:,1:start-1) =-1
+
         select case(keyword)
         case(no_interpolation)
             do j=1,t% ncol
                 if (exclude_core .and. any(j .eq. excl_cols,1)) cycle
-                t% tr(j,1:t% ntrack) = a(1)% tr(j,1:t% ntrack)
+                t% tr(j,start:t% ntrack) = a(1)% tr(j,start:t% ntrack)
             end do
             
         case(linear)
-            !print*, "case1: mlo mhi", mlo, mhi
             alfa = (t% initial_mass - a(mlo)% initial_mass)/(a(mhi)% initial_mass - a(mlo)% initial_mass)
             beta = 1d0 - alfa
-            do i=1,t% ntrack
+            do i = start,t% ntrack
                 do j=1,t% ncol
                     if (exclude_core .and. any(j .eq. excl_cols,1)) cycle
                     t% tr(j,i) = alfa*a(mhi)% tr(j,i) + beta*a(mlo)% tr(j,i)
@@ -97,8 +99,7 @@ module interp_support
         case(Steffen1990)
             x = a(mlo:mhi)% initial_mass
             dx = t% initial_mass - x(2)
-            if (start>1) t% tr(:,1:start-1) =-1
-            do i=start,t% ntrack
+            do i = start,t% ntrack
                 do j=1,t% ncol
                     if (exclude_core .and. any(j .eq. excl_cols,1)) cycle
                     do k=1,4
@@ -112,13 +113,14 @@ module interp_support
         
         if (fix_track) call check_length(iseg,t,min_index,exclude_core)
 
+        t% tr(i_age2,:) = t% tr(i_age2,:)*1E-6          !Myrs
+
         ! check if mass and age are monotonic
         call smooth_track(t)
 
         ! recalibrate age from ZAMS
         
 !        t% tr(i_age2,:) = t% tr(i_age2,:)- t% tr(i_age2,start)
-        t% tr(i_age2,:) = t% tr(i_age2,:)*1E-6          !Myrs
         
         if (exclude_core) then
 !            if (t% ntrack/=nt) write(UNIT=err_unit,fmt=*)'WARNING: track length changed',t% initial_mass,nt,t% ntrack
@@ -131,7 +133,7 @@ module interp_support
             if (debug_mass) print*, 'eeps',t% neep,t% eep(t% neep), eeps(size(eeps))
         endif
         
-        nullify(t, a ,s)
+        nullify(a,s)
     end subroutine interpolate_mass
 
     subroutine findtracks_for_interpolation(mass,is_he_track,bounds,min_index,keyword,iseg)
@@ -237,12 +239,6 @@ module interp_support
         b% cols(i_age2)% name = a% cols(i_age2)% name
          
         b% cols(b% ncol+1)% name = 'age_old'
-!        if (.not. allocated(b% tr))
-        allocate(b% tr(b% ncol+1, b% ntrack))
-        !allocate(b% eep(b% neep))
-        !b% eep = a% eep(1:b% neep)
-        !if(a% has_phase) b% phase = a% phase
-        b% tr = 0d0
         b% complete = .true.
         b% has_mass_loss = a% has_mass_loss
         b% is_he_track = a% is_he_track
@@ -265,10 +261,10 @@ module interp_support
         !check length
         if (debug_mass) print*,"checking length now"
         if ((t% ntrack >= min_ntrack) ) then
-            if (debug_mass) print*,"length ok", t% initial_mass, t% ntrack
+            if (debug_mass) print*,"length ok", t% initial_mass, t% ntrack,min_ntrack,t% is_he_track
             return
         else
-            if (debug_mass) print*,"not complete", t% initial_mass, t% ntrack, min_ntrack
+            if (debug_mass) print*,"not complete", t% initial_mass, t% ntrack, min_ntrack,t% is_he_track
             
             if (t% is_he_track) then
                 m_low = m_cutoff_he(iseg)
@@ -470,7 +466,7 @@ module interp_support
         else
             start = ZAMS_EEP
         endif
-        call mod_PAV(t% tr(i_age2,start:))
+        call mod_PAV(t% tr(i_age2,start:t% ntrack))
         do i = start+1,t% ntrack
             t% tr(i_mass,i) = min(t% tr(i_mass,i), t% tr(i_mass,i-1))
         end do
@@ -495,14 +491,14 @@ module interp_support
            i = locate(d) !finds the first point in d that is < 0
            start = i
             last = n
-            if (debug) print*, 'in mod_PAV', i, d(i)
-
+            if (debug) print*, 'in mod_PAV', i, d(i),y(i),y(n)
             if (start == old_start) start=old_start-1 !if start is the greatest value not in the end, take one step up and redo
             do while(.true.)
                 if (y(n)- y(start)>0) exit
+!                print*,y(n)- y(start),y(start),y(n)
                 start = start-1
                 if (start <1)  then
-                    write(UNIT=err_unit,fmt=*)"Error in mod_PAV, start<1",start
+                    write(UNIT=err_unit,fmt=*)"Error in mod_PAV, start<1",i,n
                     call stop_code
                 endif
             end do
@@ -1236,5 +1232,6 @@ module interp_support
         deallocate(Mmax,Mmin)
         if (allocated(mlist)) deallocate(mlist)
     end subroutine get_initial_mass_for_new_track
+    
     
   end module interp_support

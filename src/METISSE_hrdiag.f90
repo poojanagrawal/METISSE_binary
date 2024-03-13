@@ -32,7 +32,7 @@
     if(present(id)) idd = id
     t => tarr(idd)
     
-!    if ((id == 2) .and. kw>=1)debug = .true.
+!    if ((id == 1) .and. kw>=4)debug = .true.
 !if(id ==2 .and. t% is_he_track)debug = .true.
     if (debug) print*, '-----------HRDIAG-------------'
     if (debug) print*,"started hrdiag",mt,mc,aj,tn,kw,id
@@ -62,23 +62,6 @@
         if (t% post_agb) then
             ! contruct an artficial track until WD cooling phase is reached
             call evolve_after_agb(t)
-!        elseif (check_ge(t% pars% age,t% tr(i_age,t% ntrack))) then
-        elseif (check_ge(t% pars% age,t% times(11)) ) then
-            !have reached the end of the eep track; self explanatory
-            if (debug) print*,"end of file:aj,tn ",t% pars% age,t% times(11),t% times(kw)
-            if (kw<5 .and. t% ierr==0) then
-                write(UNIT=err_unit,fmt=*) 'WARNING: Early end of file due to incomplete track beyond phase, mass and id',&
-                kw,t% initial_mass,id
-                t% ierr = -1
-!                call stop_code
-            endif
-
-            end_of_file = .true.
-            
-            j_bagb = min(t% ntrack, TA_cHeB_EEP)
-            Mcbagb = t% tr(i_he_core, j_bagb)
-            mc_max = MAX(M_ch,0.773* Mcbagb-0.35)
-            if (check_remnant_phase(t% pars, mc_max)) has_become_remnant = .true.
         else
             !check if phase/type/kw of the star has changed
 
@@ -101,11 +84,27 @@
             if (debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
             t% pars% mass = mt
 
-            !check if envelope has been lost
+            IF (check_ge(t% pars% age,t% times(11))) THEN
+                !check if have reached the end of the eep track
+                if (debug) print*,"end of file:aj,tn ",t% pars% age,t% times(11),t% times(kw)
+                if (kw<5 .and. t% ierr==0) then
+                    write(UNIT=err_unit,fmt=*) 'WARNING: Early end of file due to incomplete track beyond phase, mass and id',&
+                    kw,t% initial_mass,id
+                    t% ierr = -1
+    !                call stop_code
+                endif
+
+                end_of_file = .true.
+                
+                j_bagb = min(t% ntrack, TA_cHeB_EEP)
+                Mcbagb = t% tr(i_he_core, j_bagb)
+                mc_max = MAX(M_ch,0.773* Mcbagb-0.35)
+                if (check_remnant_phase(t% pars, mc_max)) has_become_remnant = .true.
             
-            IF ((t% pars% core_mass.ge.t% pars% mass) .or. &
+            ELSEIF ((t% pars% core_mass.ge.t% pars% mass) .or. &
                 (t% initial_mass>=10.0 .and. abs(t% pars% core_mass-t% pars% mass)<0.01)) THEN
-                    
+                !check if envelope has been lost
+    
                 if (debug) print*, "envelope lost at",t% pars% mass, t% pars% age,t% pars% phase
                 
                 if (t% pars% phase == TPAGB) then
@@ -133,7 +132,7 @@
                         if (t% pars% phase >= He_HG) t% zams_mass = t% tr(i_mass, j_bagb)
                         call star(t% pars% phase,t% zams_mass,t% pars% mass,tm,tn,tscls,lums,GB,zpars,0.d0,id)
                         mass = t% zams_mass
-!                        print*, 'lost envelope', t% pars% phase, t% pars% age,t% MS_time,t% nuc_time,id
+                        if (debug) print*, 'after env loss', t% pars% phase, t% pars% age,t% MS_time,t% nuc_time,id
                     endif
                 endif
             ELSE
@@ -163,6 +162,19 @@
                     lums(4),rzams,rtms,rg,menv,renv,k2)
             endif
         else
+            !check if phase/type/kw of the star has changed
+            old_phase = t% pars% phase
+            do i =9,7,-1
+                if (.not. defined(t% times(i))) cycle
+                if (t% pars% age .lt. t% times(i)) then
+                    t% pars% phase = i
+                endif
+            enddo
+            if (debug .and. t% pars% phase /= old_phase) print*,"phase change",t% pars% age,t% times(i),i
+            !interpolate in age
+            call interpolate_age(t,t% pars% age)
+            if(debug)print*,"mt difference",t% pars% mass,mt,mt-t% pars% mass,t% pars% phase
+            t% pars% mass = mt
             if (check_ge(t% pars% age,t% times(11)) .or. (t% pars% core_mass.ge.t% pars% mass)) then
                 !have reached the end of the eep track; self explanatory
                 if (debug) print*,"end of file:aj,tn ",t% pars% age,t% tr(i_he_age,t% ntrack),t% times(kw)
@@ -173,19 +185,6 @@
                 mc_max = MAX(M_ch,0.773* Mcbagb-0.35)
                 if (check_remnant_phase(t% pars, mc_max)) has_become_remnant = .true.
             else
-                !check if phase/type/kw of the star has changed
-                old_phase = t% pars% phase
-                do i =9,7,-1
-                    if (.not. defined(t% times(i))) cycle
-                    if (t% pars% age .lt. t% times(i)) then
-                        t% pars% phase = i
-                    endif
-                enddo
-                if (debug .and. t% pars% phase /= old_phase) print*,"phase change",t% pars% age,t% times(i),i
-                !interpolate in age
-                call interpolate_age(t,t% pars% age)
-                if(debug)print*,"mt difference",t% pars% mass,mt,mt-t% pars% mass,t% pars% phase
-                t% pars% mass = mt
                 if (t% pars% core_radius<0) CALL calculate_rc(t,tscls,zpars,t% pars% core_radius)
                 rc = t% pars% core_radius
                 call get_mcrenv_from_cols(t,lums,menv,renv,k2)

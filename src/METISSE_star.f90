@@ -96,6 +96,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         t% ms_old = t% MS_time
         t% pars% age_old = t% pars% age
         t% tr(age_col,:) = t% tr(i_age2,:)
+        t% pars% dms = 0.d0
         if (eep_m>0 .and. eep_m<=t% ntrack) t% pars% age = min(t% tr(age_col,eep_m), t% times(11)-1d-6)
     case(remnant)
         tm = 1.0d+10
@@ -130,7 +131,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             if (debug) print*, 'delta is', delta,t% pars% delta,delta1,t% pars% mass
             if (delta.ge.0.2*mt) then
                 write(UNIT=err_unit,fmt=*)'large delta',delta,t% pars% mass,mt,kw,id
-!               call stop_code
+               call stop_code
             endif
             
     !       if (dtm<0.d0) print*,'dtm<0',t% pars% age,dtm

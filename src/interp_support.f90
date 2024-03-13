@@ -499,7 +499,7 @@ module interp_support
                 start = start-1
                 if (start <1)  then
                     write(UNIT=err_unit,fmt=*)"Error in mod_PAV, start<1",i,n
-                    call stop_code
+!                    call stop_code
                 endif
             end do
             if (debug) print*,'start, old_start', start, old_start
@@ -658,7 +658,7 @@ module interp_support
 
                 if (age< x(2) .or. age> x(3)) then
                    write(UNIT=err_unit,fmt=*)"Error in cubic interpolation in interp_support"
-                   call stop_code
+!                   call stop_code
                 endif
 
                 do j = jstart,jend
@@ -684,7 +684,7 @@ module interp_support
 
         if (t% pars% mass <0.0) then
             write(UNIT=err_unit,fmt=*)"Fatal Error: mass <0 in interpolate age",input_age,kw
-            call stop_code
+!            call stop_code
         endif
         if (debug) print*, 'exiting interpolate_age'
     end subroutine interpolate_age

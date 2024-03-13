@@ -1045,7 +1045,7 @@
 *            print*, 'test r',rad(j1),rol(j1),rdot(j1)
 *            print*, 'test dtm',dtm,iter,intpol
             if(ABS(tphys0-tphys).gt.tiny) dtm = MAX(dtm,tphys0-tphys)
-*            print*, 'test2 dtm',dtm,tphys0-tphys
+            if (dbg)print*, 'rlof lim dtm',dtm,tphys0-tphys
             if(kstar(1).ne.kw1)then
                kstar(1) = kw1
                mass0(1) = mass00(1)

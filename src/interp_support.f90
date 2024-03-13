@@ -596,8 +596,7 @@ module interp_support
 !            age2 = new_age(t% times(kw),t% times(kw-1),t% times_new(kw),t% times_new(kw-1),input_age)
             
 !            print*, "in interp2", age2, input_age,frac,kw
-!            if (kw==2)print*,'times',t% times_new(kw-1),them_new,t% pars% mass
-            !t% times(kw)-t% times(kw-1),kw!,t% times_new(kw),t% times_new(kw-1)
+!            if (kw==1)print*,'times',them_new,them,t% times_new(kw),t% times_new(kw-1),t% times(kw),t% times(kw-1)
         endif
 
         do pass = 1, n_pass
@@ -684,7 +683,7 @@ module interp_support
         deallocate(new_line)
 
         if (t% pars% mass <0.0) then
-            write(UNIT=err_unit,fmt=*)"Fatal Error: mass <0 in interpolate age"
+            write(UNIT=err_unit,fmt=*)"Fatal Error: mass <0 in interpolate age",input_age,kw
             call stop_code
         endif
         if (debug) print*, 'exiting interpolate_age'
@@ -725,11 +724,6 @@ module interp_support
         debug =  .false.
         !Todo: min_eeps-> nbr_eeps
 !         if (t% is_he_track) debug = .true.
-
-        if (age .gt. t% tr(age_col,t% eep(t% neep))) then
-            min_eeps = [t% eep(t% neep)-1,t% eep(t% neep)]
-            return
-        endif
         
         last_age = 0.d0
         initial_eep = ZAMS_EEP
@@ -785,9 +779,17 @@ module interp_support
             deallocate(age_list)
             exit
         end do
-        if(.not.allocated(min_eeps)) &
-            write(UNIT=err_unit,fmt=*)'Error finding nearest eeps for age:',age,age_col
-
+        
+    
+        if(.not.allocated(min_eeps)) then
+            if (age .gt. t% tr(age_col,t% eep(t% neep))) then
+                min_eeps = [t% eep(t% neep)-1,t% eep(t% neep)]
+                if (debug) print*,"age>t%neep", t%neep
+                return
+            else
+                write(UNIT=err_unit,fmt=*)'Error finding nearest eeps for age:',age,age_col
+            endif
+        endif
     end subroutine find_nearest_eeps
     
     subroutine save_values(new_line,pars)
@@ -1036,7 +1038,7 @@ module interp_support
         debug = .false.
 !        if(id ==2 .and. t% is_he_track) debug = .true.
 !        if (id ==1) debug = .true.
-!        if (t% star_type==rejuvenated) debug = .true.
+!        if (t% star_type==switch) debug = .true.
         
         !using the original age of the star to keep core properties comparable
         !using other (secondary)age doesn't matches well with detailed models either
@@ -1144,8 +1146,9 @@ module interp_support
                 endif
             end do
         endif
-        
         if (debug) print*,"modified eep_n : ",eep_n
+
+        if (t% star_type == switch .and. eep_n<0) eep_n = eep_m
         
         if (eep_n >0) then
             ! get mass bounds for Mnew at eep_n
@@ -1163,10 +1166,8 @@ module interp_support
             !find lower bound, start at Min_index
             do i = 0, num_list
                 k = t% min_index+i
-!                if (debug) print*,'check0',k,i,mlow
 
                 if (k <= num_list) then
-    !                print*, 'low',k,mlist(k),mnew
                     if (mlist(k) >0 .and. mlist(k).le.Mnew) then
                         Mlow = k
                         exit
@@ -1174,8 +1175,6 @@ module interp_support
                 endif
                 ! search the other side now
                 k = t% min_index-i
-!                if (debug) print*,'check2',k,i,mlow
-
                 if (k >=1 .and. i>0) then
                     if (mlist(k) >0 .and. mlist(k).le.Mnew) then
                         Mlow = k
@@ -1183,12 +1182,11 @@ module interp_support
                     endif
                 endif
             end do
-!            if (debug) print*,'check00000',k,i,mlow,t% min_index
 
             ! find upper bound, start at tracks neighbouring Mlow
             do i = 1, size(s)
                 k = Mlow+i
-                if (k <= num_list) then
+                if (k <= num_list .and. k>=1) then
                     if (mlist(k) >0 .and. mlist(k)>Mnew) then
                         Mupp = k
                         exit
@@ -1196,8 +1194,8 @@ module interp_support
                 endif
                 ! search the other side now
                 k = Mlow-i
-                if (k >=1) then
-    !            print*, 'high',k,mlist(k),mnew
+
+                if (k >=1 .and. k<=num_list) then
                     if (mlist(k) >0 .and. mlist(k)>Mnew) then
                         Mupp = k
                         exit
@@ -1209,12 +1207,20 @@ module interp_support
         if (debug)  print*, "Mup", Mupp, "mlow",Mlow,"min_index",t% min_index
         ! if no solution is found, we keep using the old tracks for interpolation
 
+        if (t% star_type == switch) then
+            if (Mlow<1) then
+                Mlow = 1
+                Mupp = 2
+            elseif (Mupp> num_list) then
+                Mupp = num_list
+                mlow = num_list -1
+            endif
+        endif
+            
         if(Mlow < 0 .or. Mupp <0) then
             if (debug) print*,"Error: beyond the bounds for interpolation"
             if (debug) print*, "Mlow,Mupp,num_list,mnew,eep_n", &
                     Mlow,Mupp,num_list,mnew,eep_n
-            if (Mlow<1) Mlow = 1
-            if (Mupp> num_list) Mupp = num_list
         else
             if (debug) print*,"mnew =",mnew,"masses at Mup =",mlist(Mupp),"mlow = ",mlist(Mlow)
             

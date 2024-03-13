@@ -25,7 +25,6 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
     if(present(id)) idd = id
     t => tarr(idd)
 
-    
     dtm = 0.d0
     mcy = 0.d0
     mt0 = mt
@@ -55,7 +54,6 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
             kw = 3
             if (debug) WRITE(*,*)' GNTAGE4: changed to 3'
          endif
-         
       endif
 
     !Next we check that we don't have a GB star for M => Mfgb
@@ -91,7 +89,7 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
         aj = t% pars% age
     case(6)
         ! We try to start the star from the start of the SAGB.
-                    if (debug) WRITE(*,*)'TPAGB'
+        if (debug) WRITE(*,*)'TPAGB'
 
         if (t% is_he_track) then
             t% pars% age = t% times(He_HG)
@@ -105,7 +103,7 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
         aj = tscls(13)
     case(5)
         ! We fit a Helium core mass at the base of the AGB.
-                if (debug) WRITE(*,*)'AGB'
+        if (debug) WRITE(*,*)'AGB'
 
         if (t% is_he_track) then
             t% pars% age = t% times(He_MS)
@@ -120,7 +118,7 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
         aj = tscls(2) + tscls(3)
     case(4)
     
-            if (debug) WRITE(*,*)'chb'
+        if (debug) WRITE(*,*)'chb'
 
         ! The supplied age is actually the fractional age, fage, of CHeB lifetime
         ! that has been completed, ie. 0 <= aj <= 1.
@@ -140,7 +138,7 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
                 
         
     case(3)
-            if (debug) WRITE(*,*)'rgb'
+        if (debug) WRITE(*,*)'rgb'
 
         !Place the star at the BGB
         if (t% is_he_track) then
@@ -151,14 +149,13 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
         endif
         CALL star(kw,m0,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         aj = tscls(1) + 1.0d-06*(tscls(2) - tscls(1))
-
-        
-    
     end select
     
     t% pars% age = aj
     t% pars% phase = kw
     mt = mt0
+    m0 = t% zams_mass
+
     nullify(t)
     
     if (debug)write(UNIT=err_unit,fmt=*)'exit gntage',kw,m0,mt,mc,aj

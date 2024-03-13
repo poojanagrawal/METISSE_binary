@@ -406,12 +406,12 @@
         !pars% McHe = 0.0
         if(pars% core_mass > Max_NS_mass)then
             pars% phase = BH  !Accretion induced Black Hole
-            pars% age = 0.0
-            pars% luminosity = 1.0E-10
-            pars% radius = 4.24E-06*pars% mass
+            pars% age = 0.d0
+            pars% luminosity = 1.0d-10
+            pars% radius = 4.24d-06*pars% mass
         else
             pars% luminosity = 0.02*(pars% mass**0.67)/(MAX(pars% age,0.1d0))**2
-            pars% radius= 1.4E-05
+            pars% radius= 1.4d-05
         endif
         
         !print*,"I am in evolve_neutron_star"
@@ -422,8 +422,8 @@
         !Black hole
         !pars% mass has been calculated during remnant check
         pars% core_mass = pars% mass 
-        pars% luminosity = 1.0E-10
-        pars% radius = 4.24E-06*pars% mass
+        pars% luminosity = 1.0d-10
+        pars% radius = 4.24d-06*pars% mass
         !pars% McCO = 0.0
         !pars% McHe = 0.0
 
@@ -431,24 +431,24 @@
 
     subroutine initialize_massless_rem(pars)
         type(star_parameters) :: pars
-        pars% age = 0.0
-        pars% mass = 0.0
-        pars% luminosity = 1E-10
-        pars% radius = 1E-10
-        pars% Teff = 1E-10
-        pars% core_mass = 0.0
-        pars% McCO = 0.0
-        pars% McHe = 0.0
+        pars% age = 0.d0
+        pars% mass = 0.d0
+        pars% luminosity = 1d-10
+        pars% radius = 1d-10
+        pars% Teff = 1d-10
+        pars% core_mass = 0.d0
+        pars% McCO = 0.d0
+        pars% McHe = 0.d0
     end subroutine
 
     subroutine initialize_ECSNe(pars)
     type(star_parameters) :: pars
         !pars% age_old = pars% age
-        pars% age = 0.0
-        pars% mass = 1.26
+        pars% age = 0.d0
+        pars% mass = 1.26d0
         pars% core_mass= pars% mass
         pars% luminosity = 0.02*(pars% mass**0.67)/(MAX(pars% age,0.1d0))**2
-        pars% radius= 1.4E-05
+        pars% radius= 1.4d-05
     end subroutine
     
     subroutine assign_stripped_star_phase(t,HeI_time)

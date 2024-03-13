@@ -32,7 +32,7 @@
     if(present(id)) idd = id
     t => tarr(idd)
     
-!    if ((id == 1) .and. kw>=3)debug = .true.
+!    if ((id == 2) .and. kw>=1)debug = .true.
 !if(id ==2 .and. t% is_he_track)debug = .true.
     if (debug) print*, '-----------HRDIAG-------------'
     if (debug) print*,"started hrdiag",mt,mc,aj,tn,kw,id
@@ -70,7 +70,7 @@
                 write(UNIT=err_unit,fmt=*) 'WARNING: Early end of file due to incomplete track beyond phase, mass and id',&
                 kw,t% initial_mass,id
                 t% ierr = -1
-!                    call stop_code
+!                call stop_code
             endif
 
             end_of_file = .true.
@@ -132,6 +132,7 @@
                         j_bagb = min(t% ntrack, TA_cHeB_EEP)
                         if (t% pars% phase >= He_HG) t% zams_mass = t% tr(i_mass, j_bagb)
                         call star(t% pars% phase,t% zams_mass,t% pars% mass,tm,tn,tscls,lums,GB,zpars,0.d0,id)
+                        mass = t% zams_mass
 !                        print*, 'lost envelope', t% pars% phase, t% pars% age,t% MS_time,t% nuc_time,id
                     endif
                 endif
@@ -258,7 +259,7 @@
         t% post_agb = post_agb
         !tm and tn get calculated in star.f90
     endif
-!    if (irecord>0 .and. debug) print*,"finished hrdiag",mt,mc,aj,kw,id,tm,tn
+    if (irecord>0 .and. debug) print*,"finished hrdiag",mt,mc,aj,kw,id,tm,tn
 !    print*,"finished hrdiag",t% pars% mass, t% pars% core_mass,t% pars% age,t% pars% radius,id
 
     nullify(t)

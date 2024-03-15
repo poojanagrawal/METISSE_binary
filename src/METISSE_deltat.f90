@@ -106,5 +106,6 @@
 !               call stop_code
             endif
             
+!            print*, 'timestep',t% pars% dt, id
             nullify(t)
       end subroutine METISSE_deltat

@@ -583,20 +583,20 @@ module interp_support
         elseif (kw>1 .and. kw<=9) then
             n_pass = 2
             
-            !TODO: this is temporary until gntage is modified
-            ! to avoid NaN during interpolation
-            if ((kw<5) .and.(t% times(kw)-t% times(kw-1)<1d-12)) kw = kw+1
-        
             !scale the input age for the new track
             them = t% times(kw)-t% times(kw-1)
             them_new = t% times_new(kw)-t% times_new(kw-1)
+            
+            ! to avoid NaN during interpolation
+            if (kw<5) .and.(t% times(kw)-t% times(kw-1)<1d-12)) kw = kw+1
+            
             frac = (input_age-t% times(kw-1))/them
             age2 = t% times_new(kw-1)+(frac*them_new)
             t% pars% age2 = age2
 !            age2 = new_age(t% times(kw),t% times(kw-1),t% times_new(kw),t% times_new(kw-1),input_age)
             
 !            print*, "in interp2", age2, input_age,frac,kw
-!            if (kw==1)print*,'times',them_new,them,t% times_new(kw),t% times_new(kw-1),t% times(kw),t% times(kw-1)
+            if (debug)print*,'times',them_new,them,t% times_new(kw),t% times_new(kw-1),t% times(kw),t% times(kw-1)
         endif
 
         do pass = 1, n_pass
@@ -629,19 +629,20 @@ module interp_support
 
             elseif ((mhi-mlo)<4) then
                 !linear interpolation
-                if (debug) print*, "doing linear interp in age"
                 alfa = (age - t% tr(age_col,mlo))/(t% tr(age_col,mhi) - t% tr(age_col,mlo))
                 beta = 1d0 - alfa
+                if (debug) print*, "doing linear interp in age",alfa,age,t% tr(age_col,mlo),t% tr(age_col,mhi)
+
+
                 do j = jstart,jend
                     interpolate = check_core_quant(j,pass,t% is_he_track)
                     if (interpolate) then
                         new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
-                        
                         if (new_line(j,1)/= new_line(j,1) .and. t% ierr==0) then
                             write(UNIT=err_unit,fmt=*) 'Warning: NaN encountered during interpolation age',&
                                 t% initial_mass,input_age,j,mhi,mlo,kw
                             t% ierr = -1
-    !                        call stop_code
+                            call stop_code
                             return
                         endif
                         
@@ -684,7 +685,7 @@ module interp_support
 
         if (t% pars% mass <0.0) then
             write(UNIT=err_unit,fmt=*)"Fatal Error: mass <0 in interpolate age",input_age,kw
-!            call stop_code
+            call stop_code
         endif
         if (debug) print*, 'exiting interpolate_age'
     end subroutine interpolate_age
@@ -1019,19 +1020,18 @@ module interp_support
         
     end function
     
-    subroutine get_initial_mass_for_new_track(t,id, eep_m)
+    subroutine get_initial_mass_for_new_track(t,id,mnew,eep_m)
 
-!        real(dp), intent(in) :: delta
-        type(eep_track), pointer :: s(:)
+        real(dp), intent(in) :: Mnew
+
         type(track), pointer :: t
+        integer :: eep_m,id
 
-        integer :: num_list,Mupp,Mlow,i,j,k,nt,id
+        type(eep_track), pointer :: s(:)
         real(dp), pointer :: age_list(:)
-
         real(dp), allocatable:: mlist(:), Mmax(:), Mmin(:)
-
-        real(dp) :: Mnew,alfa,beta,age
-        integer :: eep_m, eep_n
+        real(dp) :: alfa,beta,age
+        integer :: i,j,k,nt,eep_n,num_list,Mupp,Mlow
 
         logical :: debug
 
@@ -1039,45 +1039,41 @@ module interp_support
 !        if(id ==2 .and. t% is_he_track) debug = .true.
 !        if (id ==1) debug = .true.
 !        if (t% star_type==switch) debug = .true.
-        
-        !using the original age of the star to keep core properties comparable
-        !using other (secondary)age doesn't matches well with detailed models either
-        if (t% pars% age<0.d0) return
-        
-        age = t% pars% age
-        
+                    
         !nt is the length of the track before new interpolation
         nt = t% ntrack
         
-        eep_m = -1
         eep_n = -1
         Mlow = -1
         Mupp = -1
-        Mnew = t% pars% mass+t% pars% delta
     
-        ! create appropiate age pointers
-        
-        if (t% is_he_track .and. t% star_type /= switch) then
-            if (debug) print*, 'switching from h to he star'
-            age_list => t% tr(i_he_age,1:nt)
-        elseif (t% star_type == switch .and. (.not. t% is_he_track)) then
-            if (debug) print*, 'switching from he to h star- rejuvenataion'
-            age_list => t% tr(i_he_age,1:nt)
-        else
-            if (debug) print*, 'business as usual'
-            age_list => t% tr(i_age,1:nt)
-        endif
+        IF (eep_m<0) THEN
+            !using the original age of the star to keep core properties comparable
+            age = t% pars% age
+            
+            ! create appropiate age pointers
+            if (t% is_he_track .and. t% star_type /= switch) then
+                if (debug) print*, 'switching from h to he star'
+                age_list => t% tr(i_he_age,1:nt)
+            elseif (t% star_type == switch .and. (.not. t% is_he_track)) then
+                if (debug) print*, 'switching from he to h star'
+                age_list => t% tr(i_he_age,1:nt)
+            else
+                age_list => t% tr(i_age,1:nt)
+            endif
 
-        if (debug) print*,"getting new initial mass mnew at age and phase: ",mnew,age,t% pars% phase,id
-        
-!        call index_search(nt,age_list,age,eep_m)
-        eep_m = binary_search(nt,age_list,age)
+            if (debug) print*,"getting new initial mass mnew at age and phase: ",mnew,age,t% pars% phase,id
+            
+    !        call index_search(nt,age_list,age,eep_m)
+            eep_m = binary_search(nt,age_list,age)
 
-    !    if (age_list(eep_m)<age) eep_m = eep_m+1
-        if (eep_m > nt) eep_m = nt
-        if (debug) print*,"nearest index eep_m, ntrack : ",eep_m,nt, age, age_list(nt)
+        !    if (age_list(eep_m)<age) eep_m = eep_m+1
+            if (eep_m > nt) eep_m = nt
+            if (debug) print*,"nearest index eep_m, ntrack : ",eep_m,nt, age, age_list(nt)
+            
+            nullify(age_list)
         
-        nullify(age_list)
+        ENDIF
         
         if (t% star_type == switch) then
             if (t% is_he_track)then

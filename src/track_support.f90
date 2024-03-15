@@ -50,7 +50,6 @@ module track_support
     integer, parameter :: sse_he_star       =  7    ! special type for He star evolved using sse formulae
     integer, parameter :: rejuvenated       =  8
     integer, parameter :: switch            =  9     ! temporary type when switching from hydrogen to helium stars
-                                                    
     
     
     character(len=10) :: star_label(4) = ['   unknown', 'substellar', '  low-mass', ' high-mass']
@@ -206,7 +205,7 @@ module track_support
         integer :: star_type = unknown, irecord,ierr
         
         real(dp) :: initial_mass, initial_Z, initial_Y, Fe_div_H,  v_div_vcrit, alpha_div_Fe
-        real(dp) :: initial_mass_old,zams_mass      !effective initial mass (M0 of SSE)
+        real(dp) :: initial_mass_old,zams_mass,zams_mass_old      !effective initial mass (M0 of SSE)
         real(dp) :: MS_time, nuc_time, ms_old
         
         real(dp), allocatable :: tr(:,:)

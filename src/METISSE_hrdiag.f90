@@ -27,12 +27,12 @@
     INTEGER irecord
     COMMON /REC/ irecord
 
-    debug = .false.
     idd = 1
     if(present(id)) idd = id
     t => tarr(idd)
     
-!    if ((id == 1) .and. kw>=4)debug = .true.
+    debug = .false.
+    if ((id == 1) .and. kw>=9)debug = .true.
 !if(id ==2 .and. t% is_he_track)debug = .true.
     if (debug) print*, '-----------HRDIAG-------------'
     if (debug) print*,"started hrdiag",mt,mc,aj,tn,kw,id
@@ -47,17 +47,16 @@
         old_pars = t% pars
         ! is_he_track etc.
     endif
-  
-    if (t% star_type==rejuvenated) call star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,0.d0,id)
-      
+        
     t% pars% mass = mt
     t% pars% phase = kw
     t% irecord = irecord
     t% pars% core_mass = mc
     if (aj/=aj) aj = t% pars% age
-!    if (aj<0.d0) aj = 0.d0
     t% pars% age = aj
+!    if (aj<0.d0) stop
 
+    
     IF (t% pars% phase<=TPAGB) THEN
         if (t% post_agb) then
             ! contruct an artficial track until WD cooling phase is reached
@@ -91,7 +90,7 @@
                     write(UNIT=err_unit,fmt=*) 'WARNING: Early end of file due to incomplete track beyond phase, mass and id',&
                     kw,t% initial_mass,id
                     t% ierr = -1
-    !                call stop_code
+                    call stop_code
                 endif
 
                 end_of_file = .true.
@@ -101,8 +100,8 @@
                 mc_max = MAX(M_ch,0.773* Mcbagb-0.35)
                 if (check_remnant_phase(t% pars, mc_max)) has_become_remnant = .true.
             
-            ELSEIF ((t% pars% core_mass.ge.t% pars% mass) .or. &
-                (t% initial_mass>=10.0 .and. abs(t% pars% core_mass-t% pars% mass)<0.01)) THEN
+            ELSEIF (t% pars% core_mass.ge.t% pars% mass) THEN
+!               .or. (t% initial_mass>=10.0 .and. abs(t% pars% core_mass-t% pars% mass)<0.01)) THEN
                 !check if envelope has been lost
     
                 if (debug) print*, "envelope lost at",t% pars% mass, t% pars% age,t% pars% phase

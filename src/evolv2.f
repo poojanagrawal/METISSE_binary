@@ -1292,13 +1292,12 @@
             mass(j2) = mass(j2) + dm2
             if(kstar(j2).eq.2)then
                mass0(j2) = mass(j2)
+               if (SSE_FLAG .eqv. .false.) call set_star_type(J2)
                if(dbg)print*,'RLOF secondary giant,calling star',j2
                CALL star(kstar(j2),mass0(j2),mass(j2),tmsnew,tn,
      &                   tscls,lums,GB,zpars,dtm,j2)
-               if (SSE_FLAG .eqv. .true.) then
                aj(j2) = tmsnew + tscls(1)*(aj(j2)-tms(j2))/tbgb(j2)
                epoch(j2) = tphys - aj(j2)
-               endif
             endif
          elseif(kstar(j2).le.12)then
 *

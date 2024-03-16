@@ -18,11 +18,11 @@
     
         dtr = -1.d0
         dt = -1.d0
-        tMS_hook = (0.95* t% times(1))
         !Base new time scale for changes in radius & mass on stellar type.
         select case (t% pars% phase)
             case(low_mass_MS:MS)
-                if (age<= tMS_hook) then
+                tMS_hook = (0.95d0* t% times(1))
+                if (age .le. tMS_hook) then
                     dt = pts1* t% times(1)
                 else
                     dt = pts2*(t% times(1)-tMS_hook)
@@ -70,7 +70,6 @@
                         dt = pts2*(t% times(9) - age)
                     endif
                      dtr = t% nuc_time -age
-                    !TODO: Next line requires a check
                     !Note that this is done to avoid negative timesteps
                     ! that result from more massive cores than what sse formulae can handle
                     dtr = max(dtr,1d-10)
@@ -96,6 +95,8 @@
         end select
 
             t% pars% dt = min(dt,dtr)
+!            if (id ==2)print*,'timestep',dt,dtr,t% pars% dt,t% times(1),age, t% pars% phase,id
+
             if (t% pars% dt<=0.0 .and. t% ierr==0) then
                 write(UNIT=err_unit,fmt=*)"fatal error: invalid timestep", t% pars% dt ,"for phase and id", t% pars% phase,id
                 write(UNIT=err_unit,fmt=*)"zams_mass, pars% mass, nuc_time, age, dt,dtr"
@@ -106,6 +107,5 @@
 !               call stop_code
             endif
             
-!            print*, 'timestep',t% pars% dt, id
             nullify(t)
       end subroutine METISSE_deltat

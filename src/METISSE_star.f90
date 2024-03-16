@@ -22,7 +22,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     t => tarr(idd)
             
     debug = .false.
-    if ((id == 1) .and. kw>=9)debug = .true.
+!    if ((id == 1) .and. kw>=1)debug = .true.
 !    if (t% star_type==rejuvenated) debug = .true.
 
     if (debug) print*, '-----------STAR---------------'
@@ -121,7 +121,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             endif
             delta = (mt-t% pars% mass) + delta_wind
             
-            if (debug)print*, 'delta org', delta,t% pars% mass,mt,delta_wind
+            if (debug)print*, 'delta org', delta,delta_wind,mt,t% pars% mass
             t% pars% delta = t% pars% delta+ delta
             delta1 = 2.0d-04*mt
             if (debug) print*, 'delta is', delta,t% pars% delta,delta1,t% pars% mass
@@ -150,7 +150,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             IF (dtm<0.d0) THEN
             ! print*,'dtm<0',t% pars% age,dtm
             ! check for phase or age reversals that may occur RLOF check
-                if (t% pars% phase>= He_MS .and. t% pars% phase<=He_GB .and. kw<7)then
+                if (t% pars% phase>= He_MS .and. kw<7)then
                     
                     if (debug)print*,'rev to old initial_mass for phase',t% pars% phase,kw
                     t% pars% phase = kw
@@ -176,7 +176,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     if(quant.le.t% pars% age_old) then
                         t% initial_mass = t% initial_mass_old
                         mass_check = .true.
-                        if (debug)print*,'rev to old initial_mass',quant,t% pars% age_old
+                        if (debug)print*,'rev to old initial_mass',t% initial_mass,quant,t% pars% age_old
                     endif
                 endif
             ENDIF
@@ -252,7 +252,8 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     t% nuc_time = tn
 
     if (debug)print*, "in star end", mt,delta,kw,tm,tn,t%initial_mass,t% zams_mass
-    
+        if (debug) print*, '-----------------------------'
+
     nullify(t)
     return
 end subroutine METISSE_star

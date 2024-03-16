@@ -276,7 +276,7 @@ module track_support
             min_index = 1; return
         elseif (check_equal(value, list(size_list)))then
             min_index = size_list; return
-        else if (value > list(size_list)) then
+        elseif (value > list(size_list)) then
             min_index = size_list+1; return
         end if
 
@@ -663,7 +663,7 @@ module track_support
     logical function check_ge(x,y) result(z)
     !TODO: needs to be checked before use
     real(dp), intent(in) :: x,y
-        if (x>y .or. abs(x-y)<tiny) then
+        if (x.ge.y .or. abs(x-y)<tiny) then
             z = .true.
         else
             z = .false.
@@ -674,7 +674,7 @@ module track_support
     logical function check_le(x,y) result(z)
     !TODO: needs to be checked before use
     real(dp), intent(in) :: x,y
-        if (x<y .or. abs(x-y)<tiny) then
+        if (x.le.y .or. abs(x-y)<tiny) then
             z = .true.
         else
             z = .false.
@@ -693,7 +693,7 @@ module track_support
     threshold = 1d-4
     endif
         diff = abs(x-y)
-        if (diff<=threshold) then
+        if (diff.le.threshold) then
             z = .true.
         else
             z = .false.
@@ -703,7 +703,7 @@ module track_support
 
     logical function defined(x) result(y)
         real(dp), intent(in) :: x
-        if (abs(x-undefined)<=tiny) then
+        if (abs(x-undefined).le.tiny) then
             y = .false.
         else
             y = .true.
@@ -715,7 +715,7 @@ module track_support
     ! used for checking if locations are identified
     logical function identified(x) result(y)
         integer, intent(in) :: x
-        if (abs(x-undefined_i)<=0) then
+        if (abs(x-undefined_i).le.0.d0) then
             y = .false.
         else
             y = .true.

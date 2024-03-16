@@ -637,7 +637,7 @@
       do 504 , k = kmin,kmax
 *
          dms(k) = (dmr(k) - dmt(k))*dt
-*         if (k==2)print*,'dmr,dmt,dms,dt=',dmr(k)*dt,dmt(k)*dt
+         if (dbg)print*,'wind,acc=',dmr(k)*dt,dmt(k)*dt,dtm
         if (dbg)print*, 'dms=', dms,dtm,k
          if(kstar(k).lt.10)then
             dml = mass(k) - massc(k)
@@ -1070,7 +1070,7 @@
 * Check if already interpolating.
 *
          if(intpol.gt.0)then
-            if (dbg) print*, "already intp",tphys,dtm
+            if (dbg) print*, "already intp",rad(j1),rol(j1),tphys,dtm
             intpol = intpol + 1
             if(intpol.ge.80)then
                inttry = .true.
@@ -1951,7 +1951,7 @@
 *
 * Update the masses.
 *
-         if (dbg)print*,'updating masses1',mass,mt2,j1
+         if(dbg)print*,'updating masses1',mass(j2),mt2,j1
 
          kstar(j2) = kst
          mass(j1) = mass(j1) - dm1 - dms(j1)
@@ -1960,7 +1960,7 @@
          mass(j2) = mass(j2) + dm22 - dms(j2)
          if(kstar(j2).le.1.or.kstar(j2).eq.7) mass0(j2) = mass(j2)
 *
-         if (dbg)print*,'updating masses2',mass,mt2
+         if(dbg)print*,'updating masses2',mass(j2),mt2,dm22, dms(j2)
 *         print*, 'test delta',dmr(k)*tb*km, dmr(k)*dtm*1.0d+6
          
 * For a HG star check if the initial mass can be reduced. 

@@ -1062,7 +1062,7 @@ module interp_support
         debug = .false.
 !        if(id ==2 .and. t% is_he_track) debug = .true.
 !        if (id ==1) debug = .true.
-!        if (t% star_type==switch) debug = .true.
+!        if (t% star_type==rejuvenated) debug = .true.
                     
         !nt is the length of the track before new interpolation
         nt = t% ntrack
@@ -1077,12 +1077,12 @@ module interp_support
             
             ! create appropiate age pointers
             if (t% is_he_track .and. t% star_type /= switch) then
-                if (debug) print*, 'switching from h to he star'
                 age_list => t% tr(i_he_age,1:nt)
             elseif (t% star_type == switch .and. (.not. t% is_he_track)) then
                 if (debug) print*, 'switching from he to h star'
                 age_list => t% tr(i_he_age,1:nt)
             else
+                if (debug.and.(t% star_type == switch)) print*, 'switching from h to he star'
                 age_list => t% tr(i_age,1:nt)
             endif
 

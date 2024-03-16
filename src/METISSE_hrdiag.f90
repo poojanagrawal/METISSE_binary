@@ -32,7 +32,7 @@
     t => tarr(idd)
     
     debug = .false.
-!    if ((id == 2) .and. kw>=2)debug = .true.
+!    if ((id == 1).and. kw>=2 )debug = .true. 
 !if(id ==2 .and. t% is_he_track)debug = .true.
     if (debug) print*, '-----------HRDIAG-------------'
     if (debug) print*,"started hrdiag",mt,mc,aj,tn,kw,id
@@ -57,6 +57,13 @@
     t% pars% age = aj
 !    if (aj<0.d0) stop
 
+    ! something has gone wrong, prob during merger
+    ! making star a massless remnant to prevent crashing the code
+    if (mt<8d-2) then
+        t% pars% phase = Massless_REM
+        t% ierr = -1
+    endif
+    
     
     IF (t% pars% phase<=TPAGB) THEN
         if (t% post_agb) then
@@ -94,7 +101,6 @@
                     t% ierr = -1
 !                    call stop_code
                 endif
-
                 end_of_file = .true.
                 
                 j_bagb = min(t% ntrack, TA_cHeB_EEP)

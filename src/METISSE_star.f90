@@ -27,7 +27,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
 
     if (debug) print*, '-----------STAR---------------'
     if (debug) print*,"in star",mass,mt,kw,t% pars% phase,id,t% star_type
-!    if (debug) print*,t% pars% age,dtm,t% pars% core_mass,t% pars% mass
+    if (debug) print*,t% pars% age,dtm,t% pars% core_mass,t% pars% mass
 
 
     ierr = 0

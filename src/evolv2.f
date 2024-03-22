@@ -637,7 +637,7 @@
       do 504 , k = kmin,kmax
 *
          dms(k) = (dmr(k) - dmt(k))*dt
-         if (dbg)print*,'wind,acc=',dmr(k)*dt,dmt(k)*dt,dtm
+*         if (k==2)print*,'dmr,dmt,dms,dt=',dmr(k)*dt,dmt(k)*dt
         if (dbg)print*, 'dms=', dms,dtm,k
          if(kstar(k).lt.10)then
             dml = mass(k) - massc(k)

@@ -38,8 +38,8 @@ real(dp) function metisse_mlwind(kw,lum,r,mt,mc,rl,z,id)
         if (t% star_type == sse_he_star) then
             dms = SSE_mlwind(kw,lum,r,mt,mc,rl,z)
         else
-            tnext = t% pars% age+ t% pars% dt
-            tprev = max(0.d0,t% pars% age-t% pars% dt)
+            tnext = t% pars% age2+ t% pars% dt
+            tprev = max(0.d0,t% pars% age2-t% pars% dt)
 !        print*,'in mlwind',t% pars% age,t% pars% dt,tprev,tnext
             if (tprev<=0.d0) then
                 !Forward finite difference

@@ -15,7 +15,7 @@
     real(dp) :: r,lum,mc,rc,menv,renv,k2,mcx
     
     integer :: kw,i,idd,j_bagb,old_phase
-    real(dp) :: rg,rzams,rtms,mt0
+    real(dp) :: rg,rzams,rtms
     real(dp) :: Mcbagb, mc_max,HeI_time,dt_hold
     real(dp) :: bhspin ! only for cosmic
     type(star_parameters) :: old_pars
@@ -32,8 +32,8 @@
     t => tarr(idd)
     
     debug = .false.
-!    if ((id == 1).and. kw>=2 )debug = .true. 
-!if(id ==2 .and. t% is_he_track)debug = .true.
+!    if ((id == 2).and. kw>=5 )debug = .true.
+!if(id ==1 .and. t% is_he_track)debug = .true.
     if (debug) print*, '-----------HRDIAG-------------'
     if (debug) print*,"started hrdiag",mt,mc,aj,tn,kw,id
 
@@ -59,10 +59,10 @@
 
     ! something has gone wrong, prob during merger
     ! making star a massless remnant to prevent crashing the code
-    if (mt<8d-2) then
-        t% pars% phase = Massless_REM
-        t% ierr = -1
-    endif
+!    if (mt<8d-2 .and. t% pars% phase <HeWD) then
+!        t% pars% phase = Massless_REM
+!        t% ierr = -1
+!    endif
     
     
     IF (t% pars% phase<=TPAGB) THEN
@@ -86,9 +86,8 @@
             if (t% initial_mass<very_low_mass_limit .and. t% pars% phase==1) t% pars% phase =0
 
              !interpolate in age
-             mt0 = t% pars% mass
             call interpolate_age(t,t% pars% age)
-            if (debug)print*, "mt difference",t% pars% mass, mt, mt - t% pars% mass,kw
+            if (debug)print*, "mt difference",t% pars% mass, mt, mt-t% pars% mass,kw
             t% pars% mass = mt
 
             IF (check_ge(t% pars% age,t% times(11))) THEN
@@ -97,7 +96,6 @@
                 if (kw<5 .and. t% ierr==0 .and. (dt_hold.le.t% pars% dt)) then
                     write(UNIT=err_unit,fmt=*) 'WARNING: Early end of file at phase, mass and id',&
                     kw,t% initial_mass,id
-                    print*, dt_hold,t% pars% dt
                     t% ierr = -1
 !                    call stop_code
                 endif
@@ -120,11 +118,7 @@
                     has_become_remnant = .true.
                     !TODO: add a check if it's not a white dwarf
                 else
-                    t% pars% mass = mt0
                     call assign_stripped_star_phase(t, HeI_time)
-                    ! some checks in assigning stripped star phase are based on total mass
-                    ! if called through comenv, mt==mc anyway
-                    t% pars% mass = mt
                     if(t% pars% phase == HeWD) then
                         has_become_remnant = .true.
                     elseif (use_sse_NHe) then

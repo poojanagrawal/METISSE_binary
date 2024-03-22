@@ -469,10 +469,11 @@
             case(MS:RGB)   !MS,HG or RGB
             !ideally MS or Hg shouldn't directly jump to He_MS
             !There should be something like a He_PreMS
-                if(t% pars% mass< Mhef)then
+                if(t% zams_mass< Mhef)then
                     t% pars% phase = HeWD      !Zero-age helium white dwarf
                     t% pars% core_mass = t% pars% mass
                     t% zams_mass = t% pars% mass
+!                    print*, 'hewd',t% pars% mass,Mhef
                 else
                     t% pars% phase = He_MS       !Zero-age helium star
                     t% zams_mass = t% pars% mass
@@ -713,7 +714,7 @@
     subroutine get_mcrenv_from_cols(t,lums,menv,renv,k2)
     
         type(track),pointer, intent(in) :: t
-          real(dp), intent (in) :: lums(10)
+        real(dp), intent (in) :: lums(10)
         real(dp), intent(out) :: menv,renv,k2
         integer :: rcenv_col, mcenv_col, moi_col
         real(dp) :: rc, rg,rzams,rtms

@@ -302,7 +302,7 @@ module track_support
      real(dp), intent(in) :: vec(:) ! (n)
     !     real(dp), parameter :: tiny = 1.0d-13
      integer :: first, last, mid
-
+real(dp) :: list(2)
      if (n <= 1) then
         loc = n; return
      end if
@@ -313,8 +313,6 @@ module track_support
            loc = 1; return
         else if (abs(val - vec(1)) < tiny ) then
            loc = 1; return
-        else if (check_equal(val,vec(n))) then
-            loc = n; return
         else if (val <= vec(n)) then
            loc = n; return
         end if
@@ -338,6 +336,7 @@ module track_support
 
      else ! increasing values
      
+!        print*, 'test', vec(1),vec(n),val
         if (val < vec(1)) then
            loc = 1; return
         else if (abs(val - vec(1)) < tiny) then
@@ -364,6 +363,12 @@ module track_support
            end if
         end do
 
+    
+        if (loc>1) then
+            list(1) = vec(loc-1)
+            list(2) = vec(loc)
+            loc = minloc(abs(list-val), dim=1)
+        endif
      end if
 
     end function binary_search

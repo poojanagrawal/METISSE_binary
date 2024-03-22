@@ -24,6 +24,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     debug = .false.
 !    if ((id == 1) .and. kw>=1)debug = .true.
 !    if (t% star_type==rejuvenated) debug = .true.
+!if(id ==1 .and. t% is_he_track)debug = .true.
 
     if (debug) print*, '-----------STAR---------------'
     if (debug) print*,"in star",mass,mt,kw,t% pars% phase,id,t% star_type
@@ -36,10 +37,6 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     t% zams_mass = mass
     eep_m = -1
     exclude_core = .false.
-
-    if (t% pars% age<0.d0 .and. t% star_type/=unknown) then
-        nullify(t); return
-    endif
 
     !to be double sure, in case star changes kw/type outside hrdiag
     if(kw>= HeWD) then
@@ -85,7 +82,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
 
         if(debug.and.t% star_type==rejuvenated)print*,'rejuvenated star',t% pars% mass,mt
         if(debug.and.t% star_type==switch)print*, 'switching from', t% pars% phase,'to',kw
-
+        if (t% pars% age<0.d0) t% pars% age = 0.d0
         if (t% pars% phase>=10 .and. kw<10) t% post_agb = .false.
         t% pars% mass = mt
         t% pars% delta = 0.d0
@@ -102,7 +99,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         t% tr(age_col,:) = t% tr(i_age2,:)
         t% pars% dms = 0.d0
         if (eep_m>0 .and. eep_m<=t% ntrack) t% pars% age = min(t% tr(age_col,eep_m), t% times(11)-1d-6)
-        
+        if (debug)print*, 'age after switch',t% pars% age,t% times(11)
     case(sub_stellar:star_high_mass)
         if (debug) print*,'nuc burn star'
         
@@ -112,45 +109,12 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             if (debug) print*, 'diff in mt', mt, t% pars% mass,mt-t% pars% mass
             
             mass_check = .false.
-            
-            ! For tracks that already have wind mass loss, exclude contribution from winds
-            if (t% has_mass_loss) then
-                delta_wind = (t% pars% dms*dtm*1.0d+06)
-            else
-                delta_wind = 0.d0
-            endif
-            delta = (mt-t% pars% mass) + delta_wind
-            
-            if (debug)print*, 'delta org', delta,delta_wind,mt,t% pars% mass
-            t% pars% delta = t% pars% delta+ delta
-            delta1 = 2.0d-04*mt
-            if (debug) print*, 'delta is', delta,t% pars% delta,delta1,t% pars% mass
-            if (delta.ge.0.2*mt) then
-                write(UNIT=err_unit,fmt=*)'large delta',delta,t% pars% mass,mt,kw,id
-!               call stop_code
-            endif
-            if ((abs(t% pars% delta).ge.delta1)) then
-                if(debug)print*,"interpolate mass called for",t% initial_mass,id
-
-                t% ms_old = t% times(MS)
-                t% pars% age_old = t% pars% age
-                t% initial_mass_old = t% initial_mass
-                Mnew = t% pars% mass+t% pars% delta
-                call get_initial_mass_for_new_track(t,idd,mnew,eep_m)
-                mass_check = .true.
-                if (debug)print*, 'new initial mass',t% initial_mass
-            endif
-                
-            IF(kw>MS .and. kw/=He_MS) THEN
-                exclude_core = .true.
-            else
-                t% zams_mass_old = t% zams_mass
-            ENDIF
+            if (t% pars% age<0.d0) t% pars% age = 0.d0
         
             IF (dtm<0.d0) THEN
             ! print*,'dtm<0',t% pars% age,dtm
             ! check for phase or age reversals that may occur RLOF check
-                if (t% pars% phase>= He_MS .and. kw<7)then
+                if (t% is_he_track .and. kw<=TPAGB)then
                     
                     if (debug)print*,'rev to old initial_mass for phase',t% pars% phase,kw
                     t% pars% phase = kw
@@ -158,10 +122,11 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                         ! need new track core properties
                         if (debug) print*, 'diff in mass', t% zams_mass_old,t% zams_mass,t% zams_mass_old-t% zams_mass
 
-                        eep_m = TAMS_EEP
-                        if (t% is_he_track) eep_m = TAMS_HE_EEP
+                        t% is_he_track = .false.
+                        t% star_type = switch
                         mass_hold = t% initial_mass
                         mnew = t% zams_mass_old
+                        eep_m = TAMS_HE_EEP
                         call get_initial_mass_for_new_track(t,idd,mnew,eep_m)
                         call interpolate_mass(t,exclude_core)
                         t% zams_mass_old = t% zams_mass
@@ -170,7 +135,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     endif
                     t% initial_mass = t% initial_mass_old
                     mass_check = .true.
-                elseif(exclude_core.eqv..false.) then
+                elseif(kw<=MS .or. kw==He_MS) then
                     quant = (t% pars% age*t% MS_old/t% ms_time)+dtm
 !                    if (id ==2)print*, 'quant', quant, t% pars% age_old
                     if(quant.le.t% pars% age_old) then
@@ -181,6 +146,44 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                 endif
             ENDIF
              
+            ! For tracks that already have wind mass loss, exclude contribution from winds
+            if (t% has_mass_loss) then
+                delta_wind = (t% pars% dms*dtm*1.0d+06)
+            else
+                delta_wind = 0.d0
+            endif
+            delta = mt-t% pars% mass + delta_wind
+            
+            if (debug)print*, 'delta org', delta,delta_wind,mt,t% pars% mass
+            t% pars% delta = t% pars% delta+ delta
+            delta1 = 2.0d-04*mt
+            if (debug) print*, 'delta is', delta,t% pars% delta,delta1,t% pars% mass
+            
+            if ((abs(t% pars% delta).ge.delta1) .and. (.not.mass_check))then
+                if(debug)print*,"interpolate mass called for",t% initial_mass,id
+
+                if (delta.ge.0.2*mt) then
+                    write(UNIT=err_unit,fmt=*)'large delta',delta,t% pars% mass,mt,kw,id
+    !               call stop_code
+                endif
+                t% pars% age_old = t% pars% age
+!                t% pars% age = (t% pars% age*t% MS_old/t% ms_time)+dtm
+!t% pars% age = t% pars% age2
+                t% initial_mass_old = t% initial_mass
+                Mnew = t% pars% mass+t% pars% delta
+                t% ms_old = t% times(MS)
+                call get_initial_mass_for_new_track(t,idd,mnew,eep_m)
+                t% pars% age = t% pars% age_old
+                mass_check = .true.
+                if (debug)print*, 'new initial mass',t% initial_mass
+            endif
+                
+            IF(kw>MS .and. kw/=He_MS) THEN
+                exclude_core = .true.
+            else
+                t% zams_mass_old = t% zams_mass
+            ENDIF
+            
             if (mass_check) then
                 ! reset delta
                 t% pars% delta = 0.d0
@@ -195,7 +198,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
 !                     .and.(t% pars% env_frac.ge.0.2)
                         allocate(rlist(t% ntrack))
                         rlist = t% tr(i_logR,:)
-                        consvR= .true.
+                        consvR = .true.
                     endif
     !
                     call interpolate_mass(t,exclude_core)

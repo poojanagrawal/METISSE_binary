@@ -26,7 +26,8 @@ module interp_support
         integer, allocatable :: eeps(:), excl_cols(:)
         
         debug_mass = .false.
-        
+!        if(t% is_he_track)debug_mass = .true.
+
         if (debug_mass) print*, 'in interpolate_mass'
         mass = t% initial_mass
         dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
@@ -79,7 +80,6 @@ module interp_support
         
         ! interpolate the new track for given initial mass
         ! based on keyword
-        if (start>1) t% tr(:,1:start-1) =-1
 
         select case(keyword)
         case(no_interpolation)
@@ -116,10 +116,11 @@ module interp_support
         if (fix_track) call check_length(iseg,t,min_index,exclude_core)
 
         t% tr(i_age2,:) = t% tr(i_age2,:)*1E-6          !Myrs
+        if (start>1) t% tr(:,1:start-1) = -1.d0
 
         ! check if mass and age are monotonic
         call smooth_track(t)
-
+        
         ! recalibrate age from ZAMS
         
 !        t% tr(i_age2,:) = t% tr(i_age2,:)- t% tr(i_age2,start)
@@ -765,8 +766,8 @@ module interp_support
 
             if (debug) print*,"len_eep:",len_eep,"bounds:",age_list(1),age_list(len_eep)
 
-!            call index_search(len_eep,age_list,age,min_index)
-            min_index = binary_search(len_eep,age_list,age)
+            call index_search(len_eep,age_list,age,min_index)
+!            min_index = binary_search(len_eep,age_list,age)
             if(abs(age_list(min_index)-age)< tiny) then        !less than a year
                     if (debug) print*,"no interpolation, min_index", age_list(min_index)
                     allocate(min_eeps(1))
@@ -1062,9 +1063,8 @@ module interp_support
         debug = .false.
 !        if(id ==2 .and. t% is_he_track) debug = .true.
 !        if (id ==1) debug = .true.
-!        if (t% star_type==rejuvenated) debug = .true.
+!        if (t% star_type==rejuvenated .or. t%star_type== switch) debug = .true.
                     
-        !nt is the length of the track before new interpolation
         nt = t% ntrack
         
         eep_n = -1
@@ -1078,22 +1078,26 @@ module interp_support
             ! create appropiate age pointers
             if (t% is_he_track .and. t% star_type /= switch) then
                 age_list => t% tr(i_he_age,1:nt)
+                initial_eep = ZAMS_HE_EEP
             elseif (t% star_type == switch .and. (.not. t% is_he_track)) then
                 if (debug) print*, 'switching from he to h star'
                 age_list => t% tr(i_he_age,1:nt)
+                initial_eep = ZAMS_HE_EEP
             else
                 if (debug.and.(t% star_type == switch)) print*, 'switching from h to he star'
                 age_list => t% tr(i_age,1:nt)
+                initial_eep = ZAMS_EEP
             endif
-
+            !age_list => t% tr(i_age2,1:nt)
             if (debug) print*,"getting new initial mass mnew at age and phase: ",mnew,age,t% pars% phase,id,t% is_he_track
             
-    !        call index_search(nt,age_list,age,eep_m)
-            eep_m = binary_search(nt,age_list,age)
+            call index_search(nt-initial_eep+1,age_list(initial_eep:),age,eep_m)
+            eep_m = eep_m+initial_eep-1
 
-        !    if (age_list(eep_m)<age) eep_m = eep_m+1
+!            eep_m = binary_search(nt,age_list,age)
+
             if (eep_m > nt) eep_m = nt
-            if (debug) print*,"nearest index eep_m, ntrack : ",eep_m,nt, age, age_list(nt)
+            if (debug) print*,"nearest index eep_m, ntrack : ",eep_m,nt, age, age_list(eep_m)
             
             nullify(age_list)
         
@@ -1102,7 +1106,7 @@ module interp_support
         if (t% star_type == switch) then
             if (t% is_he_track)then
                 if (eep_m <= cHeIgnition_EEP) then
-                    eep_m = 1
+                    eep_m = ZAMS_HE_EEP
                 elseif (eep_m <= TA_cHeB_EEP) then
                     eep_m = eqv_eep(TA_cHeB_EEP,cHeIgnition_EEP,TAMS_HE_EEP,ZAMS_HE_EEP,eep_m)
                 elseif (eep_m<=TPAGB_EEP) then
@@ -1185,46 +1189,85 @@ module interp_support
                 end if
             end do
             
-            !find upper bound, start at Min_index
+            !find lower bound, start at Min_index
+            do i = 0, num_list
+                k = t% min_index+i
+
+                if (k <= num_list) then
+                    if (mlist(k) >0 .and. mlist(k).le.Mnew) then
+                        Mlow = k
+                        exit
+                    endif
+                endif
+                ! search the other side now
+                k = t% min_index-i
+                if (k >=1 .and. i>0) then
+                    if (mlist(k) >0 .and. mlist(k).le.Mnew) then
+                        Mlow = k
+                        exit
+                    endif
+                endif
+            end do
+
+!            ! find upper bound, start at tracks neighbouring Mlow
+!            do i = 1, size(s)
+!                k = Mlow+i
+!                if (k <= num_list .and. k>=1) then
+!                    if (mlist(k) >0 .and. mlist(k)>Mnew) then
+!                        Mupp = k
+!                        exit
+!                    endif
+!                endif
+!                ! search the other side now
+!                k = Mlow-i
+!                if (k >=1 .and. k<=num_list) then
+!                    if (mlist(k) >0 .and. mlist(k)>Mnew) then
+!                        Mupp = k
+!                        exit
+!                    endif
+!                endif
+!            end do
+            
+!            find upper bound, start at Min_index
             do i = 0, num_list
                 k = t% min_index+i
                 if (k <= num_list .and. k>=1) then
-                    if (mlist(k) >0 .and. mlist(k).ge.Mnew) then
+                    if (mlist(k) >0 .and. mlist(k).gt.Mnew) then
                         Mupp = k
                         exit
                     endif
                 endif
-                
+
                 ! search the other side now
                 k = t% min_index-i
                 if (k >=1 .and. k<=num_list) then
-                    if (mlist(k) >0 .and. mlist(k).ge.Mnew) then
+                    if (mlist(k) >0 .and. mlist(k).gt.Mnew) then
                         Mupp = k
                         exit
                     endif
                 endif
             end do
 
-            ! find lower bound, start at tracks neighbouring Mupp
-            do i = 1, size(s)
-                k = Mupp+i
-                if (k <= num_list .and. k>=1) then
-                    if (mlist(k) >0 .and. mlist(k).lt.Mnew) then
-                        Mlow = k
-                        exit
-                    endif
-                endif
-                ! search the other side now
-                k = Mupp-i
-                if (k >=1 .and. k<=num_list) then
-                    if (mlist(k) >0 .and. mlist(k).lt.Mnew) then
-                        Mlow = k
-                        exit
-                    endif
-                endif
-                
-            end do
-         endif
+!            ! find lower bound, start at tracks neighbouring Mupp
+!            do i = 1, size(s)
+!                k = Mupp+i
+!                if (k <= num_list .and. k>=1) then
+!                    if (mlist(k) >0 .and. mlist(k).le.Mnew) then
+!                        Mlow = k
+!                        exit
+!                    endif
+!                endif
+!                ! search the other side now
+!                k = Mupp-i
+!                if (k >=1 .and. k<=num_list) then
+!                    if (mlist(k) >0 .and. mlist(k).le.Mnew) then
+!                        Mlow = k
+!                        exit
+!                    endif
+!                endif
+!
+!            end do
+        endif
         
         if (debug)  print*, "Mup", Mupp, "mlow",Mlow,"min_index",t% min_index
         ! if no solution is found, we keep using the old tracks for interpolation

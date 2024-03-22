@@ -156,8 +156,6 @@
      &                      DTM,J1)
             CALL hrdiag(M01,AJ1,M1,TM1,TN,TSCLS1,LUMS,GB,ZPARS,
      &                  R1,L1,KW1,MC1,RC1,MENV,RENV,K21,MCX,J1)
-            if (dbg) print*,kw1,kw2
-
             IF(KW1.GE.13)THEN
 *               print*, 'kick=',MF,M1,M2,ECC,SEPF,JORB,VS
                CALL kick(KW1,MF,M1,M2,ECC,SEPF,JORB,VS)

@@ -28,7 +28,7 @@ module interp_support
         debug_mass = .false.
 !        if(t% is_he_track)debug_mass = .true.
 
-        if (debug_mass) print*, 'in interpolate_mass'
+        if (debug_mass) print*, 'in interpolate_mass',t% pars% phase
         mass = t% initial_mass
         dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
 

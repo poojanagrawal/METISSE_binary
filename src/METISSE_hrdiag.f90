@@ -77,7 +77,7 @@
                 if (.not. defined(t% times(i))) cycle
                 if (t% pars% age .lt. t% times(i)) then
                     t% pars% phase = i
-                    if (debug)print*,"phase",t% pars% age,t% times(t% pars% phase)
+                    if (debug)print*,"phase",t% pars% age,t% times(t% pars% phase),t% pars% phase
                 endif
             enddo
             if (debug .and. t% pars% phase /= old_phase .and.t% pars% phase>0) &
@@ -123,15 +123,17 @@
                         has_become_remnant = .true.
                     elseif (use_sse_NHe) then
                         t% star_type = sse_he_star
+                        t% zams_mass = t% pars% mass
+
                         call initialize_SSE_helium_star(t,HeI_time)
                         call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
                     else
                         t% is_he_track = .true.
                         t% star_type = switch
                         j_bagb = min(t% ntrack, TA_cHeB_EEP)
-                        if (t% pars% phase >= He_HG) t% zams_mass = t% tr(i_mass, j_bagb)
-                        call star(t% pars% phase,t% zams_mass,t% pars% mass,tm,tn,tscls,lums,GB,zpars,0.d0,id)
-                        mass = t% zams_mass
+                        if (t% pars% phase >= He_HG) mass = t% tr(i_mass, j_bagb)
+                        ! zams_mass is assigned in the star
+                        call star(t% pars% phase, mass,t% pars% mass,tm,tn,tscls,lums,GB,zpars,0.d0,id)
                         if (debug) print*, 'after env loss', t% pars% phase, t% pars% age,t% MS_time,t% nuc_time,id
                     endif
                 endif
@@ -168,9 +170,12 @@
                 if (.not. defined(t% times(i))) cycle
                 if (t% pars% age .lt. t% times(i)) then
                     t% pars% phase = i
+                    if (debug)print*,"phase",t% pars% age,t% times(t% pars% phase),t% pars% phase
+
                 endif
             enddo
-            if (debug .and. t% pars% phase /= old_phase) print*,"phase change",t% pars% age,t% times(i),i
+            if (debug .and. t% pars% phase /= old_phase) &
+                    print*,"phase change",t% pars% age,t% times(t% pars% phase),t% pars% phase
             !interpolate in age
             call interpolate_age(t,t% pars% age)
             if(debug)print*,"mt difference",t% pars% mass,mt,mt-t% pars% mass,t% pars% phase
@@ -259,7 +264,7 @@
         !tm and tn get calculated in star.f90
     endif
     if (irecord>0 .and. debug) print*,"finished hrdiag",mt,mc,aj,kw,id,tm,tn
-!    print*,"finished hrdiag",t% pars% mass, t% pars% core_mass,t% pars% age,t% pars% radius,id
+!    if (id==1)print*,"finished hrdiag",t% pars% mass, t% pars% core_mass,t% pars% age,t% pars% radius,id
 
     nullify(t)
     end subroutine METISSE_hrdiag

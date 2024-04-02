@@ -11,7 +11,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
 
     real(dp), allocatable:: rlist(:)
     real(dp) :: times_old(11),dtm, quant
-    real(dp):: Mass_hold,delta1,delta_wind,delta,mnew
+    real(dp):: delta1,delta_wind,delta,mnew
 
     integer :: idd, ierr, age_col,eep_m
     logical :: debug, exclude_core,consvR, mass_check
@@ -34,10 +34,10 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     ierr = 0
     consvR = .false.
     delta = 0.d0
-    t% zams_mass = mass
     eep_m = -1
     exclude_core = .false.
 
+!    if (t% pars% age+dtm <0.d0) stop !return
     !to be double sure, in case star changes kw/type outside hrdiag
     if(kw>= HeWD) then
         t% star_type = remnant
@@ -66,6 +66,8 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         mt = t% tr(i_mass,ZAMS_EEP)
         t% pars% mass = mt
         t% initial_mass_old = t% initial_mass
+        t% zams_mass = mass
+
         t% zams_mass_old = t% zams_mass
         if (debug)print*, "initial interpolate mass", t% initial_mass,t% zams_mass,t% pars% mass,mt,kw
 
@@ -83,15 +85,19 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         if(debug.and.t% star_type==rejuvenated)print*,'rejuvenated star',t% pars% mass,mt
         if(debug.and.t% star_type==switch)print*, 'switching from', t% pars% phase,'to',kw
         if (t% pars% age<0.d0) t% pars% age = 0.d0
+        
         if (t% pars% phase>=10 .and. kw<10) t% post_agb = .false.
-        t% pars% mass = mt
         t% pars% delta = 0.d0
         t% pars% phase = kw
+        if (t% star_type==switch)t% zams_mass_old = t% zams_mass
+        t% zams_mass = mass
+        t% pars% mass = mt
         t% initial_mass_old = t% initial_mass
         Mnew = t% pars% mass
+        
         call get_initial_mass_for_new_track(t,idd,mnew,eep_m)
         call interpolate_mass(t,exclude_core)
-!        t% zams_mass = t% initial_mass
+        
         call calculate_timescales(t)
         t% times_new = t% times
         t% ms_old = t% MS_time
@@ -99,45 +105,47 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         t% tr(age_col,:) = t% tr(i_age2,:)
         t% pars% dms = 0.d0
         if (eep_m>0 .and. eep_m<=t% ntrack) t% pars% age = min(t% tr(age_col,eep_m), t% times(11)-1d-6)
-        if (debug)print*, 'age after switch',t% pars% age,t% times(11)
+        if (debug)print*, 'age after switch',t% pars% age,t% times(11),t% zams_mass_old,mass
+        
     case(sub_stellar:star_high_mass)
         if (debug) print*,'nuc burn star'
+
+        mass_check = .false.
+        if (t% pars% age<0.d0) t% pars% age = 0.d0
         
-        ! Check if mass has changed since the last time star was called.
-        IF(abs(mt-t% pars% mass)>1.0d-08 .and. (t% post_agb .eqv..false.) &
+        IF (t% pars% phase>= He_MS .and. t% pars% phase<=He_GB .and. kw<=TPAGB)THEN
+            ! check for phase reversals that may occur RLOF check
+
+            if (debug)print*,'rev to old initial_mass for phase',t% pars% phase,kw
+            t% pars% phase = kw
+            if (abs(t% zams_mass_old-t% zams_mass)>1.0d-12) then
+                ! need new track core properties
+                if (debug) print*, 'diff in mass', t% zams_mass_old,t% zams_mass,mass,t% zams_mass_old-t% zams_mass
+
+                t% is_he_track = .false.
+!                t% star_type = switch
+!                mnew = t% zams_mass_old
+!                eep_m = TAMS_HE_EEP
+!                call get_initial_mass_for_new_track(t,idd,mnew,eep_m)
+                t% initial_mass = mass
+                t% zams_mass = t% initial_mass
+                                call interpolate_mass(t,exclude_core)
+!                t% zams_mass_old = t% zams_mass
+                call calculate_timescales(t)
+            endif
+            t% initial_mass = t% initial_mass_old
+            mass_check = .true.
+        
+        ELSEIF(abs(mt-t% pars% mass)>1.0d-08 .and. (t% post_agb .eqv..false.) &
                 .and. (t% pars% core_mass.lt.mt)) THEN
+            ! Check if mass has changed since the last time star was called.
+
             if (debug) print*, 'diff in mt', mt, t% pars% mass,mt-t% pars% mass
             
-            mass_check = .false.
-            if (t% pars% age<0.d0) t% pars% age = 0.d0
-            
-            ! check for phase or age reversals that may occur RLOF check
-            if (t% pars% phase>= He_MS .and. t% pars% phase<=He_GB .and. kw<=TPAGB)then
-                if (debug)print*,'rev to old initial_mass for phase',t% pars% phase,kw
-                t% pars% phase = kw
-                if (abs(t% zams_mass_old-t% zams_mass)>1.0d-12) then
-                    ! need new track core properties
-                    if (debug) print*, 'diff in mass', t% zams_mass_old,t% zams_mass,t% zams_mass_old-t% zams_mass
-
-                    t% is_he_track = .false.
-                    t% star_type = switch
-                    mass_hold = t% initial_mass
-                    mnew = t% zams_mass_old
-                    eep_m = TAMS_HE_EEP
-                    call get_initial_mass_for_new_track(t,idd,mnew,eep_m)
-                    call interpolate_mass(t,exclude_core)
-                    t% zams_mass_old = t% zams_mass
-                    t% initial_mass = mass_hold
-                    call calculate_timescales(t)
-                endif
-                t% initial_mass = t% initial_mass_old
-                mass_check = .true.
-            endif
-            
-            if((kw<=MS .or. kw==He_MS) .and. dtm<0.d0) THEN
-                ! print*,'dtm<0',t% pars% age,dtm) then
+            if(dtm<0.d0 .and.(kw<=MS .or. kw==He_MS)) THEN !
+                if (debug)print*,'dtm<0',t% pars% age,dtm
                 quant = (t% pars% age*t% MS_old/t% ms_time)+dtm
-!                    if (id ==2)print*, 'quant', quant, t% pars% age_old
+                if (debug)print*, 'quant', quant, t% pars% age_old
                 if(quant.le.t% pars% age_old) then
                     t% initial_mass = t% initial_mass_old
                     mass_check = .true.
@@ -145,7 +153,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                 endif
             endif
              
-            IF (mass_check .eqv. .false.) THEN
+            if(mass_check .eqv. .false.) then
                 ! For tracks that already have wind mass loss, exclude contribution from winds
                 if (t% has_mass_loss) then
                     delta_wind = (t% pars% dms*dtm*1.0d+06)
@@ -168,7 +176,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     endif
                     t% pars% age_old = t% pars% age
     !                t% pars% age = (t% pars% age*t% MS_old/t% ms_time)+dtm
-    !t% pars% age = t% pars% age2
+    !                  t% pars% age = t% pars% age2
                     t% initial_mass_old = t% initial_mass
                     Mnew = t% pars% mass+t% pars% delta
                     t% ms_old = t% times(MS)
@@ -177,67 +185,73 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     mass_check = .true.
                     if (debug)print*, 'new initial mass',t% initial_mass
                 endif
-            ENDIF
-            IF(kw>MS .and. kw/=He_MS) THEN
-                exclude_core = .true.
-            else
-                t% zams_mass_old = t% zams_mass
-            ENDIF
-            
-            if (mass_check) then
-                ! reset delta
-                t% pars% delta = 0.d0
-                t% times_new = -1.d0
-                
-                if (exclude_core) then
-                    !store core properties for post-main sequence evolution
-                    if (debug) print*,'post-main-sequence star'
-                    times_old = t% times
-
-                    if ((t% pars% mcenv/t% pars% mass).ge.0.2d0) then
-!                     .and.(t% pars% env_frac.ge.0.2)
-                        allocate(rlist(t% ntrack))
-                        rlist = t% tr(i_logR,:)
-                        consvR = .true.
-                    endif
-    !
-                    call interpolate_mass(t,exclude_core)
-                   !write the mass interpolated track if write_eep_file is true
-                    if (kw>=1 .and. kw<=4 .and. .false.) call write_eep_track(t,mt)
-                    
-                    call calculate_timescales(t)
-                    t% times_new = t% times
-                    t% times = times_old
-                    t% nuc_time = t% times(11)
-                    t% ms_time = t% times(MS)
-                    if (t% is_he_track) t% ms_time = t% times(He_MS)
-
-                    !TEST: R remains unchanged if Mcenv is significant
-                    if (consvR) then
-                        t% tr(i_logR,:) = rlist(1:t% ntrack)
-                        deallocate(rlist)
-                    endif
-                else
-                    ! kw=0,1,7: main-sequence star, rewrite all columns with new track
-                    if (debug)print*, 'main-sequence star, rewrite with new track'
-                    call interpolate_mass(t,exclude_core)
-                    
-                    call calculate_timescales(t)
-                    t% times_new = t% times
-                    t% tr(age_col,:) = t% tr(i_age2,:)
-                endif
             endif
+            
+            t% zams_mass = mass
             t% pars% mass = mt
-            ! above is to prevent multiple interpolations in mass
-            ! for multiple calls to star in same step
+            ! to prevent multiple interpolations in mass
+            ! for multiple calls to star in the same evolution step
         ENDIF
+            
+        if(kw>MS .and. kw/=He_MS) then
+            exclude_core = .true.
+        elseif (kw<=TPAGB)then
+            t% zams_mass_old = t% zams_mass
+        endif
+            
+        if (mass_check) then
+            ! reset delta
+            t% pars% delta = 0.d0
+            t% times_new = -1.d0
+            
+            if (exclude_core) then
+                !store core properties for post-main sequence evolution
+                if (debug) print*,'post-main-sequence star',t% is_he_track
+                times_old = t% times
+
+                if ((t% pars% mcenv/t% pars% mass).ge.0.2d0) then
+!                     .and.(t% pars% env_frac.ge.0.2)
+                    allocate(rlist(t% ntrack))
+                    rlist = t% tr(i_logR,:)
+                    consvR = .true.
+                endif
+!
+                call interpolate_mass(t,exclude_core)
+               !write the mass interpolated track if write_eep_file is true
+                if (kw>=1 .and. kw<=4 .and. .false.) call write_eep_track(t,mt)
+                
+                call calculate_timescales(t)
+                t% times_new = t% times
+                t% times = times_old
+                t% nuc_time = t% times(11)
+                t% ms_time = t% times(MS)
+                if (t% is_he_track) t% ms_time = t% times(He_MS)
+
+                !TEST: R remains unchanged if Mcenv is significant
+                if (consvR) then
+                    t% tr(i_logR,:) = rlist(1:t% ntrack)
+                    deallocate(rlist)
+                endif
+            else
+                ! kw=0,1,7: main-sequence star, rewrite all columns with new track
+                if (debug)print*, 'main-sequence star, rewrite with new track'
+                call interpolate_mass(t,exclude_core)
+                
+                call calculate_timescales(t)
+                t% times_new = t% times
+                t% tr(age_col,:) = t% tr(i_age2,:)
+            endif
+        endif
         
     case(remnant)
+        t% zams_mass = mass
         tm = 1.0d+10
         tscls(1) = tm
         tn = 1.0d+10
+        
         if (debug) print*, 'remnant'
     case(sse_he_star)
+         t% zams_mass = mass
          call calculate_SSE_He_timescales(t)
          call calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
     end select

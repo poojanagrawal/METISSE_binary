@@ -603,7 +603,9 @@ module interp_support
 
         debug = .false.
 !         if (t% is_he_track) debug = .true.
-         
+!        if (t% pars% phase>=4 .and. (present(icolumn).eqv..false.)) debug = .true.
+
+
         if (debug) print*,"in interpolate age",t% pars% phase
         dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
         jstart = 1
@@ -642,7 +644,7 @@ module interp_support
 
             if (debug) print*, 'pass', n_pass,pass,age_col,age, t% pars% phase
             if (debug) print*,"neighbouring_eeps", min_eeps
-!            if (debug) print*,"ages", t% tr(age_col,mlo),t% tr(age_col,mhi)
+!            if (debug) print*,"ages", t% tr(age_col,mlo:mhi)
 
             if (mhi == mlo) then
                 if (t% irecord>0 .and. debug) print*, "no interp in age needed"

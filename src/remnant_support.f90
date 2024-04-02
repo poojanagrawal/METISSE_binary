@@ -472,11 +472,9 @@
                 if(t% zams_mass< Mhef)then
                     t% pars% phase = HeWD      !Zero-age helium white dwarf
                     t% pars% core_mass = t% pars% mass
-                    t% zams_mass = t% pars% mass
 !                    print*, 'hewd',t% pars% mass,Mhef
                 else
                     t% pars% phase = He_MS       !Zero-age helium star
-                    t% zams_mass = t% pars% mass
                     t% pars% core_mass = 0.d0
                     t% pars% McCO = 0.d0
                     t% pars% McHe = 0.d0
@@ -485,7 +483,6 @@
 
             case(HeBurn)  !core he Burning
                 t% pars% phase = He_MS
-                t% zams_mass = t% pars% mass
                 t% pars% core_mass = 0.d0
                 t% pars% McCO = 0.d0
                 t% pars% McHe = 0.d0
@@ -496,8 +493,6 @@
                 t% pars% mass = t% pars% core_mass
                 t% pars% McHe = t% pars% mass
                 t% pars% core_mass = t% pars% McCO
-                t% zams_mass = t% pars% mass
-                                
         end select
         
     end subroutine

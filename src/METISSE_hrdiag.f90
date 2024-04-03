@@ -130,8 +130,13 @@
                     else
                         t% is_he_track = .true.
                         t% star_type = switch
-                        j_bagb = min(t% ntrack, TA_cHeB_EEP)
-                        if (t% pars% phase >= He_HG) mass = t% tr(i_mass, j_bagb)
+                        
+                        if (t% pars% phase >= He_HG) then
+                            mass = t% tr(i_mass, j_bagb)
+                            j_bagb = min(t% ntrack, TA_cHeB_EEP)
+                        else
+                            mass = t% pars% mass
+                        endif
                         ! zams_mass is assigned in the star
                         call star(t% pars% phase, mass,t% pars% mass,tm,tn,tscls,lums,GB,zpars,0.d0,id)
                         t% pars% age_old = t% pars% age

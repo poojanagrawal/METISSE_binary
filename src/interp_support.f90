@@ -618,7 +618,7 @@ module interp_support
         
         allocate (new_line(t% ncol,1))
         new_line = -1.d0
-        n_pass = 2
+        n_pass = 1!2
         
         if (t% pars% phase<=1 .or. t% pars% phase ==7) n_pass = 1
             

@@ -32,7 +32,7 @@
     t => tarr(idd)
     
     debug = .false.
-!    if ((id == 2).and. kw>=5 )debug = .true.
+!    if ((id == 1).and. kw>=1 )debug = .true.
 !if(id ==1 .and. t% is_he_track)debug = .true.
     if (debug) print*, '-----------HRDIAG-------------'
     if (debug) print*,"started hrdiag",mt,mc,aj,tn,kw,id
@@ -81,7 +81,7 @@
                 endif
             enddo
             if (debug .and. t% pars% phase /= old_phase .and.t% pars% phase>0) &
-                    print*,"phase change",t% pars% age,t% times(t% pars% phase),t% pars% phase
+                    print*,"phase change",t% pars% age,kw,t% pars% phase
 
             if (t% initial_mass<very_low_mass_limit .and. t% pars% phase==1) t% pars% phase =0
 
@@ -134,6 +134,8 @@
                         if (t% pars% phase >= He_HG) mass = t% tr(i_mass, j_bagb)
                         ! zams_mass is assigned in the star
                         call star(t% pars% phase, mass,t% pars% mass,tm,tn,tscls,lums,GB,zpars,0.d0,id)
+                        t% pars% age_old = t% pars% age
+
                         if (debug) print*, 'after env loss', t% pars% phase, t% pars% age,t% MS_time,t% nuc_time,id
                     endif
                 endif

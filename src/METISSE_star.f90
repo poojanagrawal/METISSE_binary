@@ -22,7 +22,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     t => tarr(idd)
             
     debug = .false.
-!    if ((id == 1) .and. kw>=4)debug = .true.
+!    if ((id == 1) .and. kw>=7)debug = .true.
 !    if (t% star_type==rejuvenated) debug = .true.
 !if(id ==1 .and. t% is_he_track)debug = .true.
 
@@ -181,9 +181,9 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                     Mnew = t% pars% mass+t% pars% delta
                     t% ms_old = t% times(MS)
                     call get_initial_mass_for_new_track(t,idd,mnew,eep_m)
-                    t% pars% age = t% pars% age_old
+!                    t% pars% age = t% pars% age_old
                     mass_check = .true.
-                    if (debug)print*, 'new initial mass',t% initial_mass
+                    if (debug)print*, 'new initial mass',t% initial_mass,t% pars% age
                 endif
             endif
             

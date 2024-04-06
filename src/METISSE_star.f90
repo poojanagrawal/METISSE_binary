@@ -61,7 +61,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         ! Initial call- just do normal interpolation
         t% initial_mass = mass
         t% is_he_track = .false.
-
+        t% pars% phase = kw
         call interpolate_mass(t,exclude_core)
         mt = t% tr(i_mass,ZAMS_EEP)
         t% pars% mass = mt
@@ -77,7 +77,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         t% tr(i_age,:) = t% tr(i_age2,:)
         t% ms_old = t% times(MS)
         t% pars% age_old = t% pars% age
-        t% pars% phase = kw
+        
         !call write_eep_track(t,t% initial_mass)
 
     case(rejuvenated:switch) !gntage/mix/comenv

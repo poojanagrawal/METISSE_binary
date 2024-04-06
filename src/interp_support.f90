@@ -30,8 +30,15 @@ module interp_support
 
         if (debug_mass) print*, 'in interpolate_mass',t% pars% phase
         mass = t% initial_mass
+        
+        if (mass/=mass .or. mass<=0.d0) then
+            write(UNIT=err_unit,fmt=*)"Fatal Error: Invalid mass",mass,t% pars% phase
+            t% ierr = -1
+!            call stop_code
+            return
+        endif
+        
         dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
-
         
         ! this line is to avoid array length problem with multiple calls to fix-track
         if (allocated(t% tr) .and. (.not.exclude_core)) call deallocate_arrays(t)
@@ -172,6 +179,8 @@ module interp_support
             deallocate(cutoff); nullify(s)
             return
         endif
+        
+        
             
         ! we don't want to search the whole list, only between the mass cutoffs
         ! therefore we create smaller list of initial_masses

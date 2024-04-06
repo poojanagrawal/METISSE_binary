@@ -170,8 +170,8 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
                 if ((abs(t% pars% delta).ge.delta1))then
                     if(debug)print*,"interpolate mass called for",t% initial_mass,id
 
-                    if (delta.ge.0.2*mt) then
-                        write(UNIT=err_unit,fmt=*)'large delta',delta,t% pars% mass,mt,kw,id
+                    if ((delta.ge.0.2*mt) .and. debug) then
+                        write(UNIT=err_unit,fmt=*)'warning: large delta',delta,t% pars% mass,mt,kw,id
         !               call stop_code
                     endif
                     t% pars% age_old = t% pars% age

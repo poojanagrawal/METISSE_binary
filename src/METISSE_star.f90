@@ -22,7 +22,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     t => tarr(idd)
             
     debug = .false.
-!    if ((id == 1) .and. kw>=7)debug = .true.
+!    if ((id == 1) .and. kw>=4)debug = .true.
 !    if (t% star_type==rejuvenated) debug = .true.
 !if(id ==1 .and. t% is_he_track)debug = .true.
 
@@ -86,7 +86,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
         if(debug.and.t% star_type==switch)print*, 'switching from', t% pars% phase,'to',kw
         if (t% pars% age<0.d0) t% pars% age = 0.d0
         
-        if (t% pars% phase>=10 .and. kw<10) t% post_agb = .false.
+        t% post_agb = .false.
         t% pars% delta = 0.d0
         t% pars% phase = kw
         if (t% star_type==switch)t% zams_mass_old = t% zams_mass
@@ -206,7 +206,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
             
             if (exclude_core) then
                 !store core properties for post-main sequence evolution
-                if (debug) print*,'post-main-sequence star',t% is_he_track
+                if (debug) print*,'post-main-sequence star'
                 times_old = t% times
 
                 if ((t% pars% mcenv/t% pars% mass).ge.0.2d0) then

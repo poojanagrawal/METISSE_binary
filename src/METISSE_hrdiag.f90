@@ -32,10 +32,10 @@
     t => tarr(idd)
     
     debug = .false.
-!    if ((id == 1).and. kw>=1 )debug = .true.
+!    if ((id == 1).and. kw>=4 )debug = .true.
 !if(id ==1 .and. t% is_he_track)debug = .true.
     if (debug) print*, '-----------HRDIAG-------------'
-    if (debug) print*,"started hrdiag",mt,mc,aj,tn,kw,id
+    if (debug) print*,"started hrdiag",mt,mc,aj,tn,kw,id,t% post_agb
 
     end_of_file = .false. !this is just the end of eep track
     has_become_remnant = .false.
@@ -93,17 +93,20 @@
             IF (check_ge(t% pars% age,t% times(11))) THEN
                 !check if have reached the end of the eep track
                 if (debug) print*,"end of file:aj,tn ",t% pars% age,t% times(11),t% times(kw)
-                if (kw<5 .and. t% ierr==0 .and. (dt_hold.le.t% pars% dt)) then
+                if (kw<5 .and. (t% initial_mass.gt.very_low_mass_limit)) then
+                if (t% ierr==0 .and. (dt_hold.le.t% pars% dt)) then
                     write(UNIT=err_unit,fmt=*) 'WARNING: Early end of file at phase, mass and id',&
                     kw,t% initial_mass,id
                     t% ierr = -1
 !                    call stop_code
+                endif
                 endif
                 end_of_file = .true.
                 
                 j_bagb = min(t% ntrack, TA_cHeB_EEP)
                 Mcbagb = t% tr(i_he_core, j_bagb)
                 mc_max = MAX(M_ch,0.773* Mcbagb-0.35)
+
                 if (check_remnant_phase(t% pars, mc_max)) has_become_remnant = .true.
             
             ELSEIF (check_ge(t% pars% core_mass,t% pars% mass)) THEN

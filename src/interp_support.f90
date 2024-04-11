@@ -174,13 +174,11 @@ module interp_support
             keyword = no_interpolation
             allocate(bounds(1))
             bounds = min_index
-            if (debug_mass) print*,"mass EXCEEDS highest initial mass, no interpolation",mass
+            if (debug_mass) print*,"No interpolation: mass EXCEEDS highest initial mass, ",mass
             iseg = size(cutoff)-1
             deallocate(cutoff); nullify(s)
             return
         endif
-        
-        
             
         ! we don't want to search the whole list, only between the mass cutoffs
         ! therefore we create smaller list of initial_masses
@@ -215,7 +213,6 @@ module interp_support
             allocate(bounds(1))
             bounds = min_index
             if (debug_mass) print*,"Interpolation NOT required during interpolate mass",mass
-
         elseif(mass < mass_list(2)) then
             !index adjustments for mass at boundaries
             keyword = linear
@@ -474,7 +471,6 @@ module interp_support
                     t% tr(j,i) = alfa*a(2)% tr(j,i) + beta*a(1)% tr(j,i) +bprime
                 enddo
             enddo
-            
         end if
         deallocate(excl_cols)
                 
@@ -491,7 +487,12 @@ module interp_support
         endif
         call mod_PAV(t% tr(i_age2,start:t% ntrack))
         do i = start+1,t% ntrack
-            t% tr(i_mass,i) = min(t% tr(i_mass,i), t% tr(i_mass,i-1))
+            if (t% tr(i_mass,i).le.0.d0) then
+            ! although rare, sometime extrapolation can cause negative mass values
+                t% tr(i_mass,i) = t% tr(i_mass,i-1)
+            else
+                t% tr(i_mass,i) = min(t% tr(i_mass,i), t% tr(i_mass,i-1))
+            endif
         end do
     end subroutine smooth_track
     
@@ -764,6 +765,15 @@ module interp_support
         last_age = 0.d0
         initial_eep = ZAMS_EEP
         if (t% is_he_track) initial_eep = ZAMS_HE_EEP
+        
+        ! check for lower boundary
+        if (age .lt. t% tr(age_col,initial_eep)) then
+            allocate(min_eeps(1))
+            min_eeps = initial_eep
+            if (debug)write(*,*)"age<initial_eep",age, t% tr(age_col,initial_eep)
+            return
+        endif
+                
         do i = 1,t% neep-1
             if (debug) print*,"loc_low", t% eep(i), t% eep(i+1),t%neep
 
@@ -818,11 +828,11 @@ module interp_support
         
     
         if(.not.allocated(min_eeps)) then
+            ! check for upper boundary
             if (age .gt. t% tr(age_col,t% eep(t% neep))) then
                 allocate(min_eeps(1))
                 min_eeps = t% eep(t% neep)
                 if (debug)write(*,*)"age>t%neep",age,t% ntrack,t%neep,t% eep(t% neep)
-                return
             else
                 write(UNIT=err_unit,fmt=*)'Error finding nearest eeps for age:',age,age_col
             endif

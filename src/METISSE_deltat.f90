@@ -95,7 +95,7 @@
         end select
 
             t% pars% dt = min(dt,dtr)
-!            if (id ==2)print*,'timestep',dt,dtr,t% pars% dt,t% times(1),age, t% pars% phase,id
+!            if (id ==1)print*,'timestep',dt,dtr,t% pars% dt,t% times(4),age, t% pars% phase,id
 
             if (t% pars% dt<=0.0 .and. t% ierr==0) then
                 write(UNIT=err_unit,fmt=*)"fatal error: invalid timestep", t% pars% dt ,"for phase and id", t% pars% phase,id

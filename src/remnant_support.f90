@@ -170,7 +170,8 @@
 !            print*, t% nuc_time,t% agb% tfinal,dt
         alfa = 0d0; beta = 0d0
         r3 = 0.3*(t% agb% radius+radius_wd)
-
+        t% pars% core_radius = radius_wd
+        t% pars% core_mass = mass_wd
         if (dt<t1) then
             alfa = dt/t1
             beta = 1d0-alfa
@@ -193,7 +194,7 @@
             t% pars% age_old = t% pars% age
             t% pars% phase = t% agb% phase_wd
             t% zams_mass = t% pars% mass
-            call initialize_white_dwarf(t% pars)
+!            call initialize_white_dwarf(t% pars)
         endif
 !        print*, 'mass',t% pars% core_mass,t% pars% mass
     end subroutine
@@ -735,7 +736,7 @@
         
         rc = t% pars% core_radius  ! it's calculated in hrdiag
         
-        if ((.not. identified(mcenv_col)) .or. (.not. identified(rcenv_col)) .or. (.not. identified(moi_col))) then
+        if ((.not. identified(mcenv_col)) .or. (.not. identified(rcenv_col)) .or. (.not. identified(moi_col)) .or. t% post_agb) then
             CALL calculate_rg(t,rg)
             CALL mrenv(t% pars% phase,t% zams_mass,t% pars% mass,t% pars% core_mass, &
             t% pars% luminosity,t% pars% radius,rc,t% pars% age,t% MS_time,lums(2),lums(3),&

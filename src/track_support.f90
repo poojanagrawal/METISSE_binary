@@ -199,22 +199,33 @@ module track_support
         type(column), allocatable :: cols(:)
         logical :: has_RGB =.false., complete=.true.
         logical :: has_mass_loss,is_he_track
-        logical :: post_agb = .false.
 
         integer :: ncol, ntrack, neep,min_index
         integer :: star_type = unknown, irecord,ierr
-        
+        integer, allocatable :: eep(:), bounds(:)
+
         real(dp) :: initial_mass, initial_Z, initial_Y, Fe_div_H,  v_div_vcrit, alpha_div_Fe
-        real(dp) :: initial_mass_old,zams_mass,zams_mass_old      !effective initial mass (M0 of SSE)
-        real(dp) :: MS_time, nuc_time, ms_old
+        real(dp) :: initial_mass_old,initial_mass0,zams_mass
+        
+        ! initial_mass is the initial mass of the track
+        ! zams_mass is the effective initial mass (M0/mass0 of SSE)
+        ! pars% mass contains current total mass of the star (mt of sse)
+        ! initial_mass0 is the initial_mass of the track for which mass at zams is zams_mass
+        ! initial_mass_old is the last initial mass of the track used for interpolation
+        
+        ! Initial_mass/Initial_mass_old is needed for surface parameters,
+        ! while Initial_mass0 is for core parameters( except MS when initial_mass0 is enough)
         
         real(dp), allocatable :: tr(:,:)
         real(dp) :: times(11), times_new(11)           !timescales
-        integer, allocatable :: eep(:), bounds(:)
-
+        real(dp) :: MS_time, nuc_time, MS_old
         type(star_parameters) :: pars    ! parameters at any instant
-        type(agb_parameters) :: agb
-        type(sse_parameters) :: He_pars
+        
+        
+        logical :: post_agb = .false.
+        type(agb_parameters) :: agb   ! parameters of stars used when constructing post-agb to WD track
+        
+        type(sse_parameters) :: He_pars   !parameters of naked helium stars, mostly used when using SSE formulae
     end type track
     
     !defining array for input tracks

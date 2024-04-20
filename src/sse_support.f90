@@ -1,27 +1,23 @@
 module sse_support
-!module to help interface metisse with sse
+    !module to help interface metisse with sse
+
     use track_support
     implicit none
     
- !SSE parameters required if envelope is lost
+    !SSE parameters required if envelope is lost
     real(dp) :: AHe = 8.0d-05   !7.66d-5 !Msun Lsun**-1 MYR**-1
     real(dp) :: B = 4.1d+04
     real(dp) :: p = 5.0
     real(dp) :: q = 3.0
     real(dp), parameter :: pow = 2.d0/3.d0
 
-!
-!    some of these needs recalculation at every step and others need to be a part of t
-!    initialize them when star loses envelope or becomes WD
-!    real(dp) :: Tinf1,Tinf2,Tx
-
-contains
+    contains
 
     subroutine calculate_SSE_parameters(t,zpars,tscls,lums,GB,tm,tn)
         type(track), pointer, intent(in) :: t
         real(dp) :: tscls(20),lums(10),GB(10),zpars(20),tm,tn
     
-        ! Other SSE parameters
+        !only upto phase 6 (TPAGB)
         call calculate_SSE_tscls(t, tscls,tm,tn)
         call calculate_SSE_GB(t, zpars, GB)
         call calculate_SSE_lums(t, zpars, lums)
@@ -37,7 +33,7 @@ contains
     !13; TP            Thermal Pulsations  14; t(Mcmax)  maximum age
     
     subroutine calculate_SSE_tscls(t, tscls,tm,tn)
-    !only for phase upto 6 (TPAGB)
+    !only upto phase 6 (TPAGB)
     implicit none
     type(track), pointer, intent(in) :: t
     real(dp) , intent(out):: tscls(20),tm,tn
@@ -75,40 +71,33 @@ contains
     !1; ZAMS             2; End MS        3; BGB
     !4; He ignition      5; He burning    6; L(Mx)
     !7; BAGB             8; TP
+    
     subroutine calculate_SSE_lums(t, zpars,lums)
-    !only for phase upto 6 (TPAGB)
+    !only upto phase 6 (TPAGB)
     implicit none
-     type(track), pointer, intent(in) :: t
+    type(track), pointer, intent(in) :: t
     real(dp),  intent(in) :: zpars(20)
     
-    integer :: i,j_bgb
-    real(dp) :: lums(10), mass
-    real(dp), allocatable :: Lumt(:)
+    integer :: j_bgb
+    real(dp) :: lums(10)
     
     logical :: debug
     debug = .false.
-    Lumt = 10**(t% tr(i_logL,:))
-    mass = t% initial_mass
-            
-    do i = 1, t% neep
-        if (t% eep(i) == ZAMS_EEP) lums(1) = Lumt(ZAMS_EEP)
-        if (t% eep(i) == TAMS_EEP) lums(2) = Lumt(TAMS_EEP)
-        if (t% eep(i) == cHeIgnition_EEP) lums(4) = Lumt(cHeIgnition_EEP)
-        if (t% eep(i) == cHeBurn_EEP) lums(5) = Lumt(cHeBurn_EEP)
-        if (t% eep(i) == TA_cHeB_EEP) lums(7)= Lumt(TA_cHeB_EEP)
-        if (t% eep(i) == TPAGB_EEP) lums(8) = Lumt(TPAGB_EEP)
-    enddo
+
+    lums(1) = 10**(t% tr(i_logL,ZAMS_EEP))
+    lums(2) = 10**(t% tr(i_logL,TAMS_EEP))
+    lums(3) = 10**(t% tr(i_logL,cHeIgnition_EEP))
+    lums(4) = lums(3)
+    lums(5) = 10**(t% tr(i_logL,cHeBurn_EEP))
     lums(6) = 0.d0
+    lums(7) = 10**(t% tr(i_logL,TA_cHeB_EEP))
+    lums(8) = 10**(t% tr(i_logL,TPAGB_EEP))
     
-    !TODO check this
-     if (mass .lt. zpars(3) .and. identified(BGB_EEP)) then
-            j_bgb = min(BGB_EEP, t% ntrack)
-            lums(3) = Lumt(j_bgb)
-    else
-            lums(3) = lums(4)
+     if (t% initial_mass .lt. zpars(3) .and. identified(BGB_EEP)) then
+        j_bgb = min(BGB_EEP, t% ntrack)
+        lums(3) = 10**(t% tr(i_logL,j_bgb))
     endif
     
-    deallocate(Lumt)
     end subroutine
 
     ! GB = giant branch parameters
@@ -116,9 +105,8 @@ contains
     !4; D                5; p             6; q
     !7; Mx               8; A(He)         9; Mc,BGB
     subroutine calculate_SSE_GB(t,zpars, GB)
-     !only for phase upto 6 (TPAGB)
-    implicit none
-
+     !only upto phase 6 (TPAGB)
+     
     type(track), pointer, intent(in) :: t
     real(dp),  intent(in) :: zpars(20)
     real(dp) :: GB(10)
@@ -150,7 +138,6 @@ contains
     GB(4) = 10.d0**GB(4)
     GB(7) = (GB(3)/GB(4))**(1.d0/(GB(5)-GB(6)))
       
-      
      if(mass.le.zpars(2).and. identified(BGB_EEP))then                   !MHeF
             j = min(t% ntrack, BGB_EEP)
             GB(9) = t% tr(i_he_core, j )
@@ -163,99 +150,99 @@ contains
       endif
     end subroutine
 
+    subroutine calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
+    type(track), pointer, intent(in) :: t
+    real(dp) :: tscls(20),lums(10),GB(10),tm,tn
+
+        GB(3) = 4.1d+04
+        GB(4) = 5.5d+04/(1.d0+0.4d0* t% zams_mass**4)
+
+        GB(5) = 5.d0
+        GB(6) = 3.d0
+        GB(7) = (GB(3)/GB(4))**(1.d0/(GB(5)-GB(6)))
+        GB(8) = 8.0d-05
+        
+        lums(1) = t% He_pars% Lzams
+        lums(2) = t% He_pars% LtMS
+        lums(6) = t% He_pars% lx
+        
+        tscls(1) = t% MS_time
+        tscls(4) = t% times(8)
+        tscls(5) = t% times(9)
+        tscls(6) = t% times(10)
+        tscls(14) = t% nuc_time
+        tm = t% MS_time
+        tn = t% nuc_time
+        
+    end subroutine calculate_SSE_He_star
+    
 !     subroutine calculate_he_timescales(t,t% He_pars% LtMS, Mx, Tinf1, Tx, Tinf2)
      subroutine calculate_SSE_He_timescales(t)
       !only for phases 7 to 9
-            type(track), pointer, intent(inout) :: t
-            real(dp) :: Tinf1, Tx, Tinf2
-            real(dp) :: D,Mx,Lx,LtMS
-            real(dp) :: mc1, Tmax, mc_max,tm
-            logical :: debug
+        type(track), pointer, intent(inout) :: t
+        real(dp) :: Tinf1, Tx, Tinf2
+        real(dp) :: D,Mx,Lx,LtMS
+        real(dp) :: mc1, Tmax, mc_max,tm
+        logical :: debug
 
-            debug = .false.
-            
-    !        Calculate Helium star Main Sequence lifetime.
-            t% MS_time = time_He_MS(t% zams_mass)
-            tm = t% MS_time
-            
-    !       Zero- and terminal age Helium star main sequence luminosity
-            t% He_pars% Lzams = lum_He_ZAMS(t% zams_mass)
-            LtMS = lum_He_MS(t% zams_mass, t% He_pars% Lzams,1.d0)
-            t% He_pars% LtMS = LtMS
-            
-    !       Set the Helium star GB parameters
-            
-            D = 5.5d+04/(1.d0+0.4d0* t% zams_mass**4)
-            t% He_pars% D = D
-            Mx = (B/D)**(1.d0/(p-q))
-            t% He_pars% Mx = Mx
-            ! Change in slope of giant L-Mc relation.
-            lx= D*Mx**p
-            t% He_pars% lx = lx
-
-    !       Set Helium star GB timescales
-            !core_mass_THeMS; mc1
-            if(LtMS <= lx)then
-                mc1 = (LtMS/D)**(1.d0/p)
-            else
-                mc1 = (LtMS/B)**(1.d0/q)
-            endif
-
-            Tinf1 = tm + (1.d0/((p-1.d0)*AHe*D))*mc1**(1.d0-p)
-            Tx = Tinf1 - (Tinf1 - tm)*((Mx/mc1)**(1.d0-p))
-            Tinf2 = Tx + (1.d0/((q-1.d0)*AHe*B))*Mx**(1.d0-q)
-
-    !        Get an idea of when Mc = MIN(Mt,Mc,C,max) on the GB
+        debug = .false.
         
-            mc_max = max_core_mass_he(t% pars% mass, t% zams_mass)
+!        Calculate Helium star Main Sequence lifetime.
+        t% MS_time = time_He_MS(t% zams_mass)
+        tm = t% MS_time
+        
+!       Zero- and terminal age Helium star main sequence luminosity
+        t% He_pars% Lzams = lum_He_ZAMS(t% zams_mass)
+        LtMS = lum_He_MS(t% zams_mass, t% He_pars% Lzams,1.d0)
+        t% He_pars% LtMS = LtMS
+        
+!       Set the Helium star GB parameters
+        
+        D = 5.5d+04/(1.d0+0.4d0* t% zams_mass**4)
+        t% He_pars% D = D
+        Mx = (B/D)**(1.d0/(p-q))
+        t% He_pars% Mx = Mx
+        ! Change in slope of giant L-Mc relation.
+        lx= D*Mx**p
+        t% He_pars% lx = lx
+
+!       Set Helium star GB timescales
+        !core_mass_THeMS; mc1
+        if(LtMS <= lx)then
+            mc1 = (LtMS/D)**(1.d0/p)
+        else
+            mc1 = (LtMS/B)**(1.d0/q)
+        endif
+
+        Tinf1 = tm + (1.d0/((p-1.d0)*AHe*D))*mc1**(1.d0-p)
+        Tx = Tinf1 - (Tinf1 - tm)*((Mx/mc1)**(1.d0-p))
+        Tinf2 = Tx + (1.d0/((q-1.d0)*AHe*B))*Mx**(1.d0-q)
+
+!        Get an idea of when Mc = MIN(Mt,Mc,C,max) on the GB
+    
+        mc_max = max_core_mass_he(t% pars% mass, t% zams_mass)
 !TODO: Next line requires a check
 !Note that this is done to avoid negative timesteps that result from more massive cores than what sse formulae predict
-            mc_max = max(mc_max,t% pars% core_mass+1.d-10)
-            if(debug)print*, 'core',mc_max,t% pars% core_mass,t% pars% mass,t% zams_mass
+        mc_max = max(mc_max,t% pars% core_mass+1.d-10)
+        if(debug)print*, 'core',mc_max,t% pars% core_mass,t% pars% mass,t% zams_mass
 
-            if(mc_max.le.Mx)then
-                Tmax = Tinf1 - (1.d0/((p-1.d0)*AHe*D))*(mc_max**(1.d0-p))
-            else
-                Tmax = Tinf2 - (1.d0/((q-1.d0)*AHe*B))*(mc_max**(1.d0-q))
-            endif
-            if (debug) print*, 'tmax', tmax, mc_max,mx,mc1
-            Tmax = MAX(Tmax,t% MS_time)
-            t% nuc_time = Tmax
-            
-            t% times(He_MS)= t% MS_time
-            t% times(8) = Tinf1     !these 8-10 here do not represent the phase numbers
-            t% times(9) = Tinf2
-            t% times(10) = Tx
-            if(debug) print*,"He timescales", tinf1, tx, tinf2, tmax,t% MS_time,t% nuc_time
-        return
-        end subroutine calculate_SSE_He_timescales
+        if(mc_max.le.Mx)then
+            Tmax = Tinf1 - (1.d0/((p-1.d0)*AHe*D))*(mc_max**(1.d0-p))
+        else
+            Tmax = Tinf2 - (1.d0/((q-1.d0)*AHe*B))*(mc_max**(1.d0-q))
+        endif
+        if (debug) print*, 'tmax', tmax, mc_max,mx,mc1
+        Tmax = MAX(Tmax,t% MS_time)
+        t% nuc_time = Tmax
+        
+        t% times(He_MS)= t% MS_time
+        t% times(8) = Tinf1     !these 8-10 here do not represent the phase numbers
+        t% times(9) = Tinf2
+        t% times(10) = Tx
+        if(debug) print*,"He timescales", tinf1, tx, tinf2, tmax,t% MS_time,t% nuc_time
+        
+    end subroutine calculate_SSE_He_timescales
 
-    subroutine calculate_SSE_He_star(t,tscls,lums,GB,tm,tn)
-            type(track), pointer, intent(in) :: t
-            real(dp) :: tscls(20),lums(10),GB(10),tm,tn
-
-                GB(3) = 4.1d+04
-                GB(4) = 5.5d+04/(1.d0+0.4d0* t% zams_mass**4)
-
-                GB(5) = 5.d0
-                GB(6) = 3.d0
-                GB(7) = (GB(3)/GB(4))**(1.d0/(GB(5)-GB(6)))
-                GB(8) = 8.0d-05
-                
-                lums(1) = t% He_pars% Lzams
-                lums(2) = t% He_pars% LtMS
-                lums(6) = t% He_pars% lx
-                
-                tscls(1) = t% MS_time
-                tscls(4) = t% times(8)
-                tscls(5) = t% times(9)
-                tscls(6) = t% times(10)
-                tscls(14) = t% nuc_time
-                tm = t% MS_time
-                tn = t% nuc_time
-    end subroutine calculate_SSE_He_star
-    
-    
     real(dp) FUNCTION lum_He_ZAMS(m)
     !old name = lzhef(mass)
     implicit none

@@ -260,7 +260,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     t% nuc_time = tn
 
     if (debug)print*, "in star end", mt,delta,kw,tm,tn,t%initial_mass,t% zams_mass
-        if (debug) print*, '-----------------------------'
+    if (debug) print*, '-----------------------------'
 
     nullify(t)
     return

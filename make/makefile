@@ -18,7 +18,7 @@ FC=gfortran
 #OMP=-fopenmp
 
 WARN=-Wall -Wno-tabs -Wno-maybe-uninitialized -fimplicit-none  -Wsurprising  -Waliasing
-DEBUG=-g3 -O2 -fbacktrace -fcheck=all -fbounds-check 
+DEBUG=-g3 -O0 -fbacktrace -fcheck=all -fbounds-check #-pg
 
 
 #-O2    -Wall  -Wline-truncation  -Wcharacter-truncation   -Wimplicit-interface  -Wunused-parameter   -fcheck=all      -fbacktrace
@@ -116,11 +116,11 @@ $(SSE_METISSE): $(OBJT4) $(OBJT_SSE) $(OBJT_METISSE)
 
 
 $(BSE_METISSE): $(OBJT5) $(OBJT_SSE) $(OBJT_METISSE)
-	$(FC) $(OMP) -o $(BSE_DIR)/$(BSE_METISSE) $^
+	$(FC) $(OMP) $(FFLAGS1) -o $(BSE_DIR)/$(BSE_METISSE) $^
 
 
 $(POPBIN): $(OBJT3) $(OBJT_SSE) $(OBJT_METISSE)
-	$(FC) $(OMP) -o $(BSE_DIR)/$(POPBIN) $^
+	$(FC) $(OMP) $(FFLAGS1) -o $(BSE_DIR)/$(POPBIN) $^
 
 
 all:$(BSE_METISSE) $(SSE_METISSE) $(POPBIN)

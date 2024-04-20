@@ -113,6 +113,8 @@
 *
       OPEN(10,file='binaries.in',action='read',status='old')
       READ(10,*)nm1, Z
+*      READ(10,*)nm1
+
 *
 * Set parameters which depend on the metallicity
 *
@@ -126,6 +128,8 @@
 * Read in parameters and set coefficients which depend on metallicity. 
 *
          READ(10,*,iostat=ierr)k1,k2,m1,m2,tb,ecc,age1,tmax
+*         READ(10,*,iostat=ierr)k1,k2,m1,m2,tb,ecc,z,age1,tmax
+
          write(99,*) 'ip',i,k1,k2,m1,m2,tb,ecc,tmax
          ecc0 = ecc
          tb0 = tb/yeardy

@@ -608,7 +608,7 @@ module interp_support
         real(dp), allocatable :: new_line(:,:)
         integer, allocatable :: min_eeps(:)
 
-        logical :: debug, interpolate
+        logical :: debug
         type(track), pointer :: t
 
         debug = .false.
@@ -659,8 +659,11 @@ module interp_support
             if (mhi == mlo) then
                 if (t% irecord>0 .and. debug) print*, "no interp in age needed"
                 do j=jstart,jend
-                    interpolate = check_core_quant(j,pass,t% is_he_track)
-                    if (interpolate) new_line(j,1) = t% tr(j,mlo)
+                    if (pass==2) then
+                        ! check if it is core-related quantity
+                        if (check_core_quant(j,t% is_he_track)) cycle
+                    endif
+                    new_line(j,1) = t% tr(j,mlo)
                 end do
 
             elseif ((mhi-mlo)<4) then
@@ -669,19 +672,19 @@ module interp_support
                 beta = 1d0 - alfa
                 if (debug) print*, "doing linear interp in age",alfa,age,t% tr(age_col,mlo),t% tr(age_col,mhi)
 
-
                 do j = jstart,jend
-                    interpolate = check_core_quant(j,pass,t% is_he_track)
-                    if (interpolate) then
-                        new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
-                        if (new_line(j,1)/= new_line(j,1) .and. t% ierr==0) then
-                            write(UNIT=err_unit,fmt=*) 'Warning: NaN encountered during interpolation age',&
-                                t% initial_mass,input_age,j,mhi,mlo,t% pars% phase
-                            t% ierr = -1
-!                            call stop_code
-                            return
-                        endif
-                        
+                    if (pass==2) then
+                        ! check if it is core-related quantity
+                        if (check_core_quant(j,t% is_he_track)) cycle
+                    endif
+
+                    new_line(j,1) = alfa*t% tr(j,mhi) + beta*t% tr(j,mlo)
+                    if (new_line(j,1)/= new_line(j,1) .and. t% ierr==0) then
+                        write(UNIT=err_unit,fmt=*) 'Warning: NaN encountered during interpolation age',&
+                            t% initial_mass,input_age,j,mhi,mlo,t% pars% phase
+                        t% ierr = -1
+            !            call stop_code
+                        return
                     endif
                 end do
                 if (debug) print*, "ending linear interp in age"
@@ -699,19 +702,20 @@ module interp_support
                 endif
 
                 do j = jstart,jend
-                    interpolate = check_core_quant(j,pass,t% is_he_track)
-                    if (interpolate) then
-                        do k=1,4
-                            y(k) = t% tr(j,mlo-1+k)
-                        enddo
-                        call interp_4pt_pm(x, y, f)
-                        new_line(j,1) = y(2) + dx*(f(1) + dx*(f(2) + dx*f(3)))
-                    end if
+                    if (pass==2) then
+                        ! check if it is core-related quantity
+                        if (check_core_quant(j,t% is_he_track)) cycle
+                    endif
+                    do k=1,4
+                        y(k) = t% tr(j,mlo-1+k)
+                    enddo
+                    call interp_4pt_pm(x, y, f)
+                    new_line(j,1) = y(2) + dx*(f(1) + dx*(f(2) + dx*f(3)))
                 enddo
             endif
             if (allocated(min_eeps)) deallocate(min_eeps)
         end do
-        
+                    
         if (present(icolumn)) then
             val = new_line(icolumn,1)
         else
@@ -724,11 +728,12 @@ module interp_support
 !            call stop_code
         endif
         if (debug) print*, 'exiting interpolate_age'
+        
     end subroutine interpolate_age
     
-    logical function check_core_quant(j,pass,is_he_track)
-        integer :: j, pass
-        logical:: is_he_track
+    logical function check_core_quant(j,is_he_track)
+        integer, intent(in) :: j
+        logical, intent(in) :: is_he_track
         integer, allocatable :: excl_cols(:)
 
         if (is_he_track) then
@@ -737,10 +742,10 @@ module interp_support
             excl_cols = core_cols
         endif
 
-        if (pass==2 .and. (any(j .eq. excl_cols,1) .or. j == i_age2)) then
-            check_core_quant = .false.
-        else
+        if (any(j .eq. excl_cols,1) .or. j == i_age2) then
             check_core_quant = .true.
+        else
+            check_core_quant = .false.
         endif
         
         deallocate(excl_cols)
@@ -762,18 +767,24 @@ module interp_support
         !Todo: min_eeps-> nbr_eeps
 !         if (t% is_he_track) debug = .true.
         
-        last_age = 0.d0
         initial_eep = ZAMS_EEP
         if (t% is_he_track) initial_eep = ZAMS_HE_EEP
         
-        ! check for lower boundary
         if (age .lt. t% tr(age_col,initial_eep)) then
+        ! check for lower boundary
             allocate(min_eeps(1))
             min_eeps = initial_eep
             if (debug)write(*,*)"age<initial_eep",age, t% tr(age_col,initial_eep)
             return
+        elseif (age .gt. t% tr(age_col,t% eep(t% neep))) then
+        ! check for upper boundary
+            allocate(min_eeps(1))
+            min_eeps = t% eep(t% neep)
+            if (debug)write(*,*)"age>t%neep",age,t% ntrack,t%neep,t% eep(t% neep)
         endif
                 
+        last_age = 0.d0
+        
         do i = 1,t% neep-1
             if (debug) print*,"loc_low", t% eep(i), t% eep(i+1),t%neep
 
@@ -790,33 +801,33 @@ module interp_support
             call index_search(len_eep,age_list,age,min_index)
 !            min_index = binary_search(len_eep,age_list,age)
             if(abs(age_list(min_index)-age)< tiny) then        !less than a year
-                    if (debug) print*,"no interpolation, min_index", age_list(min_index)
-                    allocate(min_eeps(1))
-                    min_eeps = min_index
+                if (debug) print*,"no interpolation, min_index", age_list(min_index)
+                allocate(min_eeps(1))
+                min_eeps = min_index
 !                            a => b(:,min_index: min_index)
             elseif(age< age_list(2)) then
-                    if (debug) print*,"age< age_list(2)", age_list(1:2)
-                    allocate(min_eeps(2))
-                    min_eeps = [1,2]
+                if (debug) print*,"age< age_list(2)", age_list(1:2)
+                allocate(min_eeps(2))
+                min_eeps = [1,2]
 !                            a => b(:,1:2)
             elseif(age> age_list(len_eep-1)) then
-                    if (debug) print*,"age> age_list(len_eep-1)", age_list(len_eep-1:len_eep)
-                    allocate(min_eeps(2))
-                    min_eeps = [len_eep-1,len_eep]
+                if (debug) print*,"age> age_list(len_eep-1)", age_list(len_eep-1:len_eep)
+                allocate(min_eeps(2))
+                min_eeps = [len_eep-1,len_eep]
 !                            a => b(:,len_eep-1:len_eep)
             elseif(age < age_list(min_index)) then
-                    if (debug) print*,"age< min_index", age_list(min_index-2:min_index+1)
+                if (debug) print*,"age< min_index", age_list(min_index-2:min_index+1)
 
 !                            a => b(:,min_index-2:min_index+1)
-                    allocate(min_eeps(2))
-                    min_eeps = (/(j, j=min_index-1,min_index)/)
+                allocate(min_eeps(2))
+                min_eeps = (/(j, j=min_index-1,min_index)/)
 !                            a => b(:,min_index-1:min_index) !forcing linear
 
             else
-                    if (debug) print*,"age> min_index",age_list(min_index-1:min_index+2)
+                if (debug) print*,"age> min_index",age_list(min_index-1:min_index+2)
 !                            a => b(:,min_index-1:min_index+2)
-                    allocate(min_eeps(2))
-                    min_eeps = (/(j, j=min_index,min_index+1)/)
+                allocate(min_eeps(2))
+                min_eeps = (/(j, j=min_index,min_index+1)/)
 !                            a => b(:,min_index:min_index+1)
             endif
             ! original min_eeps were only a given primary eep,
@@ -825,18 +836,11 @@ module interp_support
             deallocate(age_list)
             exit
         end do
-        
     
         if(.not.allocated(min_eeps)) then
-            ! check for upper boundary
-            if (age .gt. t% tr(age_col,t% eep(t% neep))) then
-                allocate(min_eeps(1))
-                min_eeps = t% eep(t% neep)
-                if (debug)write(*,*)"age>t%neep",age,t% ntrack,t%neep,t% eep(t% neep)
-            else
-                write(UNIT=err_unit,fmt=*)'Error finding nearest eeps for age:',age,age_col
-            endif
+            write(UNIT=err_unit,fmt=*)'Error finding nearest eeps for age:',age,age_col
         endif
+        
     end subroutine find_nearest_eeps
     
     subroutine save_values(new_line,pars)

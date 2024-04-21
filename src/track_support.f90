@@ -313,7 +313,7 @@ module track_support
      real(dp), intent(in) :: vec(:) ! (n)
     !     real(dp), parameter :: tiny = 1.0d-13
      integer :: first, last, mid
-real(dp) :: list(2)
+     real(dp) :: list(3)
      if (n <= 1) then
         loc = n; return
      end if
@@ -373,15 +373,17 @@ real(dp) :: list(2)
               last = mid - 1
            end if
         end do
-
-    
-        if (loc>1) then
-            list(1) = vec(loc-1)
-            list(2) = vec(loc)
-            loc = minloc(abs(list-val), dim=1)
-        endif
      end if
 
+    
+        if (loc>1 .and. loc<n) then
+            list(1) = vec(loc-1)
+            list(2) = vec(loc)
+            list(3) = vec(loc+1)
+!            print*, 'list',list,val
+            loc = loc+minloc(abs(list-val), dim=1)-2
+!            print*,'loc',minloc(abs(list-val), dim=1)
+        endif
     end function binary_search
     
     subroutine stop_code()

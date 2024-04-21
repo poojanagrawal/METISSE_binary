@@ -125,8 +125,12 @@ module interp_support
         t% tr(i_age2,:) = t% tr(i_age2,:)*1E-6          !Myrs
         if (start>1) t% tr(:,1:start-1) = -1.d0
 
-        ! check if mass and age are monotonic
-        call smooth_track(t)
+    
+        ! check if age is monotonically increasing
+        call mod_PAV(t% tr(i_age2,start:t% ntrack))
+        
+        ! check if mass is same or monotonically decreasing
+        call smooth_track(t,start)
         
         ! recalibrate age from ZAMS
         
@@ -265,7 +269,7 @@ module interp_support
     end subroutine
 
     subroutine check_length(iseg,t,min_index,exclude_core)
-        type(track) :: t
+        type(track), pointer :: t
         integer :: min_index,iseg
         logical, intent(in) :: exclude_core
         
@@ -410,7 +414,7 @@ module interp_support
     !this has been modified for use with fix_incomplete_tracks only
         implicit none
         type(eep_track), intent(in) :: a(:)
-        type(track), intent(inout) :: t
+        type(track), pointer :: t
         integer, intent(in) :: min_ntrack
         logical, intent(in) :: exclude_core
         real(dp) :: alfa,beta,bprime
@@ -476,16 +480,26 @@ module interp_support
                 
     end subroutine fix_incomplete_tracks
 
-    subroutine smooth_track(t)
+    subroutine smooth_track(t,start)
     implicit none
-    type(track), intent(inout) :: t
+    type(track), pointer :: t
+
     integer :: i, start
-        if (t% is_he_track) then
-            start = ZAMS_HE_EEP
-        else
-            start = ZAMS_EEP
-        endif
-        call mod_PAV(t% tr(i_age2,start:t% ntrack))
+    
+!    real(dp), pointer :: mass_list(:)
+!
+!        mass_list => t% tr(i_mass,start:t% ntrack)
+!
+!        do i = 2, size(mass_list)
+!            if (mass_list(i).le.0.d0) then
+!            ! although rare, sometime extrapolation can cause negative mass values
+!                mass_list(i) = mass_list(i-1)
+!            else
+!                mass_list(i) = min(mass_list(i), mass_list(i-1))
+!            endif
+!        end do
+!        nullify(mass_list)
+        
         do i = start+1,t% ntrack
             if (t% tr(i_mass,i).le.0.d0) then
             ! although rare, sometime extrapolation can cause negative mass values
@@ -516,7 +530,8 @@ module interp_support
            start = i
             last = n
             if (debug) print*, 'in mod_PAV', i, d(i),y(i),y(n)
-            if (start == old_start) start=old_start-1 !if start is the greatest value not in the end, take one step up and redo
+            !if start is the greatest value not in the end, take one step up and redo
+            if (start == old_start) start=old_start-1
             do while(.true.)
                 if (y(n)- y(start)>0) exit
 !                print*,y(n)- y(start),y(start),y(n)
@@ -798,8 +813,11 @@ module interp_support
 
             if (debug) print*,"len_eep:",len_eep,"bounds:",age_list(1),age_list(len_eep)
 
+            if (len_eep<5) then
             call index_search(len_eep,age_list,age,min_index)
-!            min_index = binary_search(len_eep,age_list,age)
+        else
+            min_index = binary_search(len_eep,age_list,age)
+        endif
             if(abs(age_list(min_index)-age)< tiny) then        !less than a year
                 if (debug) print*,"no interpolation, min_index", age_list(min_index)
                 allocate(min_eeps(1))
@@ -892,7 +910,7 @@ module interp_support
         !calculate timescales associated with different phases (0-6)
         implicit none
         
-        type(track), pointer,intent(inout) :: t
+        type(track), pointer :: t
         integer :: i,j_bgb
         real(dp), pointer :: age(:)=> NULL()
         logical :: debug
@@ -966,7 +984,7 @@ module interp_support
         !calculate timescales associated with different he star phases (7,8,9)
         implicit none
         
-        type(track), pointer,intent(inout) :: t
+        type(track), pointer :: t
         integer :: i
         real(dp), pointer :: age(:)=> NULL()
 
@@ -1065,8 +1083,8 @@ module interp_support
         integer, intent(in) :: EEP2,EEP1,EEP_OLD2,EEP_OLD1,m
         real(dp) ::  frac
 
-        frac = (M-EEP1)* 1.0_dp /(EEP2-EEP1)
-        eqv_eep = nint(EEP_OLD1+(frac* 1.0_dp *(EEP_OLD2-EEP_OLD1)))
+        frac = (M-EEP1)* 1.d0 /(EEP2-EEP1)
+        eqv_eep = nint(EEP_OLD1+(frac* 1.d0 *(EEP_OLD2-EEP_OLD1)))
         
     end function
     
@@ -1081,7 +1099,7 @@ module interp_support
         real(dp), pointer :: age_list(:)
         real(dp), allocatable:: mlist(:), Mmax(:), Mmin(:)
         real(dp) :: alfa,beta,age
-        integer :: i,j,k,nt,eep_n,num_list,Mupp,Mlow
+        integer :: i,j,k,nt,eep_n,num_list,Mupp,Mlow,eep_m1
 
         logical :: debug
 
@@ -1116,10 +1134,14 @@ module interp_support
             !age_list => t% tr(i_age2,1:nt)
             if (debug) print*,"getting new initial mass mnew at age and phase: ",mnew,age,t% pars% phase,id,t% is_he_track
             
-            call index_search(nt-initial_eep+1,age_list(initial_eep:),age,eep_m)
+!            call index_search(nt-initial_eep+1,age_list(initial_eep:),age,eep_m)
+            eep_m = binary_search(nt-initial_eep+1,age_list(initial_eep:),age)
+!            if (eep_m/=eep_m1) then
+!
+!            print*, 'divergence',eep_m,eep_m1,age,age_list(eep_m+initial_eep-1),age_list(eep_m1+initial_eep-1)
+!            STOP
+!            endif
             eep_m = eep_m+initial_eep-1
-
-!            eep_m = binary_search(nt,age_list,age)
 
             if (eep_m > nt) eep_m = nt
             if (debug) print*,"nearest index eep_m, ntrack : ",eep_m,nt, age, age_list(eep_m)

@@ -84,19 +84,21 @@ module sse_support
     logical :: debug
     debug = .false.
 
-    lums(1) = 10**(t% tr(i_logL,ZAMS_EEP))
-    lums(2) = 10**(t% tr(i_logL,TAMS_EEP))
-    lums(3) = 10**(t% tr(i_logL,cHeIgnition_EEP))
+    lums = 0.d0
+    lums(1) = t% tr(i_logL,ZAMS_EEP)
+    lums(2) = t% tr(i_logL,TAMS_EEP)
+    lums(3) = t% tr(i_logL,cHeIgnition_EEP)
     lums(4) = lums(3)
-    lums(5) = 10**(t% tr(i_logL,cHeBurn_EEP))
-    lums(6) = 0.d0
-    lums(7) = 10**(t% tr(i_logL,TA_cHeB_EEP))
-    lums(8) = 10**(t% tr(i_logL,TPAGB_EEP))
-    
+    lums(5) = t% tr(i_logL,cHeBurn_EEP)
+    lums(7) = t% tr(i_logL,TA_cHeB_EEP)
+    lums(8) = t% tr(i_logL,TPAGB_EEP)
+
      if (t% initial_mass .lt. zpars(3) .and. identified(BGB_EEP)) then
         j_bgb = min(BGB_EEP, t% ntrack)
-        lums(3) = 10**(t% tr(i_logL,j_bgb))
+        lums(3) = t% tr(i_logL,j_bgb)
     endif
+    
+    lums = 10**lums
     
     end subroutine
 

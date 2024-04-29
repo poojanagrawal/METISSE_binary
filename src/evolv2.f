@@ -1028,6 +1028,11 @@
 * Interpolate back until the primary is just filling its Roche lobe.
          if(dbg)print*,'b4 RLOF',j1,rad(j1),rol(j1),dtm,tphys
 
+         if ((SSE_FLAG .eqv. .false.) .and. (rad(j1).lt.1.05d0*rol(j1))) then
+*           print*, 'rad ok',rad(j1),rol(j1),j1,aj(j1),tphys
+            if(tphys.ge.tphysf) goto 140
+            goto 7
+         endif
          if(rad(j1).ge.1.002d0*rol(j1))then
          
             if(intpol.eq.0) tphys00 = tphys
@@ -1097,6 +1102,8 @@
                
             endif
             tphys0 = tphys
+            if((SSE_FLAG .eqv. .false.) .and. (dtm.le.1.0d-10))
+     &       dtm=max(ABS(dtm),dtmi(j1))
          endif
       endif
       

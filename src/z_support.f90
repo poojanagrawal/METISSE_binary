@@ -63,15 +63,7 @@ module z_support
             
     contains
 
-    subroutine read_defaults(ierr)
-        integer, intent(out) :: ierr
-
-        ierr = 0
-        if (front_end <0) then
-            print*, 'Error: front_end is not initialized for METISSE'
-            ierr = 1
-            return
-        endif
+    subroutine read_defaults()
         
         allocate(metallicity_file_list(max_files))
         allocate(metallicity_file_list_he(max_files))
@@ -745,6 +737,7 @@ module z_support
 
         i_age = n
         if(is_he_track) i_he_age = n
+        
     end subroutine get_key_columns
 
     subroutine assign_sgl_col(temp, col, colname,n)

@@ -121,8 +121,8 @@
       SSE_FLAG = .false.
       
       !set the front end for METISSE
-      if(SSE_FLAG.eqv..FALSE.) call initialize_front_end('BSE','','')
-      CALL zcnsts(z,zpars)
+      if(SSE_FLAG.eqv..FALSE.) call initialize_front_end('BSE')
+      CALL zcnsts(z,zpars,'','')
       do i = 1,nm1
 *
 * Read in parameters and set coefficients which depend on metallicity. 

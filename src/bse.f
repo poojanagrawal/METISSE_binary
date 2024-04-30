@@ -139,8 +139,8 @@
       SSE_FLAG = .false.
       
       !set the front end for METISSE
-      if(SSE_FLAG.eqv..FALSE.) call initialize_front_end('BSE','','')
-      CALL zcnsts(z,zpars)
+      if(SSE_FLAG.eqv..FALSE.) call initialize_front_end('BSE')
+      CALL zcnsts(z,zpars,'','')
 *
 * Set the collision matrix.
 *

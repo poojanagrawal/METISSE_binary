@@ -103,9 +103,9 @@ c-------------------------------------------------------------c
       SSE_FLAG = .false.
       
       !set the front end for METISSE
-      if(SSE_FLAG.eqv..FALSE.) call initialize_front_end('SSE','','')
+      if(SSE_FLAG.eqv..FALSE.) call initialize_front_end('SSE')
         
-      CALL zcnsts(z,zpars)
+      CALL zcnsts(z,zpars,'','')
       if(idum.gt.0) idum = -idum
 *
       if(mass.gt.0.0)then

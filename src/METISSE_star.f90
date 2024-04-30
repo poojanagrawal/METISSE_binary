@@ -10,7 +10,7 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     integer :: kw
 
     real(dp), allocatable:: rlist(:)
-    real(dp) :: times_old(11),dtm, quant
+    real(dp) :: times_old(11),dtm!, quant
     real(dp):: delta1,delta_wind,delta,mnew
 
     integer :: idd, ierr, age_col,eep_m

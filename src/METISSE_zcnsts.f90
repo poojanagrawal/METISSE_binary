@@ -1,26 +1,57 @@
-subroutine METISSE_zcnsts(z,zpars)
+subroutine METISSE_zcnsts(z,zpars,path_to_tracks,path_to_he_tracks)
     use track_support
     use z_support
 
     real(dp), intent(in) :: z
     real(dp), intent(out) :: zpars(20)
-
-    integer :: i,ierr,j,nloop,jerr
-    logical :: debug, res
-    logical :: read_inputs = .true.
+    character(len=*), intent(in), optional :: path_to_tracks, path_to_he_tracks
+    
     character(LEN=strlen), allocatable :: track_list(:)
     character(LEN=strlen) :: USE_DIR, find_cmd,rnd
+    integer :: i,ierr,j,nloop,jerr
     integer :: num_tracks
-
+    
+    logical :: load_tracks
+    logical :: debug, res
+    
     debug = .false.
     
-    if (initial_Z >0 .and.(relative_diff(initial_Z,z) < Z_accuracy_limit) .and. zpars(14).gt.0.d0) then
-        if (debug) print*, '**** No change in metallicity, exiting METISSE_zcnsts ****'
+    if (debug) print*, 'in METISSE_zcsnts',z, trim(path_to_tracks),trim(path_to_he_tracks)
+    if (front_end <0) then
+        print*, 'Fatal error: front_end is not initialized for METISSE'
+        call stop_code
+    endif
+        
+    ! read one set of stellar tracks (of input Z)
+    load_tracks = .false.
+
+    
+    if (initial_Z <0) then
+        load_tracks = .true.
+    else
+        ! tracks have been loaded at least once, for initial_Z
+        ! check if they need to be reloaded
+        
+        ! if input metallicity 'z' has changed
+        if (relative_diff(initial_Z,z) .ge. Z_accuracy_limit) load_tracks = .true.
+
+        ! maybe metallicity is same, but paths may have changed
+        ! (if paths are same, then metallicity doesn't matter)
+        ! TODO: currently only for cosmic, can be modified to include others as well
+        if (front_end == COSMIC)then
+            if((trim(path_to_tracks)/=trim(TRACKS_DIR)) .or. &
+            (trim(path_to_he_tracks)/=trim(TRACKS_DIR_HE))) load_tracks = .true.
+        endif
+            
+    endif
+            
+    if (load_tracks.eqv. .false.) then
+        if (debug) print*, '**** No change in metallicity or paths, exiting METISSE_zcnsts ****'
         return
     endif
     
     if (debug) print*, '**** Metallicity is ',z,'initializing METISSE_zcnsts ****'
-    
+            
     ierr = 0
     nloop = 2
     use_sse_NHe = .true.
@@ -31,53 +62,50 @@ subroutine METISSE_zcnsts(z,zpars)
     if (allocated(m_cutoff)) deallocate(m_cutoff)
     if (allocated(Mmax_array)) deallocate(Mmax_array, Mmin_array)
     
-    if (read_inputs) then
-        
-        !reading defaults option first
-        call read_defaults(ierr); if (ierr/=0) STOP
+    if (allocated(metallicity_file_list))  deallocate(metallicity_file_list,metallicity_file_list_he)
 
-        !read user inputs from evolve_metisse.in or use inputs from code directly
-        if (front_end == main .or. front_end == bse) then
-            call read_metisse_input(ierr); if (ierr/=0) STOP
-        elseif (front_end == COSMIC) then
-            call get_metisse_input(TRACKS_DIR,metallicity_file_list)
-            if (TRACKS_DIR_HE/='') call get_metisse_input(TRACKS_DIR_HE,metallicity_file_list_he)
-        else
-            print*, "Error: reading inputs; unrecognized front_end_name for METISSE"
-        endif
         
-        metallicity_file_list = pack(metallicity_file_list,mask=len_trim(metallicity_file_list)>0)
-        
-        metallicity_file_list_he = pack(metallicity_file_list_he,mask=len_trim(metallicity_file_list_he)>0)
-        
-        if (size(metallicity_file_list)<1) then
-            print*, "Error: metallicity_file_list is empty"
-            STOP
-        endif
-        
-        if (size(metallicity_file_list_he)<1) then
-            print*, "Error: metallicity_file_list_he is empty"
-            print*, "Switching to SSE formulae for helium stars "
-            nloop = 1
-        endif
-        
-        if(debug) print*,'metallicity files: ',metallicity_file_list
-        if(debug) print*,'metallicity files he : ', metallicity_file_list_he
-        
-        !Some unit numbers are reserved: 5 is standard input, 6 is standard output.
-        if (write_error_to_file) then
-            err_unit = 99   !will write to fort.99
-        else
-            err_unit = 6      !will write to screen
-        endif
+    ! use input file/path to locate list of *metallicity.in files
+    ! these file contain information about eep tracks, their metallicity and format
     
-        read_inputs = .false.
-    end if
+    
+    !read defaults option first
+    call read_defaults()
+
+    !read user inputs from evolve_metisse.in or use inputs from code directly
+    if (front_end == main .or. front_end == bse) then
+        call read_metisse_input(ierr); if (ierr/=0) STOP
+    elseif (front_end == COSMIC) then
+        TRACKS_DIR = path_to_tracks
+        TRACKS_DIR_HE = path_to_he_tracks
+        call get_metisse_input(TRACKS_DIR,metallicity_file_list)
+        if (TRACKS_DIR_HE/='') call get_metisse_input(TRACKS_DIR_HE,metallicity_file_list_he)
+    else
+        print*, "Error: reading inputs; unrecognized front_end_name for METISSE"
+    endif
+    
+    metallicity_file_list = pack(metallicity_file_list,mask=len_trim(metallicity_file_list)>0)
+    
+    metallicity_file_list_he = pack(metallicity_file_list_he,mask=len_trim(metallicity_file_list_he)>0)
+    
+    if (size(metallicity_file_list)<1) then
+        print*, "Error: metallicity_file_list is empty"
+        STOP
+    endif
+    
+    if (size(metallicity_file_list_he)<1) then
+        print*, "Error: metallicity_file_list_he is empty"
+        print*, "Switching to SSE formulae for helium stars "
+        nloop = 1
+    endif
+    
+    if(debug) print*,'metallicity files: ',metallicity_file_list
+    if(debug) print*,'metallicity files he : ', metallicity_file_list_he
     
     if (front_end /= main) initial_Z = z
     
     !first calculate zpars the SSE way for use as backup
-    call calculate_sse_zpars(z,zpars)
+!    call calculate_sse_zpars(z,zpars)
     
     ! need to intialize these seperately as they may be
     ! used uninitialized if he tracks are not present
@@ -253,5 +281,13 @@ subroutine METISSE_zcnsts(z,zpars)
         call assign_commons()
     endif
 
+    !Some unit numbers are reserved: 5 is standard input, 6 is standard output.
+    if (write_error_to_file) then
+        err_unit = 99   !will write to fort.99
+    else
+        err_unit = 6      !will write to screen
+    endif
+        
+        
 end subroutine METISSE_zcnsts
 

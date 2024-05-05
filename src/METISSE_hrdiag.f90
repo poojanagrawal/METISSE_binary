@@ -56,13 +56,6 @@
     if (aj/=aj) aj = t% pars% age
     t% pars% age = aj
 !    if (aj<0.d0) stop
-
-    ! something has gone wrong, prob during merger
-    ! making star a massless remnant to prevent crashing the code
-!    if (mt<8d-2 .and. t% pars% phase <HeWD) then
-!        t% pars% phase = Massless_REM
-!        t% ierr = -1
-!    endif
     
     
     IF (t% pars% phase<=TPAGB) THEN
@@ -148,6 +141,7 @@
                     endif
                 endif
             ELSE
+                ! Calculate mass and radius of convective envelope, and envelope gyration radius.
                 if (t% pars% core_radius<0) CALL calculate_rc(t,tscls,zpars,t% pars% core_radius)
                 rc = t% pars% core_radius
                 call get_mcrenv_from_cols(t,lums,menv,renv,k2)
@@ -200,6 +194,7 @@
                 mc_max = MAX(M_ch,0.773* Mcbagb-0.35)
                 if (check_remnant_phase(t% pars, mc_max)) has_become_remnant = .true.
             else
+                ! Calculate mass and radius of convective envelope, and envelope gyration radius.
                 if (t% pars% core_radius<0) CALL calculate_rc(t,tscls,zpars,t% pars% core_radius)
                 rc = t% pars% core_radius
                 call get_mcrenv_from_cols(t,lums,menv,renv,k2)
@@ -259,11 +254,6 @@
     mt = t% pars% mass
     mass= t% zams_mass
 
-    ! Calculate mass and radius of convective envelope, and envelope gyration radius.
-    ! this needs to be separate from the above loop
-    ! as phases may change during the evolution step
-
-
     t% pars% mcenv = menv
     t% pars% rcenv = renv
 !    t% pars% env_frac = (mt-t% pars% McHe)/mt
@@ -271,7 +261,7 @@
     if (irecord<=0) then
         t% pars = old_pars
         t% post_agb = post_agb
-        !tm and tn get calculated in star.f90
+        !tm and tn are calculated in star
     endif
     if (irecord>0 .and. debug) print*,"finished hrdiag",mt,mc,aj,kw,id,tm,tn
 !    if (id==1)print*,"finished hrdiag",t% pars% mass, t% pars% core_mass,t% pars% age,t% pars% radius,id

@@ -28,7 +28,7 @@ module interp_support
         debug_mass = .false.
 !        if(t% is_he_track)debug_mass = .true.
 
-        if (debug_mass) print*, 'in interpolate_mass',t% pars% phase
+        if (debug_mass) print*, 'in interpolate_mass',t% initial_mass,t% pars% phase
         mass = t% initial_mass
         
         if (mass/=mass .or. mass<=0.d0) then
@@ -135,6 +135,25 @@ module interp_support
         ! recalibrate age from ZAMS
         
 !        t% tr(i_age2,:) = t% tr(i_age2,:)- t% tr(i_age2,start)
+        
+        t% j_bgb = -1
+        if (t% is_he_track .eqv. .false.) then
+            !determine the base of the giant branch, if present
+            if (t% initial_mass > Mcrit(2)% mass .and. t% initial_mass< Mcrit(5)% mass) then
+                if (BGB_EEP>0 .and. t% ntrack >= BGB_EEP) then
+                    !Red giant Branch
+                    t% j_bgb = BGB_EEP
+                else
+                    if(i_mcenv>0) then
+                        t% j_bgb = bgb_mcenv(t,TAMS_EEP,cHeIgnition_EEP)
+                    elseif(t% ntrack >= cHeIgnition_EEP) then
+                        t% j_bgb = base_GB(t)
+                    endif
+                    if (t% j_bgb<0 .and. debug_mass)print*, "Unable to locate BGB for",t% initial_mass
+                endif
+            endif
+            if (exclude_core .eqv. .false.) t% j_bgb0 = t% j_bgb
+        endif
         
         if (exclude_core) then
 !            if (t% ntrack/=nt) write(UNIT=err_unit,fmt=*)'WARNING: track length changed',t% initial_mass,nt,t% ntrack
@@ -384,32 +403,6 @@ module interp_support
         
     end subroutine check_length
     
-    
-    integer function get_min_ntrack(star_type,is_he_track)
-    integer, intent(in):: star_type
-    logical, intent(in):: is_he_track
-    
-        get_min_ntrack = 0
-        !calculating min required length to the new track
-        !use Mec here?
-        
-        if (is_he_track) then
-            if (star_type == star_high_mass) then
-                get_min_ntrack = high_mass_eep_he
-            else
-                get_min_ntrack = low_mass_eep_he
-            endif
-        else
-            if (star_type == star_high_mass) then
-                get_min_ntrack = high_mass_final_eep
-            else
-                get_min_ntrack = low_mass_final_eep
-            endif
-        endif
-        
-    end function
-    
-    
     subroutine fix_incomplete_tracks(a,t,min_ntrack,exclude_core)
     !this has been modified for use with fix_incomplete_tracks only
         implicit none
@@ -434,7 +427,6 @@ module interp_support
         
         if (.not. exclude_core) then
             !store orginal track tr in c
-!            print*, t% ntrack, size(t% tr, dim=2),t% initial_mass
             allocate(c(t% ncol, n))
             c(:,:) = t% tr(1: t% ncol,:)
 
@@ -486,28 +478,20 @@ module interp_support
 
     integer :: i, start
     
-!    real(dp), pointer :: mass_list(:)
-!
-!        mass_list => t% tr(i_mass,start:t% ntrack)
-!
-!        do i = 2, size(mass_list)
-!            if (mass_list(i).le.0.d0) then
-!            ! although rare, sometime extrapolation can cause negative mass values
-!                mass_list(i) = mass_list(i-1)
-!            else
-!                mass_list(i) = min(mass_list(i), mass_list(i-1))
-!            endif
-!        end do
-!        nullify(mass_list)
-        
-        do i = start+1,t% ntrack
-            if (t% tr(i_mass,i).le.0.d0) then
+    real(dp), pointer :: mass_list(:)
+
+        mass_list => t% tr(i_mass,start:t% ntrack)
+
+        do i = 2, size(mass_list)
+            if (mass_list(i).le.0.d0) then
             ! although rare, sometime extrapolation can cause negative mass values
-                t% tr(i_mass,i) = t% tr(i_mass,i-1)
+                mass_list(i) = mass_list(i-1)
             else
-                t% tr(i_mass,i) = min(t% tr(i_mass,i), t% tr(i_mass,i-1))
+                mass_list(i) = min(mass_list(i), mass_list(i-1))
             endif
         end do
+        nullify(mass_list)
+        
     end subroutine smooth_track
     
     subroutine mod_PAV(y)
@@ -611,6 +595,9 @@ module interp_support
                     
     subroutine interpolate_age(t, input_age, icolumn, val)
         implicit none
+        
+        type(track), pointer :: t
+
         real(dp), intent(in) :: input_age
         integer, intent(in), optional :: icolumn
         real(dp), intent(out), optional :: val
@@ -624,12 +611,10 @@ module interp_support
         integer, allocatable :: min_eeps(:)
 
         logical :: debug
-        type(track), pointer :: t
 
         debug = .false.
 !         if (t% is_he_track) debug = .true.
 !        if (t% pars% phase>=4 .and. (present(icolumn).eqv..false.)) debug = .true.
-
 
         if (debug) print*,"in interpolate age",t% pars% phase
         dx=0d0; alfa=0d0; beta=0d0; x=0d0; y=0d0
@@ -911,10 +896,9 @@ module interp_support
         implicit none
         
         type(track), pointer :: t
-        integer :: i,j_bgb
+        integer :: i
         real(dp), pointer :: age(:)=> NULL()
-        logical :: debug
-        debug = .false.
+
 
         if (t% is_he_track) then
             call calculate_he_timescales(t)
@@ -959,23 +943,9 @@ module interp_support
         !Todo: nuc_time should be for WR phase
         t% nuc_time = t% times(11)
         
-        !determine the base of the giant branch times, if present
-        if (t% initial_mass > Mcrit(2)% mass .and. t% initial_mass< Mcrit(5)% mass) then
-            if (identified(BGB_EEP)) then
-                !Red giant Branch
-                t% times(HG) = age(BGB_EEP)
-            elseif (t% ntrack >TAMS_EEP) then
-                j_bgb =  base_GB(t)
-                if (j_bgb>0) then
-                    j_bgb = j_bgb+TAMS_EEP-1
-                    !Red giant Branch
-                    t% times(HG) = age(j_bgb)
-                elseif (debug) then
-                    print*, "Unable to locate BGB ", j_bgb
-!                    STOP
-                end if
-            endif
-        endif
+        !Red giant Branch
+        if (t% j_bgb > 1) t% times(HG) = age(t% j_bgb)
+                    
 
         nullify(age)
     end subroutine calculate_timescales
@@ -1016,6 +986,10 @@ module interp_support
         t% nuc_time = t% times(11)
         t% MS_time = age(TAMS_HE_EEP)
 
+        !Red giant Branch
+        if (t% j_bgb > 1) t% times(HG) = age(t% j_bgb)
+        
+        
         if (t% initial_mass > Mcrit_he(4)% mass .and. t% initial_mass< Mcrit_he(5)% mass) then
             if (identified(GB_HE_EEP)) then
                 t% times(HE_HG) = age(GB_HE_EEP)
@@ -1065,20 +1039,6 @@ module interp_support
         a(3) = (yp2+yp3-2*s2)/(h2*h2)
     end subroutine interp_4pt_pm
     
-!    real(dp) function new_age(tc,tc_prev,tprime,tprime_prev,age)
-!        real(dp), intent(in) :: tc,tc_prev,tprime,tprime_prev,age
-!        real(dp) ::  frac
-!
-!        !tc = t% times(kw)
-!        !tc_prev = t% times(kw-1)
-!        !tprime = t% times_new(kw)
-!        !tprime_prev = t% times_new(kw-1)
-!
-!        frac = (age-tc_prev)/(tc-tc_prev)
-!        new_age = tprime_prev+(frac*(tprime-tprime_prev))
-!
-!    end function
-    
     integer function eqv_eep(EEP2,EEP1,EEP_OLD2,EEP_OLD1,m)
         integer, intent(in) :: EEP2,EEP1,EEP_OLD2,EEP_OLD1,m
         real(dp) ::  frac
@@ -1099,7 +1059,7 @@ module interp_support
         real(dp), pointer :: age_list(:)
         real(dp), allocatable:: mlist(:), Mmax(:), Mmin(:)
         real(dp) :: alfa,beta,age
-        integer :: i,j,k,nt,eep_n,num_list,Mupp,Mlow,eep_m1
+        integer :: i,j,k,nt,eep_n,num_list,Mupp,Mlow
 
         logical :: debug
 
@@ -1131,16 +1091,11 @@ module interp_support
                 age_list => t% tr(i_age,1:nt)
                 initial_eep = ZAMS_EEP
             endif
-            !age_list => t% tr(i_age2,1:nt)
             if (debug) print*,"getting new initial mass mnew at age and phase: ",mnew,age,t% pars% phase,id,t% is_he_track
             
 !            call index_search(nt-initial_eep+1,age_list(initial_eep:),age,eep_m)
             eep_m = binary_search(nt-initial_eep+1,age_list(initial_eep:),age)
-!            if (eep_m/=eep_m1) then
-!
-!            print*, 'divergence',eep_m,eep_m1,age,age_list(eep_m+initial_eep-1),age_list(eep_m1+initial_eep-1)
-!            STOP
-!            endif
+
             eep_m = eep_m+initial_eep-1
 
             if (eep_m > nt) eep_m = nt
@@ -1255,25 +1210,6 @@ module interp_support
                     endif
                 endif
             end do
-
-!            ! find upper bound, start at tracks neighbouring Mlow
-!            do i = 1, size(s)
-!                k = Mlow+i
-!                if (k <= num_list .and. k>=1) then
-!                    if (mlist(k) >0 .and. mlist(k)>Mnew) then
-!                        Mupp = k
-!                        exit
-!                    endif
-!                endif
-!                ! search the other side now
-!                k = Mlow-i
-!                if (k >=1 .and. k<=num_list) then
-!                    if (mlist(k) >0 .and. mlist(k)>Mnew) then
-!                        Mupp = k
-!                        exit
-!                    endif
-!                endif
-!            end do
             
 !            find upper bound, start at Min_index
             do i = 0, num_list
@@ -1294,26 +1230,6 @@ module interp_support
                     endif
                 endif
             end do
-
-!            ! find lower bound, start at tracks neighbouring Mupp
-!            do i = 1, size(s)
-!                k = Mupp+i
-!                if (k <= num_list .and. k>=1) then
-!                    if (mlist(k) >0 .and. mlist(k).le.Mnew) then
-!                        Mlow = k
-!                        exit
-!                    endif
-!                endif
-!                ! search the other side now
-!                k = Mupp-i
-!                if (k >=1 .and. k<=num_list) then
-!                    if (mlist(k) >0 .and. mlist(k).le.Mnew) then
-!                        Mlow = k
-!                        exit
-!                    endif
-!                endif
-!
-!            end do
         endif
         
         if (debug)  print*, "Mup", Mupp, "mlow",Mlow,"min_index",t% min_index

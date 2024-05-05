@@ -93,11 +93,8 @@ module sse_support
     lums(7) = t% tr(i_logL,TA_cHeB_EEP)
     lums(8) = t% tr(i_logL,TPAGB_EEP)
 
-     if (t% initial_mass .lt. zpars(3) .and. identified(BGB_EEP)) then
-        j_bgb = min(BGB_EEP, t% ntrack)
-        lums(3) = t% tr(i_logL,j_bgb)
-    endif
-    
+    if (t% j_bgb0 >1) lums(3) = t% tr(i_logL,t% j_bgb0)
+
     lums = 10**lums
     
     end subroutine

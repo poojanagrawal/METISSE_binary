@@ -196,13 +196,13 @@ module track_support
 
     !holds interpolated track
     type track
-        type(column), allocatable :: cols(:)
-        logical :: has_RGB =.false., complete=.true.
-        logical :: has_mass_loss,is_he_track
+        logical :: complete = .true., post_agb = .false.
+        logical :: has_mass_loss = .false., is_he_track = .false.
 
-        integer :: ncol, ntrack, neep,min_index
+        integer :: ncol, ntrack, neep,min_index,j_bgb,j_bgb0
         integer :: star_type = unknown, irecord,ierr
         integer, allocatable :: eep(:), bounds(:)
+        type(column), allocatable :: cols(:)
 
         real(dp) :: initial_mass, initial_Z, initial_Y, Fe_div_H,  v_div_vcrit, alpha_div_Fe
         real(dp) :: initial_mass_old,initial_mass0,zams_mass
@@ -210,22 +210,20 @@ module track_support
         ! initial_mass is the initial mass of the track
         ! zams_mass is the effective initial mass (M0/mass0 of SSE)
         ! pars% mass contains current total mass of the star (mt of sse)
-        ! initial_mass0 is the initial_mass of the track for which mass at zams is zams_mass
+        ! initial_mass0 is the initial_mass of the track for which mass at tams is zams_mass
         ! initial_mass_old is the last initial mass of the track used for interpolation
         
         ! Initial_mass/Initial_mass_old is needed for surface parameters,
-        ! while Initial_mass0 is for core parameters( except MS when initial_mass0 is enough)
+        ! while Initial_mass0 is for core parameters(except MS when initial_mass0 is enough)
         
         real(dp), allocatable :: tr(:,:)
         real(dp) :: times(11), times_new(11)           !timescales
         real(dp) :: MS_time, nuc_time, MS_old
         type(star_parameters) :: pars    ! parameters at any instant
         
-        
-        logical :: post_agb = .false.
         type(agb_parameters) :: agb   ! parameters of stars used when constructing post-agb to WD track
         
-        type(sse_parameters) :: He_pars   !parameters of naked helium stars, mostly used when using SSE formulae
+        type(sse_parameters) :: He_pars   !parameters of naked helium stars, used when using SSE formulae
     end type track
     
     !defining array for input tracks
@@ -501,7 +499,6 @@ module track_support
             elseif (t% ntrack >TAMS_EEP) then
                 j_bgb =  base_GB(t)
                 if (j_bgb>0) then
-                    j_bgb = j_bgb+TAMS_EEP-1
                     phase(j_bgb: cHeIgnition_EEP) = RGB           !Red giant Branch
                 else
                     write(UNIT=err_unit,fmt=*) "Unable to locate BGB ", j_bgb, t% initial_mass
@@ -509,6 +506,22 @@ module track_support
             endif
         endif
     end subroutine
+    
+    integer function bgb_mcenv(t,jstart,jend) result(j_bgb)
+        type(track), intent(in) :: t
+        integer :: j, jstart,jend
+
+        j_bgb = -1
+!        print*, 'teff',s% tr(i_logTe,jend)
+        if ((t% is_he_track .eqv. .false. ).and.t% tr(i_logTe,jend)> T_bgb_limit) return
+
+        do j = jstart,jend
+            if (t% tr(i_mcenv,j)/t% tr(i_mass,j).ge.0.12d0) then
+                j_bgb = j+ jstart-1
+                exit
+            endif
+        enddo
+    end function
     
     integer function base_GB(t) result(j_bgb)
         type(track), pointer,intent(in) :: t
@@ -518,23 +531,30 @@ module track_support
         real(dp), allocatable ::Lum(:),Teff(:),core_mass(:)
         real(dp), allocatable ::diff_L(:),diff_Te(:),dLdTe(:)
 
-        jini = TAMS_EEP
-        jfinal = min(cHeIgnition_EEP,cHeBurn_EEP)  !TODO: check this
+        j_bgb = -1
+        
+        if (t% is_he_track) then
+            jini = TAMS_HE_EEP
+            jfinal = Final_EEP_HE
+        else
+            jini = TAMS_EEP
+            jfinal = min(cHeIgnition_EEP,cHeBurn_EEP)
+        endif
+        
         j_diff = jfinal - jini
+
+        if ((t% tr(i_logTe,jfinal)> T_bgb_limit) .or. j_diff<=0) return
+
         allocate(Lum(j_diff),Teff(j_diff),core_mass(j_diff))
         allocate (diff_L(j_diff -1),diff_Te(j_diff -1),dLdTe(j_diff -1))
 
-        j_bgb = -1
-
+        
         mass = t% initial_mass
         Lum =  t% tr(i_logL,jini:jfinal)
         Teff = t% tr(i_logTe,jini:jfinal)            !TODO: make this wrt radius
         core_mass = t% tr(i_he_core,jini:jfinal)
-        if (Teff(j_diff)> T_bgb_limit) then
-        !j_bgb = -1000
-        return
-        endif
-
+        
+        
         diff_L = Lum(2:j_diff)-Lum(1:j_diff-1)
         diff_Te = Teff(2:j_diff)-Teff(1:j_diff-1)
         dLdTe = diff_L/diff_Te
@@ -542,33 +562,37 @@ module track_support
         peak = maxloc(dLdTe,dim = 1)
 !        print*,"peak = ",mass,peak, Teff(peak),j_diff
 
-        if(peak>=j_diff) return
-        if (dLdTe(peak)>0.0 .and. dLdTe(peak+1)<0.0) then         !checking for oscillations
-            peak = maxloc(dLdTe(:peak-1),dim = 1)     !!whatif ends are very close??
+        if(peak>=j_diff) then
+            deallocate(diff_L,diff_Te,dLdTe)
+            deallocate(Lum,Teff,core_mass)
+            return
         endif
-        if (dLdTe(peak)>0.0) then          !convective core
+        
+        if (dLdTe(peak)>0.d0 .and. dLdTe(peak+1)<0.d0) then         !checking for oscillations
+            if (peak>1) peak = maxloc(dLdTe(:peak-1),dim = 1)
+        endif
+        
+        if (dLdTe(peak)>0.d0) then          !convective core
             do k = peak,j_diff-1
-                if (dLdTe(k)<1E-32 .and. Teff(k)<3.8) then
-                    j_bgb = k
-                    t% has_RGB=.true.
-                    return
+                if (dLdTe(k)<1E-12 .and. Teff(k)<=T_bgb_limit) then
+                    j_bgb = k+TAMS_EEP-1
+                    exit
                 endif
             end do
-        elseif (mass<2.0) then            !radiative core  !TODO: -- mhook?
+        elseif (mass<Mhook) then            !radiative core
             do k = 1,j_diff-1
-                l_calc = log10(2.3E+5*(core_mass(k)**6))
-                diff =  l_calc-Lum(k)
+                l_calc = log10(2.3d+5*(core_mass(k)**6))
+                diff = l_calc-Lum(k)
                 if (abs(diff)<0.12) then
-                    j_bgb = k
-                    t% has_RGB=.true.
-                    return
+                    j_bgb = k+TAMS_EEP-1
+                    exit
                 endif
             end do
         end if
-        
-        deallocate(diff_L,diff_Te,dLdTe)
 
+        deallocate(diff_L,diff_Te,dLdTe)
         deallocate(Lum,Teff,core_mass)
+        
     end function
     
     subroutine write_dat_track(tphys, pars)
@@ -788,4 +812,28 @@ module track_support
         deallocate(t% cols)
 
     end subroutine deallocate_arrays
+    
+    integer function get_min_ntrack(star_type,is_he_track)
+    integer, intent(in):: star_type
+    logical, intent(in):: is_he_track
+    
+        get_min_ntrack = 0
+        !calculating min required length to the new track
+        !use Mec here?
+        
+        if (is_he_track) then
+            if (star_type == star_high_mass) then
+                get_min_ntrack = high_mass_eep_he
+            else
+                get_min_ntrack = low_mass_eep_he
+            endif
+        else
+            if (star_type == star_high_mass) then
+                get_min_ntrack = high_mass_final_eep
+            else
+                get_min_ntrack = low_mass_final_eep
+            endif
+        endif
+        
+    end function
 end module track_support

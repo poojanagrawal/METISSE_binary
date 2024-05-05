@@ -330,7 +330,8 @@ module z_support
     !determine column of mass, age etc.
     if (set_cols) call locate_column_numbers(x% cols, x% ncol,x% is_he_track)
     x% initial_mass = max(x% initial_mass,maxval(x% tr(i_mass,:)))
-    call set_star_type_from_label(type_label,x)
+!    call set_star_type_from_label(type_label,x)
+    call set_star_type_from_history(x)
 
     close(io)
     call free_iounit(io)
@@ -418,7 +419,10 @@ module z_support
         endif
         !print*,x% eep
         x% initial_mass = maxval(x% tr(i_mass,:))
+        x% initial_mass = max(x% initial_mass,maxval(x% tr(i_mass,:)))
+        call set_star_type_from_history(x)
         x% initial_Z = initial_Z
+        x% initial_Y = Z_He
 
         if (debug) print*,x% initial_mass, x% initial_Z, x% ncol
     end subroutine read_input_file
@@ -499,8 +503,17 @@ module z_support
             start = ZAMS_EEP
             if (y(n)% is_he_track)start = ZAMS_HE_EEP
             y(n)% tr(i_age2,:) = y(n)% tr(i_age2,:)- y(n)% tr(i_age2,start)
-!            
+!
 !            print*,'test input', y(n)% initial_mass,y(n)% ntrack
+            if (.false.) then
+            if (y(n)% ntrack< get_min_ntrack(y(n)% star_type, y(n)% is_he_track)) then
+            print*, 'input track is incomplete', y(n)% initial_mass,y(n)% ntrack
+            endif
+            
+            if (y(n)% star_type == star_high_mass .and. (y(n)% tr(i_co_core,y(n)% ntrack)<tiny)) then
+            print*,'track has zero co_core',y(n)% initial_mass,y(n)% tr(i_co_core,y(n)% ntrack)
+            endif
+            endif
         end do
         
         !Now deallocate xa
@@ -990,13 +1003,15 @@ module z_support
            x% star_type = star_high_mass
            return
         endif
+        
+        !i_he_core
+        if (x% tr(i_he_core,n)>= he_core_mass_limit) then
+            x% star_type = star_high_mass
+            return
+        endif
+        
     endif
     
-    !i_he_core
-    if (x% tr(i_he_core,n)>= he_core_mass_limit) then
-        x% star_type = star_high_mass
-        return
-    endif
     
     !simple test for high-mass stars is that central C is depleted
     if (i_c12 >0) then
@@ -1042,7 +1057,7 @@ module z_support
     subroutine set_zparameters(zpars)
         real(dp), intent(out) :: zpars(20)
         real(dp) :: old_co_frac,co_fraction,change_frac
-        real(dp) :: smass,Teff,last_val,he_diff
+        real(dp) :: smass,Teff,last_val,he_diff, mup_max
         real(dp), allocatable :: T_centre(:)
         integer :: len_track, i, min_index
         integer:: j_bagb, j_tagb, start
@@ -1051,13 +1066,15 @@ module z_support
 
         logical:: debug
 
-        debug = .false.
+        debug = .true.
         
-        old_co_frac = 0.d0
-        Mup_core = 0.d0
-        Mec_core = 0.d0
+        ! default is SSE
+        Mup_core = 1.6d0
+        Mec_core = 2.2d0
+        !first calculate zpars the SSE way for use as backup
+        call calculate_sse_zpars(initial_z,zpars)
+
         num_tracks = size(xa)
-!        allocate(Mcrit(9))
         Mcrit% mass= -1.d0
         Mcrit% loc = 0
 
@@ -1077,16 +1094,9 @@ module z_support
 
         if (verbose) write(*,'(a,f7.1)') ' Minimum initial mass', Mcrit(1)% mass
         if (verbose) write(*,'(a,f7.1)') ' Maximum initial mass', Mcrit(9)% mass
-        
-        if (.not. defined(Mcrit(7)% mass)) then
-          do i = 1,size(xa)
-            call set_star_type_from_history(xa(i))
-!            print*, xa(i)% initial_mass, xa(i)% star_type
-          end do
-        endif
 
-        allocate(mass_list(num_tracks))
-        mass_list = xa% initial_mass
+        allocate(mass_list(num_tracks),source=xa% initial_mass)
+        old_co_frac = 0.d0
 
         !if already defined, do index search here otherwise search below
         do i = 2, size(Mcrit)-1
@@ -1103,17 +1113,15 @@ module z_support
             smass = xa(i)% initial_mass
             !print*,smass, xa(i)% star_type
             len_track = xa(i)% ntrack
-            if (smass<=3.0) then
+            
+            if (smass<=3.0 .and. i_Tc>0) then
                 !determining Mhook
                 !where the maximum of the central temperature (Tc) between
                 !the IAMS and the TAMS EEPs is greater than the Tc at
                 !the TAMS EEP i.e., Tc,max>Tc,TAMS
 
-                if (.not. defined(Mcrit(3)% mass))then
-                    if (len_track >= TAMS_EEP) then
-                    !T_centre = xa(i)%tr(i_Tc,IAMS_EEP:TAMS_EEP)
+                if ((Mcrit(3)% mass< 0.d0) .and. len_track >= TAMS_EEP) then
                     allocate(T_centre,source=xa(i)% tr(i_Tc,IAMS_EEP:TAMS_EEP))
-
                     last_val = T_centre(size(T_centre))
                     if (maxval(T_centre)>last_val) then
                         Mcrit(3)% mass = smass
@@ -1121,8 +1129,6 @@ module z_support
                         if (debug) print*,"Mhook",smass,i
                     endif
                     deallocate(T_centre)
-
-                    endif
                 endif
 
                 !determining Mhef
@@ -1131,10 +1137,8 @@ module z_support
                 ! following the flash causes the central temperature to decrease
                 !a little before increasing again with stable helium burning.
                 
-                if (.not. defined(Mcrit(4)% mass))then
-                if (len_track>=TA_cHeB_EEP) then
-                    allocate(T_centre,source=xa(i)% tr(i_Tc,cHeIgnition_EEP:TA_cHeB_EEP-1))
-                    !T_centre = xa(i)% tr(i_Tc,cHeIgnition_EEP:TA_cHeB_EEP-1)
+                if ((Mcrit(4)% mass< 0.d0) .and. len_track>=TA_cHeB_EEP) then
+                    allocate(T_centre,source=xa(i)% tr(i_Tc,cHeIgnition_EEP:TA_cHeB_EEP))
                     if (minval(T_centre)>7.4) then
                         Mcrit(4)% mass = smass
                         Mcrit(4)% loc = i
@@ -1142,14 +1146,32 @@ module z_support
                     endif
                     deallocate(T_centre)
                 endif
-                endif
 
-            else        !if (smass>=3.0) then
+            elseif(smass>=3.0) then
+            
+                !determining Mfgb
+                if ((Mcrit(5)% mass< 0.d0) .and. len_track>=cHeIgnition_EEP) then
+                    Teff = xa(i)% tr(i_logTe,cHeIgnition_EEP)       !temp at the end of HG/FGB
+                    if (i_he4>0) then
+                        he_diff = abs(xa(i)% tr(i_he4,cHeIgnition_EEP)-xa(i)% tr(i_he4,TAMS_EEP))
+                    else
+                        he_diff = 0.d0
+                    endif
+!                    print*,"bgb",smass,Teff, he_diff
+                    if (Teff> T_bgb_limit .or. he_diff >0.01) then
+                        Mcrit(5)% mass = smass
+                        Mcrit(5)% loc = i
+                        if (debug) print*,"Mfgb",smass,i
+                    endif
+                endif
+            
                 !determining Mup
                 !where the absolute fractional change in the
                 !central carbon-oxygen mass fraction exceeds
                 !0.01 at the end of the AGB (TPAGB EEP)
-                if ((.not. defined(Mcrit(6)% mass)) .and. smass<8.0) then
+                mup_max = 10.d0
+                if (Mcrit(7)% mass> 0.d0) mup_max = Mcrit(7)% mass
+                if ((Mcrit(6)% mass< 0.d0) .and. smass<mup_max) then
                     if (i_c12>0 .and. i_o16 >0) then
                         j_tagb = min(cCBurn_EEP,TPAGB_EEP)      !end of agb
                         j_tagb = min(len_track,j_tagb)
@@ -1166,27 +1188,13 @@ module z_support
                                 if (debug) print*,"Mup",Mcrit(6)% mass, Mcrit(6)% loc
                             endif
                         endif
-                    old_co_frac = co_fraction
-                    endif
-                endif
-            endif
-
-            !determining Mfgb- all masses
-            if (.not. defined(Mcrit(5)% mass))then
-                if (len_track>=cHeIgnition_EEP) then
-                    Teff = xa(i)% tr(i_logTe,cHeIgnition_EEP-1)       !temp at the end of HG/FGB
-                    he_diff = abs(xa(i)% tr(i_he4, cHeIgnition_EEP-1)-xa(i)% tr(i_he4, TAMS_EEP))
-!                    print*,"bgb",smass,Teff, he_diff
-                    if (Teff> T_bgb_limit .or. he_diff >0.01) then !
-                        Mcrit(5)% mass = smass
-                        Mcrit(5)% loc = i
-                        if (debug) print*,"Mfgb",smass,i
+                        old_co_frac = co_fraction
                     endif
                 endif
             endif
 
             !determining Mec
-            if (.not. defined(Mcrit(7)% mass))then
+            if (Mcrit(7)% mass< 0.d0)then
                 if (xa(i)% star_type == star_high_mass) then
                     Mcrit(7)% mass = smass
                     Mcrit(7)% loc = i
@@ -1207,28 +1215,32 @@ module z_support
             endif
         end do
 
-        Mcrit(7)% loc = max(Mcrit(7)% loc,1)
-        j_bagb = min(xa(Mcrit(7)% loc)% ntrack,TA_cHeB_EEP)
-        Mec_core = xa(Mcrit(7)% loc)% tr(i_he_core,j_bagb)
+        if (Mcrit(7)% loc < 1) then
+            Mcrit(7)% mass = zpars(5)
+        else
+            j_bagb = min(xa(Mcrit(7)% loc)% ntrack,TA_cHeB_EEP)
+            Mec_core = xa(Mcrit(7)% loc)% tr(i_he_core,j_bagb)
+        endif
         
         !if cannot locate Mup or located it beyond Mec (which is incorrect),
 
         if (Mcrit(6)% loc < 1 .or. Mcrit(6)% loc >=  Mcrit(7)% loc) then
-            if (debug) print*, 'Mcrit(6)/Mup not found or is incorrect (exceeds Mcrit(7)/Mec)'
+            if (debug) print*, 'Mcrit(6)/Mup not found'
             if (debug) print*, 'Using value closest to Mec-1.8 (the SSE way)'
             !modify Mup by SSE's way
             Mcrit(6)% mass = Mcrit(7)% mass - 1.8d0
             call index_search (num_tracks, mass_list, Mcrit(6)% mass, Mcrit(6)% loc)
             !make sure the new location for Mup does not exceed Mec
-            Mcrit(6)% loc = max(1,min(Mcrit(6)% loc,Mcrit(7)% loc-1))
-            Mcrit(6)% mass = xa(Mcrit(6)% loc)% initial_mass
-            if (debug) print*,"new Mup",Mcrit(6)% mass, Mcrit(6)% loc
+            if (Mcrit(7)% loc>1) Mcrit(6)% loc = min(Mcrit(6)% loc,Mcrit(7)% loc-1)
         endif
 
-
-        j_bagb = min(xa(Mcrit(6)% loc)% ntrack,TA_cHeB_EEP)
-        Mup_core = xa(Mcrit(6)% loc)% tr(i_he_core,j_bagb)
-
+        if (Mcrit(6)% loc >= 1 .and. Mcrit(6)% loc <=num_tracks) then
+            Mcrit(6)% mass = xa(Mcrit(6)% loc)% initial_mass
+            if (debug) print*,"new Mup",Mcrit(6)% mass, Mcrit(6)% loc
+            j_bagb = min(xa(Mcrit(6)% loc)% ntrack,TA_cHeB_EEP)
+            Mup_core = xa(Mcrit(6)% loc)% tr(i_he_core,j_bagb)
+        endif
+        
         if (debug) print*,"Mup_core =", Mup_core
         if (debug) print*,"Mec_core =", Mec_core
 
@@ -1239,9 +1251,28 @@ module z_support
     
         !now redefine zpars where applicable
         do i = 3,7
-        if (defined (Mcrit(i)% mass)) zpars (i-2) = Mcrit(i)% mass
+            if(defined(Mcrit(i)% mass)) then
+                zpars(i-2) = Mcrit(i)% mass
+            else
+                Mcrit(i)% mass = zpars(i-2)
+            endif
         end do
+    
+        if (defined(Z_He)) then
+            zpars(12) = Z_He
+        elseif (xa(1)% initial_Y >0.d0)then
+            zpars(12) = xa(1)% initial_Y
+        endif
 
+        if (defined(Z_H)) then
+            zpars(11) = Z_H
+        else
+            zpars(11) = 1-initial_Z-Z_He
+        endif
+        
+        Z04 = initial_Z**0.4
+
+        
         !Redefine these for use later in the code
         Mhook = zpars(1)
         Mhef = zpars(2)
@@ -1249,14 +1280,9 @@ module z_support
         Mup = zpars(4)
         Mec = zpars(5)
     
-        if (defined(Z_H)) zpars(11) = Z_H
-        if (defined(Z_He)) zpars(12) = Z_He
-        Z04 = zpars(14)
-
+    
         if (debug) print*, 'zpars:',  zpars(1:5)
-
         deallocate(mass_list)
-!        call sort(Mcrit% loc, m_cutoff)
     end subroutine set_zparameters
 
     subroutine set_zparameters_he()
@@ -1292,13 +1318,6 @@ module z_support
 
         if (verbose) write(*,'(a,f7.1)') ' Minimum initial mass', Mcrit_he(1)% mass
         if (verbose) write(*,'(a,f7.1)') ' Maximum initial mass', Mcrit_he(9)% mass
-        
-        if (.not. defined(Mcrit_he(7)% mass)) then
-          do i = 1,size(xa)
-            call set_star_type_from_history(xa(i))
-!            print*, xa(i)% initial_mass, xa(i)% star_type
-          end do
-        endif
 
         allocate(mass_list(num_tracks))
         mass_list = xa% initial_mass
@@ -1328,20 +1347,13 @@ module z_support
                         if (debug) print*,"Mhook",smass,i
                     endif
                 endif
-!            ELSEIF (.not. defined(Mcrit_he(8)% mass))THEN
-!                if (xa(i)% tr(i_logL,TAMS_HE_EEP) .le. xa(i)% tr(i_logL,ZAMS_HE_EEP)) then
-!                    Mcrit_he(8)% mass = smass
-!                    Mcrit_he(8)% loc = i
-!                    if (debug) print*,"Mextra",smass,i
-!                endif
             ENDIF
             
-            IF (.not. defined(Mcrit_he(5)% mass) .and. i_he_mcenv>0)THEN
-                if (GB_HE_EEP>0 .and. len_track>=GB_HE_EEP) then
+            IF (.not. defined(Mcrit_he(5)% mass))THEN
+                if (i_he_mcenv>0 .and. GB_HE_EEP>0 .and. len_track>=GB_HE_EEP) then
                     frac_mcenv = xa(i)% tr(i_he_mcenv,GB_HE_EEP)/xa(i)% tr(i_mass,GB_HE_EEP)
                     if (.not. defined(Mcrit_he(4)% mass) .and. frac_mcenv.ge.0.12d0) then
                         Mcrit_he(4)% mass = smass
-!                        Mcrit_he(4)% loc = i
                         if (debug) print*,"Mfgb1",smass,i
 
                     elseif(defined(Mcrit_he(4)% mass) .and. frac_mcenv.lt.0.12d0) then
@@ -1349,9 +1361,9 @@ module z_support
                         Mcrit_he(5)% loc = i
                         if (debug) print*,"Mfgb2",smass,i
                     endif
-!                elseif (len_track>= min(TPAGB_HE_EEP,cCBurn_HE_EEP)) then
+!                elseif (len_track>= Final_EEP_HE)) then
 !                    jstart = TAMS_HE_EEP
-!                    jend = min(TPAGB_HE_EEP,cCBurn_HE_EEP) ! TODO: this might needs modification
+!                    jend = Final_EEP_HE
 !                    do j = jstart,jend
 !                        if (xa(i)% tr(i_mcenv,j)/xa(i)% tr(i_mass,j).ge.0.12d0) then
 !                            Mcrit_he(5)% mass = smass

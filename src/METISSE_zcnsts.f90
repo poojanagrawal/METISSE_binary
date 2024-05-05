@@ -62,7 +62,7 @@ subroutine METISSE_zcnsts(z,zpars,path_to_tracks,path_to_he_tracks)
     if (allocated(m_cutoff)) deallocate(m_cutoff)
     if (allocated(Mmax_array)) deallocate(Mmax_array, Mmin_array)
     
-    if (allocated(metallicity_file_list))  deallocate(metallicity_file_list,metallicity_file_list_he)
+    if (allocated(metallicity_file_list)) deallocate(metallicity_file_list,metallicity_file_list_he)
 
         
     ! use input file/path to locate list of *metallicity.in files
@@ -103,10 +103,7 @@ subroutine METISSE_zcnsts(z,zpars,path_to_tracks,path_to_he_tracks)
     if(debug) print*,'metallicity files he : ', metallicity_file_list_he
     
     if (front_end /= main) initial_Z = z
-    
-    !first calculate zpars the SSE way for use as backup
-!    call calculate_sse_zpars(z,zpars)
-    
+
     ! need to intialize these seperately as they may be
     ! used uninitialized if he tracks are not present
     i_he_RCO = -1
@@ -266,7 +263,6 @@ subroutine METISSE_zcnsts(z,zpars,path_to_tracks,path_to_he_tracks)
         endif
         deallocate(track_list)
     end do
-!    if(debug) print*, s(1)% cols% name, s(1)% tr(:,1)
 
     !TODO: 1. check for monotonicity of initial masses
     ! 2. incompleteness of the tracks

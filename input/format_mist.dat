@@ -29,7 +29,7 @@
     post_AGB_EEP = 1409
 
     Initial_EEP = 202       !files will be read from this line number
-    Final_EEP = 1409        !to this line
+    Final_EEP = 808       !to this line
     Extra_EEP1 = -1
     Extra_EEP2= -1
     Extra_EEP3 = -1
@@ -61,11 +61,11 @@
 
     !columns required for determining Mup and Mhook
     
-    he_core_radius = 'he_core_radius'       !in solar units (cannout use log)
-    co_core_radius = 'c_core_radius'        !in solar units (cannout use log)
+    he_core_radius = ''       !in solar units (cannout use log)
+    co_core_radius = ''        !in solar units (cannout use log)
     
-    mass_conv_envelope = 'mass_conv_envelope'    !in solar units
-    radius_conv_envelope = 'rad_conv_envelope'    !in solar units
+    mass_conv_envelope = ''    !in solar units
+    radius_conv_envelope = ''    !in solar units
     moment_of_inertia = ''
     
     

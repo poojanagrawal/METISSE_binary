@@ -4,11 +4,9 @@ SRC_DIR=$(BSE_DIR)/src
 SSE_DIR=$(BSE_DIR)/src/SSE
 METISSE_DIR=$(BSE_DIR)/src
 
-#com
+#compiler
 FC=gfortran
-#DEBUG=-g3 -fbacktrace -fcheck=all -fbounds-check
-#WARN=-Wall -pedantic -Wno-tabs -Wno-maybe-uninitialized
-# -Wconversion -Wextra
+
 
 #Optimization flag
 #OPT=-O3
@@ -17,19 +15,20 @@ FC=gfortran
 #Tells gfortran to compile using OpenMP
 #OMP=-fopenmp
 
-WARN=-Wall -Wno-tabs -Wno-maybe-uninitialized -fimplicit-none  -Wsurprising  -Waliasing
-DEBUG=-g3 -O2 -fbacktrace -fcheck=all -fbounds-check #-pg
+# for profiling
+#DEBUG=-g3 -O0 -fbacktrace -fcheck=all -fbounds-check -pg
 
+#WARN=-Wall -pedantic -Wno-tabs -Wno-maybe-uninitialized
+# -Wconversion -Wextra
 
-#-O2    -Wall  -Wline-truncation  -Wcharacter-truncation   -Wimplicit-interface  -Wunused-parameter   -fcheck=all      -fbacktrace
-
-
-
+WARN= -Wno-tabs -Wno-maybe-uninitialized -fimplicit-none  -Wsurprising  -Waliasing -pedantic
+DEBUG= -g3 -O2 -fbacktrace -fcheck=all -fbounds-check
 
 FFLAGS1= -ffree-form -fimplicit-none $(WARN) $(DEBUG)
 FFLAGS2= -ffixed-form -fimplicit-none $(DEBUG)
-
-POPBIN =popbin
+	
+	
+POPBIN=popbin
 
 SRCE3 = \
 popbin.f comenv.f corerd.f dgcore.f evolv2.f gntage.f \
@@ -47,6 +46,9 @@ hrdiag.f star.f zcnsts.f deltat.f mlwind.f\
 assign_remnant.f hrdiag_remnant.f
 
 OBJT4 = $(SRCE4:.f=.o)
+
+
+SSE_METISSE=sse_metisse
 
 
 BSE_METISSE=bse_metisse
@@ -88,18 +90,37 @@ initialize_front_end.o: $(METISSE_DIR)/initialize_front_end.f90 track_support.o
 alloc_track.o: $(METISSE_DIR)/alloc_track.f90 track_support.o
 dealloc_track.o: $(METISSE_DIR)/dealloc_track.f90 track_support.o
 assign_commons_main.o: $(METISSE_DIR)/assign_commons_main.f90 track_support.o remnant_support.o
-metisse_mlwind.o: $(METISSE_DIR)/metisse_mlwind.f90 track_support.o
-metisse_deltat.o: $(METISSE_DIR)/metisse_deltat.f90 track_support.o
-metisse_zcnsts.o: $(METISSE_DIR)/metisse_zcnsts.f90 track_support.o z_support.o 
-metisse_star.o: $(METISSE_DIR)/metisse_star.f90 track_support.o interp_support.o sse_support.o
-metisse_hrdiag.o: $(METISSE_DIR)/metisse_hrdiag.f90 track_support.o interp_support.o sse_support.o remnant_support.o
-metisse_gntage.o: $(METISSE_DIR)/metisse_gntage.f90 track_support.o interp_support.o
+METISSE_mlwind.o: $(METISSE_DIR)/METISSE_mlwind.f90 track_support.o
+METISSE_deltat.o: $(METISSE_DIR)/METISSE_deltat.f90 track_support.o
+METISSE_zcnsts.o: $(METISSE_DIR)/METISSE_zcnsts.f90 track_support.o z_support.o
+METISSE_star.o: $(METISSE_DIR)/METISSE_star.f90 track_support.o interp_support.o sse_support.o
+METISSE_hrdiag.o: $(METISSE_DIR)/METISSE_hrdiag.f90 track_support.o interp_support.o sse_support.o remnant_support.o
+METISSE_gntage.o: $(METISSE_DIR)/METISSE_gntage.f90 track_support.o interp_support.o
 
 comenv_lambda.o: $(METISSE_DIR)/comenv_lambda.f90 track_support.o
 
 assign_commons.o: $(METISSE_DIR)/assign_commons_bse.f90 track_support.o remnant_support.o
 
 
+# metisse in standalone mode
+METISSE=metisse
+
+SRCE0 = \
+METISSE_main.f90 evolv_metisse.f90 \
+track_support.f90 z_support.f90 sse_support.f90 \
+remnant_support.f90 interp_support.f90 assign_commons_main.f90 \
+alloc_track.f90 dealloc_track.f90 initialize_front_end.f90 \
+METISSE_zcnsts.f90 METISSE_star.f90 METISSE_hrdiag.f90 \
+METISSE_deltat.f90
+
+SRCE00 = \
+assign_remnant.f hrdiag_remnant.f
+	
+OBJT0 = $(SRCE0:.f90=.o)
+OBJT00 = $(SRCE00:.f=.o)
+
+evolv_metisse.o: $(METISSE_DIR)/evolv_metisse.f90 track_support.o sse_support.o
+METISSE_main.o: $(METISSE_DIR)/METISSE_main.f90 track_support.o z_support.o
 
 %.o : $(SRC_DIR)/%.f
 	$(FC) $(FFLAGS2) -c $<
@@ -111,6 +132,11 @@ assign_commons.o: $(METISSE_DIR)/assign_commons_bse.f90 track_support.o remnant_
 	$(FC) $(FFLAGS1) -c $<
 	
 
+
+$(METISSE): $(OBJT0) $(OBJT00)
+	$(FC) $(OMP) $(FFLAGS1) -o $(BSE_DIR)/$(METISSE) $^
+	
+	
 $(SSE_METISSE): $(OBJT4) $(OBJT_SSE) $(OBJT_METISSE)
 	$(FC) $(OMP) -o $(BSE_DIR)/$(SSE_METISSE) $^
 
@@ -123,10 +149,12 @@ $(POPBIN): $(OBJT3) $(OBJT_SSE) $(OBJT_METISSE)
 	$(FC) $(OMP) $(FFLAGS1) -o $(BSE_DIR)/$(POPBIN) $^
 
 
-all:$(BSE_METISSE) $(SSE_METISSE) $(POPBIN)
+all:$(BSE_METISSE) #$(SSE_METISSE) $(POPBIN)
+main: $(METISSE)
 
 
 clean:
-	rm -f $(BSE_DIR)/$(SSE_METISSE) $(BSE_DIR)/$(BSE_METISSE) $(BSE_DIR)/$(POPBIN)
+	rm -f $(BSE_DIR)/$(SSE_METISSE) $(BSE_DIR)/$(METISSE)
+	rm -f $(BSE_DIR)/$(BSE_METISSE) $(BSE_DIR)/$(POPBIN)
 	rm -f *.mod *.o
 

@@ -24,7 +24,6 @@ subroutine METISSE_zcnsts(z,zpars,path_to_tracks,path_to_he_tracks)
         
     ! read one set of stellar tracks (of input Z)
     load_tracks = .false.
-
     
     if (initial_Z <0) then
         load_tracks = .true.
@@ -46,7 +45,7 @@ subroutine METISSE_zcnsts(z,zpars,path_to_tracks,path_to_he_tracks)
     endif
             
     if (load_tracks.eqv. .false.) then
-        if (debug) print*, '**** No change in metallicity or paths, exiting METISSE_zcnsts ****'
+        if (debug) print*, '**** No change in metallicity or paths, exiting METISSE_zcnsts ****',initial_Z,z
         return
     endif
     

@@ -81,8 +81,11 @@
              !interpolate in age
             call interpolate_age(t,t% pars% age)
             if (debug)print*, "mt difference",t% pars% mass, mt, mt-t% pars% mass,kw
-            t% pars% mass = mt
-
+            if (front_end==main) then
+                mt = t% pars% mass
+            else
+                t% pars% mass = mt
+            endif
             IF (check_ge(t% pars% age,t% times(11))) THEN
                 !check if have reached the end of the eep track
                 if (debug) print*,"end of file:aj,tn ",t% pars% age,t% times(11),t% times(kw)
@@ -134,7 +137,7 @@
                             mass = t% pars% mass
                         endif
                         ! zams_mass is assigned in the star
-                        call star(t% pars% phase, mass,t% pars% mass,tm,tn,tscls,lums,GB,zpars,0.d0,id)
+                        call METISSE_star(t% pars% phase, mass,t% pars% mass,tm,tn,tscls,lums,GB,zpars,0.d0,id)
                         t% pars% age_old = t% pars% age
 
                         if (debug) print*, 'after env loss', t% pars% phase, t% pars% age,t% MS_time,t% nuc_time,id
@@ -155,11 +158,14 @@
             call evolve_after_envelope_loss(t,zpars(10))
             Mcbagb = t% zams_mass
             mc_max = max_core_mass_he(t% pars% mass, Mcbagb)
-            if(t% pars% phase >He_MS .and. check_remnant_phase(t% pars, mc_max)) has_become_remnant = .true.
+            
+            if(t% pars% phase >He_MS) then
+                if(check_remnant_phase(t% pars, mc_max)) has_become_remnant = .true.
+            endif
             
             if (has_become_remnant .eqv..false.) then
+                ! Calculate mass and radius of convective envelope, and envelope gyration radius.
                 rzams = t% He_pars% Rzams
-
                 CALL calculate_rc(t,tscls,zpars,rc)
                 t% pars% core_radius = rc
                 CALL calculate_rg(t,rg)

@@ -20,7 +20,7 @@ module sse_support
         !only upto phase 6 (TPAGB)
         call calculate_SSE_tscls(t, tscls,tm,tn)
         call calculate_SSE_GB(t, zpars, GB)
-        call calculate_SSE_lums(t, zpars, lums)
+        call calculate_SSE_lums(t, lums)
         lums(6) = GB(4)*GB(7)**GB(5)
         
     end subroutine calculate_SSE_parameters
@@ -72,17 +72,13 @@ module sse_support
     !4; He ignition      5; He burning    6; L(Mx)
     !7; BAGB             8; TP
     
-    subroutine calculate_SSE_lums(t, zpars,lums)
+    subroutine calculate_SSE_lums(t, lums)
     !only upto phase 6 (TPAGB)
     implicit none
     type(track), pointer, intent(in) :: t
-    real(dp),  intent(in) :: zpars(20)
     
-    integer :: j_bgb
     real(dp) :: lums(10)
-    
-    logical :: debug
-    debug = .false.
+
 
     lums = 0.d0
     lums(1) = t% tr(i_logL,ZAMS_EEP)

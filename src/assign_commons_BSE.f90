@@ -27,5 +27,5 @@ subroutine assign_commons()
         print*,'expected 1 (BSE/SSE); got ', front_end
     endif
 
-    end subroutine
+end subroutine
 

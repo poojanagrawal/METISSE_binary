@@ -37,7 +37,6 @@ subroutine METISSE_star(kw,mass,mt,tm,tn,tscls,lums,GB,zpars,dtm,id)
     eep_m = -1
     exclude_core = .false.
 
-!    if (t% pars% age+dtm <0.d0) stop !return
     !to be double sure, in case star changes kw/type outside hrdiag
     if(kw>= HeWD) then
         t% star_type = remnant

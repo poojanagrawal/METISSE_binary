@@ -1002,7 +1002,6 @@ module interp_support
 !                    t% times(HG) = age(j_bgb)
 !                elseif (debug) then
 !                    print*, "Unable to locate BGB ", j_bgb
-!!                    STOP
 !                end if
             endif
         endif

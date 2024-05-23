@@ -268,13 +268,8 @@ subroutine METISSE_zcnsts(z,zpars,path_to_tracks,path_to_he_tracks)
     ! 3. BGB phase
     if (debug) print*,sa% initial_mass
     
-    if (front_end == main) then
-    ! sets remnant schmeme from SSE_input_controls
-        call assign_commons_main()
-    else
-    ! reads
-        call assign_commons()
-    endif
+    if (front_end /= main) call assign_commons()
+    ! for main, commons are assigned within the METISSE_main 
 
     !Some unit numbers are reserved: 5 is standard input, 6 is standard output.
     if (write_error_to_file) then

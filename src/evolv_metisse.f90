@@ -6,7 +6,6 @@ subroutine evolv_metisse(mass,max_age,ierr,id)
     use track_support
     use sse_support, only:time_He_MS
 
-
     !variable declaration
     real(dp), intent(in):: mass,max_age
     integer, intent(out):: ierr
@@ -162,24 +161,23 @@ subroutine evolv_metisse(mass,max_age,ierr,id)
     nullify(t)
     if (verbose) write(*,*) "-------------------------------------------------------------------------"
     return
-    end subroutine evolv_metisse
+end subroutine evolv_metisse
 
-    SUBROUTINE mrenv(kw,mass,mt,mc,lum,rad,rc,aj,tm,ltms,lbgb,lhei,&
-                      rzams,rtms,rg,menv,renv,k2e)
-      use track_support, only: dp
-      !dummy subroutine
+SUBROUTINE mrenv(kw,mass,mt,mc,lum,rad,rc,aj,tm,ltms,lbgb,lhei,&
+                      rzams,rtms,rg,menv,renv,k2)
+    use track_support, only: dp
+    !dummy subroutine
 
-      integer :: kw
-      real(dp):: mass,mt,mc,lum,rad,rc,aj,tm
-      real(dp):: ltms,lbgb,lhei,rzams,rtms,rg,menv,renv,k2e
-    
-      menv = (mt - mc)
-      renv = (rad - rc)
-      k2 = 0.21
+    integer :: kw
+    real(dp):: mass,mt,mc,lum,rad,rc,aj,tm
+    real(dp):: ltms,lbgb,lhei,rzams,rtms,rg,menv,renv,k2
 
+    menv = (mt - mc)
+    renv = (rad - rc)
+    k2 = 0.21
       
-    END SUBROUTINE mrenv
+END SUBROUTINE mrenv
 
-    subroutine assign_commons()
-            !dummy subroutine
-    end subroutine assign_commons
+subroutine assign_commons()
+        !dummy subroutine
+end subroutine assign_commons

@@ -163,11 +163,3 @@ subroutine METISSE_gntage(mc,mt,kw,zpars,m0,aj,id)
 
 end subroutine METISSE_gntage
 
-subroutine set_star_type(id)
-    use track_support
-        implicit none
-        integer, intent(in) :: id
-!        print*, 'setting star to reju',tarr(id)% pars% age,id
-
-        tarr(id)% star_type = rejuvenated
-    end subroutine

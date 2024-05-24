@@ -200,7 +200,7 @@ module track_support
         logical :: has_mass_loss = .false., is_he_track = .false.
 
         integer :: ncol, ntrack, neep,min_index,j_bgb,j_bgb0
-        integer :: star_type = unknown, irecord,ierr
+        integer :: star_type = unknown, ierr = 0
         integer, allocatable :: eep(:), bounds(:)
         type(column), allocatable :: cols(:)
 

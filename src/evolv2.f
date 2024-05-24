@@ -189,7 +189,7 @@
       REAL*8 beta,xi,acc2,epsnov,eddfac,gamma
       COMMON /VALUE5/ beta,xi,acc2,epsnov,eddfac,gamma
 *
-      REAL*8 z,tm,tn,m0,mt,rm,lum,mc,rc,me,re,k2,age,dtr
+      REAL*8 z,tm,tn,m0,mt,rm,lum,mc,rc,me,re,k2,age,dtm,dtr
       REAL*8 tscls(20),lums(10),GB(10),zpars(20)
       REAL*8 zero,ngtv,ngtv2,mt2,rrl1,rrl2,mcx,teff1,teff2
       REAL*8 mass1i,mass2i,tbi,ecci
@@ -200,10 +200,7 @@
       EXTERNAL rl,mlwind,vrotf,corerd
       REAL bcm(50000,34),bpp(80,10)
       COMMON /BINARY/ bcm,bpp
-      REAL*8 dtm
-      COMMON /TIMESTEP/ dtm
-      INTEGER irecord
-      COMMON /REC/ irecord
+      
       LOGICAL SSE_FLAG
       COMMON /SE/ SSE_FLAG
 
@@ -212,9 +209,6 @@
 *
 
       dbg = .false.
-      irecord = 1
-* irecord is useful for evolv1.f but serves no purpose here
-* see description in evolv1
 
       if (SSE_FLAG.eqv..FALSE.) call allocate_track(2,mass0)
 

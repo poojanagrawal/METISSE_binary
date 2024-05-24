@@ -24,9 +24,6 @@
     logical :: has_become_remnant
     type(track), pointer :: t
 
-    INTEGER irecord
-    COMMON /REC/ irecord
-
     idd = 1
     if(present(id)) idd = id
     t => tarr(idd)
@@ -40,17 +37,9 @@
     end_of_file = .false. !this is just the end of eep track
     has_become_remnant = .false.
     mc_max= 0.d0
-
-    if (irecord<=0) then
-        !save input state
-        post_agb = t% post_agb
-        old_pars = t% pars
-        ! is_he_track etc.
-    endif
         
     t% pars% mass = mt
     t% pars% phase = kw
-    t% irecord = irecord
     t% pars% core_mass = mc
     dt_hold = aj - t% pars% age
     if (aj/=aj) aj = t% pars% age
@@ -264,12 +253,7 @@
     t% pars% rcenv = renv
 !    t% pars% env_frac = (mt-t% pars% McHe)/mt
 
-    if (irecord<=0) then
-        t% pars = old_pars
-        t% post_agb = post_agb
-        !tm and tn are calculated in star
-    endif
-    if (irecord>0 .and. debug) print*,"finished hrdiag",mt,mc,aj,kw,id,tm,tn
+    if (debug) print*,"finished hrdiag",mt,mc,aj,kw,id,tm,tn
 !    if (id==1)print*,"finished hrdiag",t% pars% mass, t% pars% core_mass,t% pars% age,t% pars% radius,id
 
     nullify(t)

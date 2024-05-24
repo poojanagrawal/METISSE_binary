@@ -657,7 +657,7 @@ module interp_support
 !            if (debug) print*,"ages", t% tr(age_col,mlo:mhi)
 
             if (mhi == mlo) then
-                if (t% irecord>0 .and. debug) print*, "no interp in age needed"
+                if (debug) print*, "no interp in age needed"
                 do j=jstart,jend
                     if (pass==2) then
                         ! check if it is core-related quantity

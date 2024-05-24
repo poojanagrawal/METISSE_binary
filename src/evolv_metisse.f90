@@ -25,15 +25,6 @@ subroutine evolv_metisse(mass,max_age,ierr,id)
     real(dp) :: mt,tm,tn,tscls(20),lums(10),GB(10),zpars(20)
     real(dp) :: mc,rc,menv,renv,k2,mcx,r,lum,epoch,age
     integer :: kw
-    LOGICAL SSE_FLAG
-    COMMON /SE/ SSE_FLAG
-    INTEGER irecord
-    COMMON /REC/ irecord
-    
-    irecord = 1
-!* irecord is useful for evolv1.f but serves no purpose here
-!* see description in evolv1
-    SSE_FLAG = .false.
     
     idd = 1
     if(present(id)) idd = id

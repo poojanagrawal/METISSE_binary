@@ -21,7 +21,7 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="Using EEP tracks" href="eep_tracks.html" />
+    <link rel="next" title="Input EEP tracks" href="eep_tracks.html" />
     <link rel="prev" title="Installation and usage" href="usage.html" /> 
 </head>
 
@@ -47,16 +47,12 @@
               <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="usage.html">Installation and usage</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Package contents</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#sse-specific-subroutines">1. SSE specific subroutines</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#modules-and-other-files">2. Modules and other files</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#in-the-standalone-mode">In the standalone mode</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#as-part-of-other-codes">As part of other codes</a></li>
-</ul>
-</li>
+<li class="toctree-l2"><a class="reference internal" href="#sse-specific-subroutines">SSE specific subroutines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#modules-and-other-files">Modules and other files</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="#flowchart">Flowchart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="eep_tracks.html">Using EEP tracks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="eep_tracks.html">Input EEP tracks</a></li>
 </ul>
 
         </div>
@@ -88,42 +84,122 @@
 <p>All the programs and subroutines are written in Modern Fortran.</p>
 <p>The METISSE package contains two types of files in the source (<em>src</em>) directory:</p>
 <section id="sse-specific-subroutines">
-<h2>1. SSE specific subroutines<a class="headerlink" href="#sse-specific-subroutines" title="Link to this heading"></a></h2>
+<h2>SSE specific subroutines<a class="headerlink" href="#sse-specific-subroutines" title="Link to this heading"></a></h2>
 <p>METISSE has been developed as an alternative to SSE (Hurley et al. 2000) and, therefore, contains similar subroutines as SSE. The following subroutines replicate the behaviour of the SSE subroutines externally, with similar names and input/output variables.</p>
-<p><em>METISSE_zcnsts.f90</em>  -   Controls metallicity (Z) related part of the package.</p>
-<p><em>METISSE_star.f90</em>     - Find relevant tracks from the input set and interpolate in mass to get a track of a given mass.</p>
-<p><em>METISSE_hrdiag.f90</em>   - Interpolate within the new track to determine stellar parameters at a given age. Also, compute the evolutionary phase of the star including the remnant phases and their properties.</p>
-<p><em>METISSE_deltat.f90</em>   - Calculate the time steps depending on the stage of evolution</p>
-<p><em>METISSE_mlwind.f90</em>   - Derive the mass loss through stellar winds.</p>
-<p><em>METISSE_gntage.f90</em> - Determine the age of a giant star after merger or rejuvenation</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File Name</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>METISSE_zcnsts.f90</p></td>
+<td><p>Controls metallicity (Z) related part of the package.</p></td>
+</tr>
+<tr class="row-odd"><td><p>METISSE_star.f90</p></td>
+<td><p>Find relevant tracks from the input set and interpolate in mass to get a track of a given mass.</p></td>
+</tr>
+<tr class="row-even"><td><p>METISSE_hrdiag.f90</p></td>
+<td><p>Interpolate within the new track to determine stellar parameters at a given age. Also, compute the evolutionary phase of the star including the remnant phases and their properties.</p></td>
+</tr>
+<tr class="row-odd"><td><p>METISSE_deltat.f90</p></td>
+<td><p>Calculate the time steps depending on the stage of evolution.</p></td>
+</tr>
+<tr class="row-even"><td><p>METISSE_mlwind.f90</p></td>
+<td><p>Derive the mass loss through stellar winds.</p></td>
+</tr>
+<tr class="row-odd"><td><p>METISSE_gntage.f90</p></td>
+<td><p>Determine the age of a giant star after merger or rejuvenation.</p></td>
+</tr>
+</tbody>
+</table>
 </section>
 <section id="modules-and-other-files">
-<h2>2. Modules and other files<a class="headerlink" href="#modules-and-other-files" title="Link to this heading"></a></h2>
+<h2>Modules and other files<a class="headerlink" href="#modules-and-other-files" title="Link to this heading"></a></h2>
 <p>The following Fortran modules contain more general data structures and subroutines specific to METISSE that can be accessed by SSE-specific subroutines as required.</p>
-<p><em>track_support.f90</em> – Contains general data structures and functions needed throughout the program.</p>
-<p><em>interp_support.f90</em> – Contains functions required for interpolation</p>
-<p><em>remnant_support.f90</em> – Contains functions needed to calculate properties of remnant phases</p>
-<p><em>z_support.f90</em> – Together with METISSE_zcnsts, it reads all input namelists and files, including EEP files, and sets Z parameters and other metallicity-based functions.</p>
-<p><em>sse_support.f90</em> - contains subroutines to calculate SSE-specific quantities.</p>
-<p>In addition to the above modules, METISSE also has:</p>
-<p><em>METISSE_miscellaneous.f90</em> - Contains miscellaneous subroutines needed by METISSE to work in standalone mode or otherwise. (Ideally, these should be packed in a module but cannot be, as Fortran 77 does not know how to use modules.)</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File Name</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>track_support.f90</p></td>
+<td><p>Contains general data structures and functions needed throughout the program.</p></td>
+</tr>
+<tr class="row-odd"><td><p>interp_support.f90</p></td>
+<td><p>Contains functions required for interpolation.</p></td>
+</tr>
+<tr class="row-even"><td><p>remnant_support.f90</p></td>
+<td><p>Contains functions needed to calculate properties of remnant phases.</p></td>
+</tr>
+<tr class="row-odd"><td><p>z_support.f90</p></td>
+<td><p>Together with METISSE_zcnsts, it reads all input namelists and files, including EEP files, and sets Z parameters and other metallicity-based functions.</p></td>
+</tr>
+<tr class="row-even"><td><p>sse_support.f90</p></td>
+<td><p>Contains subroutines to calculate SSE-specific quantities.</p></td>
+</tr>
+</tbody>
+</table>
+<p>In addition to the previously mentioned modules, there is an additional file called <em>METISSE_miscellaneous.f90</em>. This file contains miscellaneous subroutines that are necessary for METISSE to function in standalone mode or other contexts. Ideally, these subroutines should also be organized into a module. However, this is not possible because Fortran 77 does not support the use of modules.</p>
 <p>It contains:</p>
-<p><em>alloc_track.f90</em> - allocate the track object.</p>
-<p><em>dealloc_track.f90</em> - deallocate the track object and arrays within.</p>
-<p><em>initialize_front_end</em> - Inform METISSE what code is using it.</p>
-<p><em>set_star_type</em> - set star type to <code class="docutils literal notranslate"><span class="pre">rejuvenated</span></code> before calling star.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File Name</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>alloc_track.f90</p></td>
+<td><p>Allocate the track object.</p></td>
+</tr>
+<tr class="row-odd"><td><p>dealloc_track.f90</p></td>
+<td><p>Deallocate the track object and arrays within.</p></td>
+</tr>
+<tr class="row-even"><td><p>initialize_front_end</p></td>
+<td><p>Inform METISSE what code is using it.</p></td>
+</tr>
+<tr class="row-odd"><td><p>set_star_type</p></td>
+<td><p>Set star type to <code class="docutils literal notranslate"><span class="pre">rejuvenated</span></code> before calling star.</p></td>
+</tr>
+</tbody>
+</table>
 <p>A combination of these files is used depending on how METISSE is being used.</p>
-<section id="in-the-standalone-mode">
-<h3>In the standalone mode<a class="headerlink" href="#in-the-standalone-mode" title="Link to this heading"></a></h3>
-<p><em>main_metisse.f90</em>   - Main program for running metisse. Can only evolve single stars. Reads the input files, and sets up relevant parameters and data structures before evolving stars of given masses.
-<em>evolv_metisse.f90</em>   - controls the evolution of each star and writes output to files.</p>
-<p><em>assign_commons_main.f90</em> - assign values for variables used in METISSE from SSE_input_controls.</p>
-</section>
-<section id="as-part-of-other-codes">
-<h3>As part of other codes<a class="headerlink" href="#as-part-of-other-codes" title="Link to this heading"></a></h3>
-<p><em>assign_commons_xyz.f90</em>   !to assign common variables when METISSE is used with other code say ‘xyz’</p>
-<p><em>comenv_lambda.f90</em> get appropiate ZAMS radius and calculate common envelope lambda</p>
-</section>
+<p><strong>In the standalone mode:</strong></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File Name</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>main_metisse.f90</p></td>
+<td><p>Main program for running METISSE. Can only evolve single stars. Reads the input files and sets up relevant parameters and data structures before evolving stars of given masses.</p></td>
+</tr>
+<tr class="row-odd"><td><p>evolv_metisse.f90</p></td>
+<td><p>Controls the evolution of each star and writes output to files.</p></td>
+</tr>
+<tr class="row-even"><td><p>assign_commons_main.f90</p></td>
+<td><p>Assign values for variables used in METISSE from SSE_input_controls.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>As part of other codes:</strong></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File Name</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>assign_commons_xyz.f90</p></td>
+<td><p>To assign common variables when METISSE is used with other code say ‘xyz’.</p></td>
+</tr>
+<tr class="row-odd"><td><p>comenv_lambda.f90</p></td>
+<td><p>Get appropriate ZAMS radius and calculate common envelope lambda.</p></td>
+</tr>
+</tbody>
+</table>
 </section>
 </section>
 <section id="flowchart">
@@ -137,7 +213,7 @@
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
         <a href="usage.html" class="btn btn-neutral float-left" title="Installation and usage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="eep_tracks.html" class="btn btn-neutral float-right" title="Using EEP tracks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="eep_tracks.html" class="btn btn-neutral float-right" title="Input EEP tracks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

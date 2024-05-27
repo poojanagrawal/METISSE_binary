@@ -1,29 +1,22 @@
-# Installation and usage
+# Installation 
 
 **Prequisite:** METISSE requires gcc/6.4.0 or above
 
-## Download METISSE
-METISSE is available for download at [here](https://github.com/TeamMETISSE).
-
-*makefile* in folder *make* contains all necessary instructions to compile METISSE in standalone mode. 
-Just do `./mk` in the main directory (not in the make directory) to compile the package.
+METISSE is available [here](https://github.com/TeamMETISSE).
 
 ## Using METISSE
 
-Currently, METISSE can be used in the following modes:
-
-1. Standalone mode
-2. with BSE (Hurley et al. 2002)
-3. with COSMIC (Breivik et al. 2020) (requires additional code from [COSMIC](https://github.com/COSMIC-PopSynth/COSMIC) to work)
-
+METISSE can be used either in the standalone/main mode or in conjunction with other codes.
 
 ## Standalone mode
 
+*makefile* in folder *make* contains all necessary instructions to compile METISSE in the standalone mode. 
+Just do `./mk` to compile the package.
+
 ### Supplying input 
 
-In the main/standalone mode values of mass, metallicity and other input parameters
+In the standalone mode values of mass, metallicity and other input parameters
 are supplied using `SSE_input_controls` namelist contained in *evolve_metisse.in* file. 
-
 
 ```
 &SSE_input_controls
@@ -155,14 +148,13 @@ are supplied using `SSE_input_controls` namelist contained in *evolve_metisse.in
 
 ```
 
-Both are Fortran namelists, so comments (!) and blank lines can be used freely. Characters are **case-insensitive**. 
-Note: Make sure to leave a blank line at the end of the file (after the `/` symbol)
+Both are Fortran namelists, so comments (!) and blank lines can be used freely. Characters are **case-insensitive**. Although make sure to leave a blank line at the end of the file (after the `/` symbol)
 
-Use the format specified in src/defaults/evolve_metisse_defaults.inc for variable names. **Do not modify any file inside the defaults folder**.
+Refer to `src/defaults/evolve_metisse_defaults.inc` for variable names and their default values. **Do not modify any file inside the defaults folder**.
 
 ### Running METISSE 
 
-To run METISSE in the standalone or main mode, simply do:
+To run METISSE in the standalone mode, simply do:
 
 `./metisse`
 
@@ -171,38 +163,55 @@ To run METISSE in the standalone or main mode, simply do:
 Check *output* directory for output data files.
 
 ### Output 
-METISSE can produce two types of output files:
+
+METISSE can produce two types of output files in the standalone mode:
 
 **1. files ending with .dat :**
 
 SSE-like output files, controlled by `write_track_to_file` in SSE_input_controls.
 These contain the following stellar parameters until max_age. Time and age at hydrogen ZAMS are assumed to be zero.
 
-*time* -- Physical time [Myr]
+| Column Header | Description |
+|-----------------|-----------------|
+| time | Physical time [Myr] |
+| age | Age of star [Myr] |
+| mass | Current mass of the star [M$_\odot$] |
+| core_mass | Mass of dominant core [M$_\odot$] |
+| He_core | Mass of helium core [M$_\odot$] |
+| CO_core | Mass of carbon-oxygen core [M$_\odot$] |
+| log_L | Log of surface luminosity [L$_\odot$] |
+| log_Teff | Log of effective temperature [K] |
+| log_radius | Log of radius [R$_\odot$] |
+| phase | SSE stellar type/phase |
+| e | Extra information about WD track (to be removed in future) |
 
-*age*  -- age of star [Myr]
 
-*mass* -- current mass of the star [M$_\odot$]
-
-*core_mass*        -- mass of dominant core [M$_\odot$]
-
-*He_core*       -- mass of helium core [M$_\odot$]
-
-*CO_core*          -- mass of carbon-oxygen core [M$_\odot$]
-
-*log_L*       -- log of surface luminosity [L$_\odot$]
-
-*log_Teff*     -- log of effective tempertaure [K]
-
-*log_radius*     -- log of radius [R$_\odot$]
-
-*phase*     --   SSE phase number
-
-*e*  -- extra information (not of general relevance- to be removed in future)
 
 **2. files ending with .eep :**
 
-For debugging purposes, METISSE can write mass interpolated files with the same columns as input files (plus phase column) and a MIST-style file structure. 
-Only contains data from ZAMS to the end of AGB or carbon burning phase.
-Can be activated by `write_eep_file` in METISSE_input_controls.
+For debugging purposes, METISSE can write mass-interpolated track to output file with the same columns as input files (plus phase column) and a MIST-style file structure. 
+This output file only contains data from ZAMS to the end of nuclear burning phases, i.e., it does not contain information about remnant phase. 
+It is controlled by `write_eep_file` in METISSE_input_controls.
 
+## With other codes
+
+Currently, METISSE can be used with the following codes: 
+
+1. BSE (Hurley et al. 2002)
+
+To run METISSE with BSE, simply enable `use_SSE = .false.` in the `bse.f` or `popbin.f`. 
+The details are input tracks are read through `METISSE_input_controls` inlist in the *evolve_metisse.in* file.
+
+2. COSMIC (Breivik et al. 2020) 
+
+(requires additional code from [COSMIC](https://github.com/COSMIC-PopSynth/COSMIC) to work)
+
+
+To run METISSE with COSMIC, set `stellar_engine` to `metisse` in SSEDict of COSMIC's input and supply paths for folders containing `metallicity files` for hydrogen and helium EEP tracks. 
+
+
+``` python
+SSEDict = {'stellar_engine': 'metisse', 'path_to_tracks': path_to_tracks, 'path_to_he_tracks':path_to_he_tracks }
+```
+
+`METISSE_input_controls`  is not read when using COSMIC. 

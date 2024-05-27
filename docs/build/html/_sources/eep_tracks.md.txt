@@ -1,16 +1,6 @@
-# Input EEP tracks
+# Using custom input tracks
 
-## Download tracks
-
-
-To interpolate a stellar track for a specific mass and metallicity, METISSE requires a set of EEP tracks with the same metallicity. 
-EEP-tracks for range of mass and metallicity, computed using MESA are available for download at this link. 
-The download contains all necessary files needed for input to METISSE and all a user has to do is specify the path to their local download of this folder through `path_to_tracks` and `path_to_he_tracks` (for COSMIC). 
-
-
-## Using you own input tracks
-
-METISSE, can also use other set of tracks computed with MESA or other stellar evolution codes. 
+METISSE, can use any set of tracks computed with MESA or other stellar evolution codes. 
 Prior to use in METISSE, the input tracks need to be converted to EEP format, ensuring that key evolutionary points, such as the zero-age main sequence (ZAMS), are aligned across all files. 
 
 Information about EEP tracks is then provided through the `&metallicity_controls` inlist, which we also call as the `metallicity file`. Each metallicity file contains details about the input tracks for a specific metallicity, including the path to the folder containing the EEP tracks, the metallicity value, and other relevant information or metadata.
@@ -87,12 +77,6 @@ Information about EEP tracks is then provided through the `&metallicity_controls
 
 
 ```
-
-The `metallicity_file_list` option in the `METISSE_input_controls` is used to specify the location of the metallicity file when METISSE is used in standalone mode or with BSE. Users can provide a list of metallicity files, and METISSE will select the one that is closest in input metallicity.
-
-In the case of COSMIC, the `metallicity_file_list` is not directly provided. Instead, the `path_to_tracks` is specified. METISSE then searches for all files ending with 'metallicity.in' in that location and creates the `metallicity_file_list`.
-
-Similarly, EEP tracks for naked helium stars or stripped stars can be provided using either `metallicity_file_list` or `path_to_he_tracks`. If helium EEP tracks are not provided, METISSE will revert to using SSE formulae for the evolution of the naked helium stars.
 
 In addition to the metallicity files, user also needs to specify the format of input files through `&format_controls` inlist. An example format file looks like this: 
 

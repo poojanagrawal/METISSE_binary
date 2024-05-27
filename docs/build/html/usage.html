@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Installation &mdash; METISSE 0.1 documentation</title>
+  <title>Using METISSE &mdash; METISSE 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
@@ -45,8 +45,7 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#using-metisse">Using METISSE</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Using METISSE</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#standalone-mode">Standalone mode</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="#supplying-input">Supplying input</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#running-metisse">Running METISSE</a></li>
@@ -58,7 +57,7 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="contents.html">Package contents</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contents.html#flowchart">Flowchart</a></li>
-<li class="toctree-l1"><a class="reference internal" href="eep_tracks.html">Input EEP tracks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="eep_tracks.html">Using custom input tracks</a></li>
 </ul>
 
         </div>
@@ -75,7 +74,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Installation</li>
+      <li class="breadcrumb-item active">Using METISSE</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/usage.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -85,18 +84,15 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="installation">
-<h1>Installation<a class="headerlink" href="#installation" title="Link to this heading"></a></h1>
+  <section id="using-metisse">
+<h1>Using METISSE<a class="headerlink" href="#using-metisse" title="Link to this heading"></a></h1>
 <p><strong>Prequisite:</strong> METISSE requires gcc/6.4.0 or above</p>
-<p>METISSE is available <a class="reference external" href="https://github.com/TeamMETISSE">here</a>.</p>
-<section id="using-metisse">
-<h2>Using METISSE<a class="headerlink" href="#using-metisse" title="Link to this heading"></a></h2>
-<p>METISSE can be used either in the standalone/main mode or in conjunction with other codes.</p>
-</section>
+<p>The code package is available <a class="reference external" href="https://github.com/TeamMETISSE">here</a>.</p>
+<p>In addition to above, METISSE also requires a set of EEP tracks with a given metallicity to interpolate a stellar track for the same metallicity and a specific mass.
+EEP tracks for a range of mass and metallicity, computed using MESA, and ready for use with METISSE can be downloaded from this link.</p>
+<p>After downloading, the path of this folder should be provided to METISSE. This path and other inputs should be provided to METISSE depending on how METISSE is used (in standalone mode or in conjunction with other codes).</p>
 <section id="standalone-mode">
 <h2>Standalone mode<a class="headerlink" href="#standalone-mode" title="Link to this heading"></a></h2>
-<p><em>makefile</em> in folder <em>make</em> contains all necessary instructions to compile METISSE in the standalone mode.
-Just do <code class="docutils literal notranslate"><span class="pre">./mk</span></code> to compile the package.</p>
 <section id="supplying-input">
 <h3>Supplying input<a class="headerlink" href="#supplying-input" title="Link to this heading"></a></h3>
 <p>In the standalone mode values of mass, metallicity and other input parameters
@@ -164,7 +160,7 @@ are supplied using <code class="docutils literal notranslate"><span class="pre">
 </pre></div>
 </div>
 <p><code class="docutils literal notranslate"><span class="pre">SSE_input_controls</span></code> is only used in standalone mode, it is ignored otherwise and input parameters provided by the overlying code are used.</p>
-<p><em>evolve_metisse.in</em> also contains another Fortran namelist <code class="docutils literal notranslate"><span class="pre">METISSE_input_controls</span></code>. This namelist contains input parameters specific to METISSE.</p>
+<p><em>evolve_metisse.in</em> also contains another Fortran namelist <code class="docutils literal notranslate"><span class="pre">METISSE_input_controls</span></code>. This namelist contains input parameters specific to METISSE, including <code class="docutils literal notranslate"><span class="pre">metallicity_file_list</span></code>.</p>
 <div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="p">&amp;</span><span class="n">METISSE_input_controls</span>
 
 <span class="w">    </span><span class="c">! A metallicity file contains details about </span>
@@ -229,6 +225,8 @@ are supplied using <code class="docutils literal notranslate"><span class="pre">
 </section>
 <section id="running-metisse">
 <h3>Running METISSE<a class="headerlink" href="#running-metisse" title="Link to this heading"></a></h3>
+<p><em>makefile</em> in folder <em>make</em> contains all necessary instructions to compile METISSE in the standalone mode.</p>
+<p>Just do <code class="docutils literal notranslate"><span class="pre">./mk</span></code> to compile the package.</p>
 <p>To run METISSE in the standalone mode, simply do:</p>
 <p><code class="docutils literal notranslate"><span class="pre">./metisse</span></code></p>
 <!-- METISSE will evolve a 1 M$_\odot$ star, of input metallicity upto 10 Gyr for you. :blush: -->
@@ -294,17 +292,20 @@ It is controlled by <code class="docutils literal notranslate"><span class="pre"
 <ol class="arabic simple">
 <li><p>BSE (Hurley et al. 2002)</p></li>
 </ol>
-<p>To run METISSE with BSE, simply enable <code class="docutils literal notranslate"><span class="pre">use_SSE</span> <span class="pre">=</span> <span class="pre">.false.</span></code> in the <code class="docutils literal notranslate"><span class="pre">bse.f</span></code> or <code class="docutils literal notranslate"><span class="pre">popbin.f</span></code>.
-The details are input tracks are read through <code class="docutils literal notranslate"><span class="pre">METISSE_input_controls</span></code> inlist in the <em>evolve_metisse.in</em> file.</p>
+<p>To run METISSE with BSE, simply enable <code class="docutils literal notranslate"><span class="pre">use_SSE</span> <span class="pre">=</span> <span class="pre">.false.</span></code> in the <code class="docutils literal notranslate"><span class="pre">bse.f</span></code> or <code class="docutils literal notranslate"><span class="pre">popbin.f</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">metallicity_file_list</span></code> option in the <code class="docutils literal notranslate"><span class="pre">METISSE_input_controls</span></code> is used to specify the location of the metallicity file when METISSE is used in standalone mode or with BSE. Users can provide a list of metallicity files, and METISSE will select the one that is closest in input metallicity.
+Similarly, EEP tracks for naked helium stars or stripped stars can be provided using <code class="docutils literal notranslate"><span class="pre">metallicity_file_list</span></code>. If helium EEP tracks are not provided, METISSE will revert to using SSE formulae for the evolution of the naked helium stars.</p>
+<p>Other details are read through <code class="docutils literal notranslate"><span class="pre">METISSE_input_controls</span></code> inlist in the <em>evolve_metisse.in</em> file.</p>
 <ol class="arabic simple" start="2">
 <li><p>COSMIC (Breivik et al. 2020)</p></li>
 </ol>
-<p>(requires additional code from <a class="reference external" href="https://github.com/COSMIC-PopSynth/COSMIC">COSMIC</a> to work)</p>
-<p>To run METISSE with COSMIC, set <code class="docutils literal notranslate"><span class="pre">stellar_engine</span></code> to <code class="docutils literal notranslate"><span class="pre">metisse</span></code> in SSEDict of COSMIC’s input and supply paths for folders containing <code class="docutils literal notranslate"><span class="pre">metallicity</span> <span class="pre">files</span></code> for hydrogen and helium EEP tracks.</p>
+<p>Running METISSE with COSMIC requires additional code from <a class="reference external" href="https://github.com/COSMIC-PopSynth/COSMIC">COSMIC</a>.</p>
+<p>To use METISSE with COSMIC, set <code class="docutils literal notranslate"><span class="pre">stellar_engine</span></code> to <code class="docutils literal notranslate"><span class="pre">metisse</span></code> in SSEDict of COSMIC’s input and supply paths for folders containing <code class="docutils literal notranslate"><span class="pre">metallicity</span> <span class="pre">files</span></code> for hydrogen and helium EEP tracks.</p>
+<p><code class="docutils literal notranslate"><span class="pre">METISSE_input_controls</span></code>  is not read when using COSMIC, therefore <code class="docutils literal notranslate"><span class="pre">metallicity_file_list</span></code> cannot be not directly provided. Instead, the <code class="docutils literal notranslate"><span class="pre">path_to_tracks</span></code> and <code class="docutils literal notranslate"><span class="pre">path_to_he_tracks</span></code> are specified SSEDict. METISSE then searches for all files ending with ‘metallicity.in’ in that location and creates the <code class="docutils literal notranslate"><span class="pre">metallicity_file_list</span></code>.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">SSEDict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;stellar_engine&#39;</span><span class="p">:</span> <span class="s1">&#39;metisse&#39;</span><span class="p">,</span> <span class="s1">&#39;path_to_tracks&#39;</span><span class="p">:</span> <span class="n">path_to_tracks</span><span class="p">,</span> <span class="s1">&#39;path_to_he_tracks&#39;</span><span class="p">:</span><span class="n">path_to_he_tracks</span> <span class="p">}</span>
 </pre></div>
 </div>
-<p><code class="docutils literal notranslate"><span class="pre">METISSE_input_controls</span></code>  is not read when using COSMIC.</p>
+<p>Here too, if <code class="docutils literal notranslate"><span class="pre">path_to_he_tracks</span></code> is empty, METISSE will revert to using SSE formulae for the evolution of the naked helium stars.</p>
 </section>
 </section>
 

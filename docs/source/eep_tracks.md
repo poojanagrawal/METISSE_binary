@@ -5,7 +5,7 @@
 
 To interpolate a stellar track for a specific mass and metallicity, METISSE requires a set of EEP tracks with the same metallicity. 
 EEP-tracks for range of mass and metallicity, computed using MESA are available for download at this link. 
-The download contains all necessary files needed for input to METISSE and all a user has to do is specify the path to their local download of this folder through 'path_to_tracks` and `path_to_he_tracks` (for COSMIC). 
+The download contains all necessary files needed for input to METISSE and all a user has to do is specify the path to their local download of this folder through `path_to_tracks` and `path_to_he_tracks` (for COSMIC). 
 
 
 ## Using you own input tracks

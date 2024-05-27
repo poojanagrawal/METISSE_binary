@@ -1,4 +1,6 @@
 subroutine comenv_lambda(KW,M0,L,R,MENVD,LAMBDA,id,LAMBF)
+
+    ! get appropiate ZAMS radius and calculate common envelope lambda
     use track_support
     implicit none
     real(dp), intent(in):: M0,L,R,MENVD,LAMBDA

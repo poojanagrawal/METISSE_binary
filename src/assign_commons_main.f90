@@ -2,14 +2,12 @@ subroutine assign_commons_main()
     use track_support
     use remnant_support
     implicit none
-    
-    !to assign common variables when METISSE is used with other codes
+    ! assign values for variables used in METISSE from SSE_input_controls
     
     REAL(dp) :: pts1,pts2,pts3
     COMMON /POINTS/ pts1,pts2,pts3
         
     if (front_end == main) then
-        ! assign values for variables used in METISSE from SSE_input_controls
        if (WD_mass_scheme == 'Mestel') then
             wd_flag = Mestel
         elseif (WD_mass_scheme == 'Modified_mestel') then

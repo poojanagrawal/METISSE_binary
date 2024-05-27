@@ -47,9 +47,9 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-# html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
 
-html_theme = "nature"
+# html_theme = "nature"
 
 
 # Add any paths that contain custom static files (such as style sheets) here,
@@ -57,4 +57,5 @@ html_theme = "nature"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-
+# set default highlighting language
+highlight_language = 'fortran'

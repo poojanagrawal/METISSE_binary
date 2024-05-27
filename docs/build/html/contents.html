@@ -1,146 +1,166 @@
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-<html lang="en" data-content_root="./">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Package contents &mdash; METISSE 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
-    <title>Package contents &#8212; METISSE 0.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=0f882399" />
-    <script src="_static/documentation_options.js?v=2709fde1"></script>
-    <script src="_static/doctools.js?v=9a2dae69"></script>
-    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Using EEP tracks" href="eep_tracks.html" />
     <link rel="prev" title="Installation and usage" href="usage.html" /> 
-  </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="usage.html" title="Installation and usage"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">METISSE 0.1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Package contents</a></li> 
-      </ul>
-    </div>  
+</head>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
-            
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            METISSE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Installation and usage</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Package contents</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#sse-specific-subroutines">1. SSE specific subroutines</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#modules-and-other-files">2. Modules and other files</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#in-the-standalone-mode">In the standalone mode</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#as-part-of-other-codes">As part of other codes</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="#flowchart">Flowchart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="eep_tracks.html">Using EEP tracks</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">METISSE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Package contents</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/contents.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <section id="package-contents">
-<h1>Package contents<a class="headerlink" href="#package-contents" title="Link to this heading">¶</a></h1>
-<p>All the programs and subroutines are written in Modern Fortran. METISSE has been developed as an alternative to SSE (Hurley et al. 2000) and so, the subprogram files have similar names and functionality. Module files on the other hand, contain more general data structures and subroutines specific to METISSE that can be accessed by other subprogram units as required.</p>
-<p>The package contains three types of files in the source (<em>src</em>) directory:</p>
-<section id="metisse-specific-subprogram-subroutines">
-<h2>1. METISSE specific subprogram/subroutines<a class="headerlink" href="#metisse-specific-subprogram-subroutines" title="Link to this heading">¶</a></h2>
-<p><em>METISSE_zcnsts.f90</em>  -   controls metallcity (Z) related part of the package. Reads EEP files and sets Z parameters.</p>
-<p><em>METISSE_star.f90</em>     - find relevant tracks from the set and interpolate in mass.</p>
-<p><em>METISSE_hrdiag.f90</em>   - compute stellar parameters by interpolating in age for nuclear burning phases. Also, compute evolutionary phases of the star including the remnant phases and their properties.</p>
-<p><em>METISSE_deltat.f90</em>   - determines evolution timestep.</p>
-<p><em>METISSE_mlwind.f90</em>   - calculate the mass loss rate through stellar winds.</p>
+<h1>Package contents<a class="headerlink" href="#package-contents" title="Link to this heading"></a></h1>
+<p>All the programs and subroutines are written in Modern Fortran.</p>
+<p>The METISSE package contains two types of files in the source (<em>src</em>) directory:</p>
+<section id="sse-specific-subroutines">
+<h2>1. SSE specific subroutines<a class="headerlink" href="#sse-specific-subroutines" title="Link to this heading"></a></h2>
+<p>METISSE has been developed as an alternative to SSE (Hurley et al. 2000) and, therefore, contains similar subroutines as SSE. The following subroutines replicate the behaviour of the SSE subroutines externally, with similar names and input/output variables.</p>
+<p><em>METISSE_zcnsts.f90</em>  -   Controls metallicity (Z) related part of the package.</p>
+<p><em>METISSE_star.f90</em>     - Find relevant tracks from the input set and interpolate in mass to get a track of a given mass.</p>
+<p><em>METISSE_hrdiag.f90</em>   - Interpolate within the new track to determine stellar parameters at a given age. Also, compute the evolutionary phase of the star including the remnant phases and their properties.</p>
+<p><em>METISSE_deltat.f90</em>   - Calculate the time steps depending on the stage of evolution</p>
+<p><em>METISSE_mlwind.f90</em>   - Derive the mass loss through stellar winds.</p>
+<p><em>METISSE_gntage.f90</em> - Determine the age of a giant star after merger or rejuvenation</p>
 </section>
-<section id="modules">
-<h2>2. Modules<a class="headerlink" href="#modules" title="Link to this heading">¶</a></h2>
-<p><em>track_support.f90</em> – contains general data structures and functions needed throughtout the program.</p>
-<p><em>interp_support.f90</em> – contains subroutines required for interpolation</p>
-<p><em>remnant_support.f90</em> – contains functions needed to calculate type and properties of remnant phases</p>
-<p><em>z_support.f90</em> – contains subroutines to read EEP files, load relevant data and EEPS and other metallicity based parameters</p>
-<p><em>sse_support.f90</em> - contains subroutines to calculate SSE related quantities.</p>
-</section>
-<section id="other-files">
-<h2>3. Other files<a class="headerlink" href="#other-files" title="Link to this heading">¶</a></h2>
-<p>A combination of these files are used depending on how METISSE is being used.</p>
-<section id="in-the-standalone-mode">
-<h3>In the standalone mode<a class="headerlink" href="#in-the-standalone-mode" title="Link to this heading">¶</a></h3>
-<p><em>main_metisse.f90</em>      - Main program for running metisse. Can only evolve single stars. Reads the input files, sets up relevant parameters and data structures before evolving stars of given masses.
-<em>evolv_metisse.f90</em>    - controls the evolution of each star and write output to files.</p>
-<p><em>assign_commons_main.f90</em> - assign input values from SSE input files to metisse variables.</p>
-</section>
-<section id="as-part-of-other-codes">
-<h3>As part of other codes<a class="headerlink" href="#as-part-of-other-codes" title="Link to this heading">¶</a></h3>
-<p><em>METISSE_miscellaneous</em> - This file contains miscellaneous subroutines needed by METISSE to work in standalone or otherwise. Ideally these should be packed in a module but Fortran 77 does not know how to use them.</p>
-<p>Contains:<br />
-<em>alloc_track.f90</em> - allocate the track object.</p>
+<section id="modules-and-other-files">
+<h2>2. Modules and other files<a class="headerlink" href="#modules-and-other-files" title="Link to this heading"></a></h2>
+<p>The following Fortran modules contain more general data structures and subroutines specific to METISSE that can be accessed by SSE-specific subroutines as required.</p>
+<p><em>track_support.f90</em> – Contains general data structures and functions needed throughout the program.</p>
+<p><em>interp_support.f90</em> – Contains functions required for interpolation</p>
+<p><em>remnant_support.f90</em> – Contains functions needed to calculate properties of remnant phases</p>
+<p><em>z_support.f90</em> – Together with METISSE_zcnsts, it reads all input namelists and files, including EEP files, and sets Z parameters and other metallicity-based functions.</p>
+<p><em>sse_support.f90</em> - contains subroutines to calculate SSE-specific quantities.</p>
+<p>In addition to the above modules, METISSE also has:</p>
+<p><em>METISSE_miscellaneous.f90</em> - Contains miscellaneous subroutines needed by METISSE to work in standalone mode or otherwise. (Ideally, these should be packed in a module but cannot be, as Fortran 77 does not know how to use modules.)</p>
+<p>It contains:</p>
+<p><em>alloc_track.f90</em> - allocate the track object.</p>
 <p><em>dealloc_track.f90</em> - deallocate the track object and arrays within.</p>
 <p><em>initialize_front_end</em> - Inform METISSE what code is using it.</p>
-<p><em>assign_commons.f90</em> - assign input values from SSE input files to metisse variables.</p>
-<p><em>set_star_type</em> - set star type to rejuvenated before calling star</p>
+<p><em>set_star_type</em> - set star type to <code class="docutils literal notranslate"><span class="pre">rejuvenated</span></code> before calling star.</p>
+<p>A combination of these files is used depending on how METISSE is being used.</p>
+<section id="in-the-standalone-mode">
+<h3>In the standalone mode<a class="headerlink" href="#in-the-standalone-mode" title="Link to this heading"></a></h3>
+<p><em>main_metisse.f90</em>   - Main program for running metisse. Can only evolve single stars. Reads the input files, and sets up relevant parameters and data structures before evolving stars of given masses.
+<em>evolv_metisse.f90</em>   - controls the evolution of each star and writes output to files.</p>
+<p><em>assign_commons_main.f90</em> - assign values for variables used in METISSE from SSE_input_controls.</p>
+</section>
+<section id="as-part-of-other-codes">
+<h3>As part of other codes<a class="headerlink" href="#as-part-of-other-codes" title="Link to this heading"></a></h3>
+<p><em>assign_commons_xyz.f90</em>   !to assign common variables when METISSE is used with other code say ‘xyz’</p>
+<p><em>comenv_lambda.f90</em> get appropiate ZAMS radius and calculate common envelope lambda</p>
 </section>
 </section>
+</section>
+<section id="flowchart">
+<h1>Flowchart<a class="headerlink" href="#flowchart" title="Link to this heading"></a></h1>
+<p>Here is a flowchart describing the workflow of METISSE:</p>
+<p><img alt="METISSE's flowchart" src="_images/METISSE_flowchart.png" /></p>
 </section>
 
 
-            <div class="clearer"></div>
+           </div>
           </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <div>
-    <h3><a href="index.html">Table of Contents</a></h3>
-    <ul>
-<li><a class="reference internal" href="#">Package contents</a><ul>
-<li><a class="reference internal" href="#metisse-specific-subprogram-subroutines">1. METISSE specific subprogram/subroutines</a></li>
-<li><a class="reference internal" href="#modules">2. Modules</a></li>
-<li><a class="reference internal" href="#other-files">3. Other files</a><ul>
-<li><a class="reference internal" href="#in-the-standalone-mode">In the standalone mode</a></li>
-<li><a class="reference internal" href="#as-part-of-other-codes">As part of other codes</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="usage.html" class="btn btn-neutral float-left" title="Installation and usage" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="eep_tracks.html" class="btn btn-neutral float-right" title="Using EEP tracks" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Poojan Agrawal.</p>
   </div>
-  <div>
-    <h4>Previous topic</h4>
-    <p class="topless"><a href="usage.html"
-                          title="previous chapter">Installation and usage</a></p>
-  </div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/contents.md.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<search id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="usage.html" title="Installation and usage"
-             >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">METISSE 0.1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Package contents</a></li> 
-      </ul>
-    </div>
-    <div class="footer" role="contentinfo">
-    &#169; Copyright 2024, Poojan Agrawal.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
-    </div>
-  </body>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
 </html>

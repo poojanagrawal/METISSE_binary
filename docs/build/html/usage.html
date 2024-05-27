@@ -1,83 +1,250 @@
 <!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="./">
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
-<html lang="en" data-content_root="./">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Installation and usage &mdash; METISSE 0.1 documentation</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
+      <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
-    <title>Installation and usage &#8212; METISSE 0.1 documentation</title>
-    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
-    <link rel="stylesheet" type="text/css" href="_static/nature.css?v=0f882399" />
-    <script src="_static/documentation_options.js?v=2709fde1"></script>
-    <script src="_static/doctools.js?v=9a2dae69"></script>
-    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+  
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script src="_static/jquery.js?v=5d32c60e"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+        <script src="_static/documentation_options.js?v=2709fde1"></script>
+        <script src="_static/doctools.js?v=9a2dae69"></script>
+        <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="Package contents" href="contents.html" />
     <link rel="prev" title="Welcome to METISSE’s documentation!" href="index.html" /> 
-  </head><body>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="contents.html" title="Package contents"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="index.html" title="Welcome to METISSE’s documentation!"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">METISSE 0.1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Installation and usage</a></li> 
-      </ul>
-    </div>  
+</head>
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
-            
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="index.html" class="icon icon-home">
+            METISSE
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation and usage</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#download-metisse">Download METISSE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#using-metisse">Using METISSE</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#standalone-mode">Standalone mode</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#supplying-input">Supplying input</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#running-metisse">Running METISSE</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#output">Output</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="contents.html">Package contents</a></li>
+<li class="toctree-l1"><a class="reference internal" href="contents.html#flowchart">Flowchart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="eep_tracks.html">Using EEP tracks</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">METISSE</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Installation and usage</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/usage.md.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
   <section id="installation-and-usage">
-<h1>Installation and usage<a class="headerlink" href="#installation-and-usage" title="Link to this heading">¶</a></h1>
+<h1>Installation and usage<a class="headerlink" href="#installation-and-usage" title="Link to this heading"></a></h1>
 <p><strong>Prequisite:</strong> METISSE requires gcc/6.4.0 or above</p>
 <section id="download-metisse">
-<h2>Download METISSE<a class="headerlink" href="#download-metisse" title="Link to this heading">¶</a></h2>
+<h2>Download METISSE<a class="headerlink" href="#download-metisse" title="Link to this heading"></a></h2>
 <p>METISSE is available for download at <a class="reference external" href="https://github.com/TeamMETISSE">here</a>.</p>
 <p><em>makefile</em> in folder <em>make</em> contains all necessary instructions to compile METISSE in standalone mode.
 Just do <code class="docutils literal notranslate"><span class="pre">./mk</span></code> in the main directory (not in the make directory) to compile the package.</p>
 </section>
 <section id="using-metisse">
-<h2>Using METISSE<a class="headerlink" href="#using-metisse" title="Link to this heading">¶</a></h2>
+<h2>Using METISSE<a class="headerlink" href="#using-metisse" title="Link to this heading"></a></h2>
 <p>Currently, METISSE can be used in the following modes:</p>
 <ol class="arabic simple">
 <li><p>Standalone mode</p></li>
 <li><p>with BSE (Hurley et al. 2002)</p></li>
-<li><p>with COSMIC (Brievik et al. 2020) (requires additional code from <link> to work)</p></li>
+<li><p>with COSMIC (Breivik et al. 2020) (requires additional code from <a class="reference external" href="https://github.com/COSMIC-PopSynth/COSMIC">COSMIC</a> to work)</p></li>
 </ol>
 </section>
 <section id="standalone-mode">
-<h2>Standalone mode<a class="headerlink" href="#standalone-mode" title="Link to this heading">¶</a></h2>
+<h2>Standalone mode<a class="headerlink" href="#standalone-mode" title="Link to this heading"></a></h2>
 <section id="supplying-input">
-<h3>Supplying input<a class="headerlink" href="#supplying-input" title="Link to this heading">¶</a></h3>
-<p>METISSE needs to know the values of mass, metallicity and time up to which a star should be evolved.</p>
-<p>Input parameters can be supplied using <em>evolve_metisse.in</em> file. It contains two Fortran namelists:</p>
-<p><em>SSE_input_controls</em> - For providing parameters such as the mass, metallicity and time up to which a star should evolve.
-Only used in standalone mode, ignored otherwise.</p>
-<p><em>METISSE_input_controls</em> - It contains input parameters specific to metisse.</p>
-<p>Both are Fortran namelist, so comments (!) and blank lines can be used freely. Characters are <strong>case-insensitive</strong>.
-Note: Make sure to leave a blank line at the end of the file (after <code class="docutils literal notranslate"><span class="pre">/</span></code> symbol)</p>
+<h3>Supplying input<a class="headerlink" href="#supplying-input" title="Link to this heading"></a></h3>
+<p>In the main/standalone mode values of mass, metallicity and other input parameters
+are supplied using <code class="docutils literal notranslate"><span class="pre">SSE_input_controls</span></code> namelist contained in <em>evolve_metisse.in</em> file.</p>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="p">&amp;</span><span class="n">SSE_input_controls</span>
+
+<span class="w">  </span><span class="c">! EVOLUTION CONTROLS</span>
+<span class="w">   </span>
+<span class="w">    </span><span class="c">! For reading input masses for new tracks</span>
+<span class="w">    </span><span class="n">read_mass_from_file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">false</span><span class="p">.</span><span class="w">      </span>
+
+<span class="w">    </span><span class="n">input_mass_file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;&#39;</span>
+
+<span class="w">    </span><span class="n">number_of_tracks</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+
+<span class="w">    </span><span class="n">max_mass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="mf">1.0</span>
+
+<span class="w">    </span><span class="n">min_mass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="mf">1.0</span>
+<span class="w">    </span>
+<span class="w">    </span><span class="n">initial_Z</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="mf">1.0</span>
+
+<span class="w">    </span><span class="c">! Maximum age in Myrs</span>
+<span class="w">    </span><span class="n">max_age</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">-</span><span class="mf">1.0</span><span class="w">   </span>
+
+<span class="w">  </span><span class="c">! REMNANT CONTROLS</span>
+
+
+<span class="w">    </span><span class="c">! Options - &quot;Mestel&quot;, &quot;Modified_mestel&quot;</span>
+<span class="w">    </span><span class="n">WD_mass_scheme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;Modified_mestel&#39;</span>
+
+<span class="w">    </span>
+<span class="w">    </span><span class="c">! Only for White Dwarfs</span>
+<span class="w">    </span><span class="n">Use_initial_final_mass_relation</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">false</span><span class="p">.</span><span class="w">       </span>
+
+
+<span class="w">    </span><span class="c">! Options - &quot;original_SSE&quot;, &quot;Belczynski2002&quot;, &quot;Belczynski2008&quot;, &quot;Eldridge_Tout2004&quot;</span>
+<span class="w">    </span><span class="n">BHNS_mass_scheme</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;Belczynski2008&#39;</span>
+
+<span class="w">    </span>
+<span class="w">    </span><span class="c">! Maximum neutron star mass </span>
+<span class="w">    </span><span class="c">! Suggested 1.8 for BHNS_mass_scheme=&quot;original_SSE&quot;, 3.0 otherwise</span>
+
+<span class="w">    </span><span class="n">Max_NS_mass</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">3.d0</span>
+<span class="w">   </span>
+<span class="w">    </span><span class="c">! Allow electron capture supernovae</span>
+
+<span class="w">    </span><span class="n">allow_electron_capture</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">true</span><span class="p">.</span><span class="w">       </span>
+<span class="w">    </span>
+<span class="w">  </span><span class="c">! TIMESCALE CONTROLS</span>
+
+<span class="w">    </span><span class="n">pts_1</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.05</span>
+<span class="w">    </span><span class="n">pts_2</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.01</span>
+<span class="w">    </span><span class="n">pts_3</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.02</span>
+
+<span class="w">  </span><span class="c">!OUTPUT CONTROLS</span>
+
+<span class="w">    </span><span class="c">! &#39;write_track_to_file&#39; generates a SSE-style output file </span>
+<span class="w">    </span><span class="c">! only at the END of the evolution</span>
+
+<span class="w">    </span><span class="n">write_track_to_file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">true</span><span class="p">.</span>
+
+<span class="o">/</span>
+
+<span class="o">/</span><span class="w"> </span><span class="c">! end of SSE_controls inlist</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">SSE_input_controls</span></code> is only used in standalone mode, it is ignored otherwise and input parameters provided by the overlying code are used.</p>
+<p><em>evolve_metisse.in</em> also contains another Fortran namelist <code class="docutils literal notranslate"><span class="pre">METISSE_input_controls</span></code>. This namelist contains input parameters specific to METISSE.</p>
+<div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="p">&amp;</span><span class="n">METISSE_input_controls</span>
+
+<span class="w">    </span><span class="c">! A metallicity file contains details about </span>
+<span class="w">    </span><span class="c">! the set of input tracks for a given metallicity,</span>
+<span class="w">    </span><span class="c">! such as the path to the folder, their metallicity value</span>
+<span class="w">    </span><span class="c">! and other information/metadata (see metallicity_defaults.in)</span>
+
+<span class="w">    </span><span class="c">! The option &#39;metallicity_file_list&#39; is used for providing </span>
+<span class="w">    </span><span class="c">! path/location of that metallicity file.</span>
+<span class="w">    </span><span class="c">! In the case of a grid of stellar tracks,</span>
+<span class="w">    </span><span class="c">! with folders containing tracks of various metallicities,</span>
+<span class="w">    </span><span class="c">! location of the metallicity file for each folder/metallicity</span>
+<span class="w">    </span><span class="c">! can be provided as a list of comma-separated strings </span>
+<span class="w">    </span><span class="c">! for up to 20 metallicities.</span>
+<span class="w">    </span><span class="c">! For example: metallicity_file_list = &#39;path1&#39;,</span>
+<span class="w">    </span><span class="c">!                                      &#39;path2&#39;,</span>
+<span class="w">    </span><span class="c">!                                       ...</span>
+<span class="w">    </span><span class="c">!                                      &#39;path20&#39;</span>
+
+<span class="w">    </span>
+<span class="w">    </span><span class="n">metallicity_file_list</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">&#39;&#39;</span>
+
+
+<span class="w">    </span><span class="c">! if (abs(Z_input-Z_required)/MIN(Z_input,Z_required)) &gt; Z_accuracy_limit</span>
+<span class="w">    </span><span class="n">Z_accuracy_limit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="n">d</span><span class="o">-</span><span class="mi">2</span>
+
+<span class="w">    </span><span class="c">! INTERPOLATION CONTROLS</span>
+
+<span class="w">    </span><span class="c">! Skip interpolation in mass if there is already</span>
+<span class="w">    </span><span class="c">! an input track with initial_mass within the &#39;mass_accuracy_limit&#39;</span>
+
+<span class="w">    </span><span class="n">mass_accuracy_limit</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span><span class="n">d</span><span class="o">-</span><span class="mi">4</span>
+
+<span class="w">    </span><span class="c">! OTHER REMNANT CONTROLS</span>
+<span class="w">    </span><span class="c">! If true, &#39;construct_wd_track&#39; is used (for low-mass stars) to construct the track between </span>
+<span class="w">    </span><span class="c">! Thermally-Pulsating AGB phase or tip of the AGB to the white dwarf cooling track</span>
+<span class="w">    </span><span class="c">! It is useful if input tracks do not contain this phase</span>
+<span class="w">    </span><span class="c">! but can be used otherwise too.</span>
+
+<span class="w">    </span><span class="n">construct_wd_track</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">true</span><span class="p">.</span>
+
+<span class="w">    </span>
+<span class="w">    </span><span class="c">! OUTPUT CONTROLS</span>
+
+<span class="w">    </span><span class="c">! if true, &#39;verbose&#39; prints useful details when reading the files</span>
+
+<span class="w">    </span><span class="n">verbose</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">false</span><span class="p">.</span><span class="w"> </span>
+
+<span class="w">    </span><span class="c">! &#39;write_eep_file&#39; generates MIST style output file </span>
+<span class="w">    </span><span class="c">! at EVERY step of mass interpolation</span>
+<span class="w">    </span><span class="c">! useful for debugging and single-star evolution calculations with implicit mass loss</span>
+
+<span class="w">    </span><span class="n">write_eep_file</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">.</span><span class="n">false</span><span class="p">.</span><span class="w">    </span>
+
+<span class="w">    </span><span class="c">!OUTPUT_DIR = &#39;&#39;</span>
+
+<span class="o">/</span>
+</pre></div>
+</div>
+<p>Both are Fortran namelists, so comments (!) and blank lines can be used freely. Characters are <strong>case-insensitive</strong>.
+Note: Make sure to leave a blank line at the end of the file (after the <code class="docutils literal notranslate"><span class="pre">/</span></code> symbol)</p>
 <p>Use the format specified in src/defaults/evolve_metisse_defaults.inc for variable names. <strong>Do not modify any file inside the defaults folder</strong>.</p>
 </section>
 <section id="running-metisse">
-<h3>Running METISSE<a class="headerlink" href="#running-metisse" title="Link to this heading">¶</a></h3>
+<h3>Running METISSE<a class="headerlink" href="#running-metisse" title="Link to this heading"></a></h3>
 <p>To run METISSE in the standalone or main mode, simply do:</p>
 <p><code class="docutils literal notranslate"><span class="pre">./metisse</span></code></p>
-<p>METISSE will evolve a 1 M$_\odot$ star, of input metallicity upto 10 Gyr for you. :blush:</p>
+<!-- METISSE will evolve a 1 M$_\odot$ star, of input metallicity upto 10 Gyr for you. :blush: -->
 <p>Check <em>output</em> directory for output data files.</p>
 </section>
 <section id="output">
-<h3>Output<a class="headerlink" href="#output" title="Link to this heading">¶</a></h3>
+<h3>Output<a class="headerlink" href="#output" title="Link to this heading"></a></h3>
 <p>METISSE can produce two types of output files:</p>
 <p><strong>1. files ending with .dat :</strong></p>
 <p>SSE-like output files, controlled by <code class="docutils literal notranslate"><span class="pre">write_track_to_file</span></code> in SSE_input_controls.
@@ -94,7 +261,7 @@ These contain the following stellar parameters until max_age. Time and age at hy
 <p><em>phase</em>     –   SSE phase number</p>
 <p><em>e</em>  – extra information (not of general relevance- to be removed in future)</p>
 <p><strong>2. files ending with .eep :</strong></p>
-<p>For debugging purposes, METISSE can write mass interpolated files with the same columns as input files (plus phase column) and MIST-style file structure.
+<p>For debugging purposes, METISSE can write mass interpolated files with the same columns as input files (plus phase column) and a MIST-style file structure.
 Only contains data from ZAMS to the end of AGB or carbon burning phase.
 Can be activated by <code class="docutils literal notranslate"><span class="pre">write_eep_file</span></code> in METISSE_input_controls.</p>
 </section>
@@ -102,79 +269,34 @@ Can be activated by <code class="docutils literal notranslate"><span class="pre"
 </section>
 
 
-            <div class="clearer"></div>
+           </div>
           </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <div>
-    <h3><a href="index.html">Table of Contents</a></h3>
-    <ul>
-<li><a class="reference internal" href="#">Installation and usage</a><ul>
-<li><a class="reference internal" href="#download-metisse">Download METISSE</a></li>
-<li><a class="reference internal" href="#using-metisse">Using METISSE</a></li>
-<li><a class="reference internal" href="#standalone-mode">Standalone mode</a><ul>
-<li><a class="reference internal" href="#supplying-input">Supplying input</a></li>
-<li><a class="reference internal" href="#running-metisse">Running METISSE</a></li>
-<li><a class="reference internal" href="#output">Output</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to METISSE’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="contents.html" class="btn btn-neutral float-right" title="Package contents" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2024, Poojan Agrawal.</p>
   </div>
-  <div>
-    <h4>Previous topic</h4>
-    <p class="topless"><a href="index.html"
-                          title="previous chapter">Welcome to METISSE’s documentation!</a></p>
-  </div>
-  <div>
-    <h4>Next topic</h4>
-    <p class="topless"><a href="contents.html"
-                          title="next chapter">Package contents</a></p>
-  </div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/usage.md.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<search id="searchbox" style="display: none" role="search">
-  <h3 id="searchlabel">Quick search</h3>
-    <div class="searchformwrapper">
-    <form class="search" action="search.html" method="get">
-      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
-      <input type="submit" value="Go" />
-    </form>
-    </div>
-</search>
-<script>document.getElementById('searchbox').style.display = "block"</script>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="contents.html" title="Package contents"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="index.html" title="Welcome to METISSE’s documentation!"
-             >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">METISSE 0.1 documentation</a> &#187;</li>
-        <li class="nav-item nav-item-this"><a href="">Installation and usage</a></li> 
-      </ul>
-    </div>
-    <div class="footer" role="contentinfo">
-    &#169; Copyright 2024, Poojan Agrawal.
-      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 7.3.7.
-    </div>
-  </body>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
 </html>

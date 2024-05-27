@@ -3,7 +3,7 @@ subroutine assign_commons()
     use remnant_support, only:ns_flag,wd_flag,if_flag,Max_NS_mass,ec_flag
     implicit none
     
-    !to assign common variables when METISSE is used with other codes
+    !to assign common variables when METISSE is used with BSE
       
     INTEGER :: ceflag,tflag,ifflag,nsflag,wdflag
     COMMON /FLAGS/ ceflag,tflag,ifflag,nsflag,wdflag

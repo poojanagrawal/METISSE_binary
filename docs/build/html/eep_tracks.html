@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Input EEP tracks &mdash; METISSE 0.1 documentation</title>
+  <title>Using custom input tracks &mdash; METISSE 0.1 documentation</title>
       <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=80d5e7a1" />
       <link rel="stylesheet" type="text/css" href="_static/css/theme.css?v=19f00094" />
 
@@ -44,14 +44,10 @@
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="usage.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Using METISSE</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contents.html">Package contents</a></li>
 <li class="toctree-l1"><a class="reference internal" href="contents.html#flowchart">Flowchart</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Input EEP tracks</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#download-tracks">Download tracks</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#using-you-own-input-tracks">Using you own input tracks</a></li>
-</ul>
-</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Using custom input tracks</a></li>
 </ul>
 
         </div>
@@ -68,7 +64,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="index.html" class="icon icon-home" aria-label="Home"></a></li>
-      <li class="breadcrumb-item active">Input EEP tracks</li>
+      <li class="breadcrumb-item active">Using custom input tracks</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/eep_tracks.md.txt" rel="nofollow"> View page source</a>
       </li>
@@ -78,17 +74,9 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
              
-  <section id="input-eep-tracks">
-<h1>Input EEP tracks<a class="headerlink" href="#input-eep-tracks" title="Link to this heading"></a></h1>
-<section id="download-tracks">
-<h2>Download tracks<a class="headerlink" href="#download-tracks" title="Link to this heading"></a></h2>
-<p>To interpolate a stellar track for a specific mass and metallicity, METISSE requires a set of EEP tracks with the same metallicity.
-EEP-tracks for range of mass and metallicity, computed using MESA are available for download at this link.
-The download contains all necessary files needed for input to METISSE and all a user has to do is specify the path to their local download of this folder through <code class="docutils literal notranslate"><span class="pre">path_to_tracks</span></code> and <code class="docutils literal notranslate"><span class="pre">path_to_he_tracks</span></code> (for COSMIC).</p>
-</section>
-<section id="using-you-own-input-tracks">
-<h2>Using you own input tracks<a class="headerlink" href="#using-you-own-input-tracks" title="Link to this heading"></a></h2>
-<p>METISSE, can also use other set of tracks computed with MESA or other stellar evolution codes.
+  <section id="using-custom-input-tracks">
+<h1>Using custom input tracks<a class="headerlink" href="#using-custom-input-tracks" title="Link to this heading"></a></h1>
+<p>METISSE, can use any set of tracks computed with MESA or other stellar evolution codes.
 Prior to use in METISSE, the input tracks need to be converted to EEP format, ensuring that key evolutionary points, such as the zero-age main sequence (ZAMS), are aligned across all files.</p>
 <p>Information about EEP tracks is then provided through the <code class="docutils literal notranslate"><span class="pre">&amp;metallicity_controls</span></code> inlist, which we also call as the <code class="docutils literal notranslate"><span class="pre">metallicity</span> <span class="pre">file</span></code>. Each metallicity file contains details about the input tracks for a specific metallicity, including the path to the folder containing the EEP tracks, the metallicity value, and other relevant information or metadata.</p>
 <div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="p">&amp;</span><span class="n">metallicity_controls</span>
@@ -161,9 +149,6 @@ Prior to use in METISSE, the input tracks need to be converted to EEP format, en
 <span class="o">/</span>
 </pre></div>
 </div>
-<p>The <code class="docutils literal notranslate"><span class="pre">metallicity_file_list</span></code> option in the <code class="docutils literal notranslate"><span class="pre">METISSE_input_controls</span></code> is used to specify the location of the metallicity file when METISSE is used in standalone mode or with BSE. Users can provide a list of metallicity files, and METISSE will select the one that is closest in input metallicity.</p>
-<p>In the case of COSMIC, the <code class="docutils literal notranslate"><span class="pre">metallicity_file_list</span></code> is not directly provided. Instead, the <code class="docutils literal notranslate"><span class="pre">path_to_tracks</span></code> is specified. METISSE then searches for all files ending with ‘metallicity.in’ in that location and creates the <code class="docutils literal notranslate"><span class="pre">metallicity_file_list</span></code>.</p>
-<p>Similarly, EEP tracks for naked helium stars or stripped stars can be provided using either <code class="docutils literal notranslate"><span class="pre">metallicity_file_list</span></code> or <code class="docutils literal notranslate"><span class="pre">path_to_he_tracks</span></code>. If helium EEP tracks are not provided, METISSE will revert to using SSE formulae for the evolution of the naked helium stars.</p>
 <p>In addition to the metallicity files, user also needs to specify the format of input files through <code class="docutils literal notranslate"><span class="pre">&amp;format_controls</span></code> inlist. An example format file looks like this:</p>
 <div class="highlight-fortran notranslate"><div class="highlight"><pre><span></span><span class="p">&amp;</span><span class="n">format_controls</span>
 
@@ -360,7 +345,6 @@ Prior to use in METISSE, the input tracks need to be converted to EEP format, en
 </pre></div>
 </div>
 <p>Similar to <code class="docutils literal notranslate"><span class="pre">&amp;SSE_input_controls</span></code> and <code class="docutils literal notranslate"><span class="pre">&amp;METISSE_input_controls</span></code>, refer to <code class="docutils literal notranslate"><span class="pre">src/defaults/metallicity_defaults.inc</span></code> and <code class="docutils literal notranslate"><span class="pre">src/defaults/format_defaults.inc</span></code> for most upto date variable names for all inlists and their default values. <strong>Do not modify any file inside the defaults folder</strong>.</p>
-</section>
 </section>
 
 

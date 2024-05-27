@@ -20,7 +20,7 @@ Check out the following sections for further information.
 .. toctree::
    :maxdepth: 1
 
-   usage
    contents
+   usage
    eep_tracks
-   
+

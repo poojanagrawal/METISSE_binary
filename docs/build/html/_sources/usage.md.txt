@@ -1,17 +1,15 @@
-# Installation 
+# Using METISSE
 
 **Prequisite:** METISSE requires gcc/6.4.0 or above
 
-METISSE is available [here](https://github.com/TeamMETISSE).
+The code package is available [here](https://github.com/TeamMETISSE).
 
-## Using METISSE
+In addition to above, METISSE also requires a set of EEP tracks with a given metallicity to interpolate a stellar track for the same metallicity and a specific mass.
+EEP tracks for a range of mass and metallicity, computed using MESA, and ready for use with METISSE can be downloaded from this link. 
 
-METISSE can be used either in the standalone/main mode or in conjunction with other codes.
+After downloading, the path of this folder should be provided to METISSE. This path and other inputs should be provided to METISSE depending on how METISSE is used (in standalone mode or in conjunction with other codes).
 
 ## Standalone mode
-
-*makefile* in folder *make* contains all necessary instructions to compile METISSE in the standalone mode. 
-Just do `./mk` to compile the package.
 
 ### Supplying input 
 
@@ -84,7 +82,7 @@ are supplied using `SSE_input_controls` namelist contained in *evolve_metisse.in
 
 `SSE_input_controls` is only used in standalone mode, it is ignored otherwise and input parameters provided by the overlying code are used.  
 
-*evolve_metisse.in* also contains another Fortran namelist `METISSE_input_controls`. This namelist contains input parameters specific to METISSE. 
+*evolve_metisse.in* also contains another Fortran namelist `METISSE_input_controls`. This namelist contains input parameters specific to METISSE, including `metallicity_file_list`.
 
 
 ```
@@ -154,6 +152,10 @@ Refer to `src/defaults/evolve_metisse_defaults.inc` for variable names and their
 
 ### Running METISSE 
 
+*makefile* in folder *make* contains all necessary instructions to compile METISSE in the standalone mode. 
+
+Just do `./mk` to compile the package.
+
 To run METISSE in the standalone mode, simply do:
 
 `./metisse`
@@ -200,18 +202,29 @@ Currently, METISSE can be used with the following codes:
 1. BSE (Hurley et al. 2002)
 
 To run METISSE with BSE, simply enable `use_SSE = .false.` in the `bse.f` or `popbin.f`. 
-The details are input tracks are read through `METISSE_input_controls` inlist in the *evolve_metisse.in* file.
+
+The `metallicity_file_list` option in the `METISSE_input_controls` is used to specify the location of the metallicity file when METISSE is used in standalone mode or with BSE. Users can provide a list of metallicity files, and METISSE will select the one that is closest in input metallicity.
+Similarly, EEP tracks for naked helium stars or stripped stars can be provided using `metallicity_file_list`. If helium EEP tracks are not provided, METISSE will revert to using SSE formulae for the evolution of the naked helium stars.
+
+Other details are read through `METISSE_input_controls` inlist in the *evolve_metisse.in* file.
+
 
 2. COSMIC (Breivik et al. 2020) 
 
-(requires additional code from [COSMIC](https://github.com/COSMIC-PopSynth/COSMIC) to work)
+Running METISSE with COSMIC requires additional code from [COSMIC](https://github.com/COSMIC-PopSynth/COSMIC).
 
 
-To run METISSE with COSMIC, set `stellar_engine` to `metisse` in SSEDict of COSMIC's input and supply paths for folders containing `metallicity files` for hydrogen and helium EEP tracks. 
+To use METISSE with COSMIC, set `stellar_engine` to `metisse` in SSEDict of COSMIC's input and supply paths for folders containing `metallicity files` for hydrogen and helium EEP tracks. 
+
+
+`METISSE_input_controls`  is not read when using COSMIC, therefore `metallicity_file_list` cannot be not directly provided. Instead, the `path_to_tracks` and `path_to_he_tracks` are specified SSEDict. METISSE then searches for all files ending with 'metallicity.in' in that location and creates the `metallicity_file_list`.
 
 
 ``` python
 SSEDict = {'stellar_engine': 'metisse', 'path_to_tracks': path_to_tracks, 'path_to_he_tracks':path_to_he_tracks }
 ```
 
-`METISSE_input_controls`  is not read when using COSMIC. 
+Here too, if `path_to_he_tracks` is empty, METISSE will revert to using SSE formulae for the evolution of the naked helium stars.
+
+
+

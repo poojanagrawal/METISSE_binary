@@ -1,5 +1,5 @@
 ! This file contains miscellaneous subroutines needed by METISSE
-! to work both in stand alone or otherwise
+! to work in stand alone or otherwise
 ! Ideally these should be packed in a module
 ! But Fortran 77 does not know how to use modules
 ! So here we are
@@ -13,8 +13,6 @@ subroutine initialize_front_end(front_end_name)
     if (ANY((/'MAIN','main'/)== trim(front_end_name))) then
         ! METISSE's main code as described in Agrawal et al. 2020
         ! Can be used to evolve single stars and/or debugging purposes.
-        ! Note: currently not functional.
-        ! Needs to be updated for latest updates.
         front_end = main
 
     elseif (ANY((/'SSE','sse','BSE','bse'/)== trim(front_end_name))) then
@@ -83,6 +81,8 @@ end subroutine dealloc_track
 
 
 subroutine set_star_type(id)
+
+! set star type to rejuvenated before calling star
     use track_support
         implicit none
         integer, intent(in) :: id

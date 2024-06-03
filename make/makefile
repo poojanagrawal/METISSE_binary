@@ -2,8 +2,9 @@ BSE_DIR=..
 
 SRC_DIR=$(BSE_DIR)/src
 SSE_DIR=$(BSE_DIR)/src/SSE
-METISSE_DIR=$(BSE_DIR)/src
+#METISSE_DIR=$(BSE_DIR)/src/METISSE/src
 
+METISSE_DIR=//Users/poojan/METISSE/src
 #compiler
 FC=gfortran
 
@@ -83,37 +84,16 @@ interp_support.o: $(METISSE_DIR)/interp_support.f90 track_support.o
 sse_support.o: $(METISSE_DIR)/sse_support.f90 track_support.o
 remnant_support.o: $(METISSE_DIR)/remnant_support.f90 track_support.o sse_support.o
 
-assign_commons.o: $(METISSE_DIR)/assign_commons_bse.f90 track_support.o remnant_support.o
-METISSE_miscellaneous.o: $(METISSE_DIR)/METISSE_miscellaneous.f90 track_support.o
-comenv_lambda.o: $(METISSE_DIR)/comenv_lambda.f90 track_support.o
-
 METISSE_mlwind.o: $(METISSE_DIR)/METISSE_mlwind.f90 track_support.o
 METISSE_deltat.o: $(METISSE_DIR)/METISSE_deltat.f90 track_support.o
 METISSE_zcnsts.o: $(METISSE_DIR)/METISSE_zcnsts.f90 track_support.o z_support.o
 METISSE_star.o: $(METISSE_DIR)/METISSE_star.f90 track_support.o interp_support.o sse_support.o
 METISSE_hrdiag.o: $(METISSE_DIR)/METISSE_hrdiag.f90 track_support.o interp_support.o sse_support.o remnant_support.o
 METISSE_gntage.o: $(METISSE_DIR)/METISSE_gntage.f90 track_support.o interp_support.o
+METISSE_miscellaneous.o: $(METISSE_DIR)/METISSE_miscellaneous.f90 track_support.o
+comenv_lambda.o: $(METISSE_DIR)/comenv_lambda.f90 track_support.o
 
-
-# metisse in standalone mode
-METISSE=metisse
-
-SRCE0 = \
-main_metisse.f90 evolv_metisse.f90 assign_commons_main.f90 \
-track_support.f90 z_support.f90 sse_support.f90 \
-remnant_support.f90 interp_support.f90 \
-METISSE_miscellaneous.f90 METISSE_zcnsts.f90 METISSE_star.f90 \
-METISSE_hrdiag.f90 METISSE_deltat.f90
-
-SRCE00 = \
-assign_remnant.f hrdiag_remnant.f
-	
-OBJT0 = $(SRCE0:.f90=.o)
-OBJT00 = $(SRCE00:.f=.o)
-
-evolv_metisse.o: $(METISSE_DIR)/evolv_metisse.f90 track_support.o sse_support.o
-main_metisse.o: $(METISSE_DIR)/main_metisse.f90 track_support.o z_support.o
-assign_commons_main.o: $(METISSE_DIR)/assign_commons_main.f90 track_support.o remnant_support.o
+assign_commons.o: $(SRC_DIR)/assign_commons_BSE.f90 track_support.o remnant_support.o
 
 
 %.o : $(SRC_DIR)/%.f
@@ -122,13 +102,11 @@ assign_commons_main.o: $(METISSE_DIR)/assign_commons_main.f90 track_support.o re
 %.o : $(SSE_DIR)/%.f
 	$(FC) $(FFLAGS2) -c $<
 	
-%.o : $(METISSE_DIR)/%.f90
+%.o : $(SRC_DIR)/%.f90
 	$(FC) $(FFLAGS1) -c $<
 	
-
-
-$(METISSE): $(OBJT0) $(OBJT00)
-	$(FC) $(OMP) $(FFLAGS1) -o $(BSE_DIR)/$(METISSE) $^
+%.o : $(METISSE_DIR)/%.f90
+	$(FC) $(FFLAGS1) -c $<
 	
 	
 $(SSE_METISSE): $(OBJT4) $(OBJT_SSE) $(OBJT_METISSE)
@@ -143,12 +121,11 @@ $(POPBIN): $(OBJT3) $(OBJT_SSE) $(OBJT_METISSE)
 	$(FC) $(OMP) $(FFLAGS1) -o $(BSE_DIR)/$(POPBIN) $^
 
 
-all:$(BSE_METISSE) $(SSE_METISSE) $(POPBIN) $(METISSE)
-main: $(METISSE)
+all:$(BSE_METISSE) $(SSE_METISSE) $(POPBIN)
 
 
 clean:
-	rm -f $(BSE_DIR)/$(SSE_METISSE) $(BSE_DIR)/$(METISSE)
+	rm -f $(BSE_DIR)/$(SSE_METISSE)
 	rm -f $(BSE_DIR)/$(BSE_METISSE) $(BSE_DIR)/$(POPBIN)
 	rm -f *.mod *.o
 

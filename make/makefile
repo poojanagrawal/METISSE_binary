@@ -2,9 +2,8 @@ BSE_DIR=..
 
 SRC_DIR=$(BSE_DIR)/src
 SSE_DIR=$(BSE_DIR)/src/SSE
-#METISSE_DIR=$(BSE_DIR)/src/METISSE/src
+METISSE_DIR=$(BSE_DIR)/src/METISSE/src
 
-METISSE_DIR=/Users/poojan/METISSE/src
 #compiler
 FC=gfortran
 

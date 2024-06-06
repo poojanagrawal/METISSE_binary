@@ -1,0 +1,3 @@
+[submodule "src/METISSE"]
+	path = src/METISSE
+	url = git@github.com:TeamMETISSE/METISSE.git
